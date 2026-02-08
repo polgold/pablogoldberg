@@ -2,15 +2,22 @@ import {
   convertLexicalToHTML,
   defaultHTMLConverters,
 } from "@payloadcms/richtext-lexical/html";
+import type { SerializedEditorState, SerializedLexicalNode } from "lexical";
 import { getPayloadClient } from "./get-payload";
 import type { PageItem, ProjectItem } from "@/types/content";
 
 function lexicalToHtml(lexical: unknown): string {
-  if (!lexical || typeof lexical !== "object") return "";
+  if (
+    !lexical ||
+    typeof lexical !== "object" ||
+    !("root" in lexical)
+  ) {
+    return "";
+  }
   try {
     return (
       convertLexicalToHTML({
-        data: lexical as { root: unknown },
+        data: lexical as SerializedEditorState<SerializedLexicalNode>,
         converters: defaultHTMLConverters,
       }) ?? ""
     );
