@@ -21,6 +21,13 @@ function getDatabaseUrl(): string {
   return `${url}${sep}sslmode=require`;
 }
 
+/** Opciones SSL para el pool de pg. Managed DBs (Neon, Supabase, etc.) suelen usar certs que Node rechaza por defecto. */
+function getPoolSsl(): { rejectUnauthorized: boolean } | undefined {
+  const url = process.env.DATABASE_URL || "";
+  if (!url) return undefined;
+  return { rejectUnauthorized: false };
+}
+
 const useS3 =
   process.env.S3_BUCKET &&
   process.env.S3_ACCESS_KEY_ID &&
@@ -50,6 +57,7 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: getDatabaseUrl(),
+      ssl: getPoolSsl(),
     },
   }),
   sharp,
