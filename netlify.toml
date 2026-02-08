@@ -1,7 +1,10 @@
 # Migraciones: correr a mano con DATABASE_URL de prod (ver README). No en build (undici/Node falla).
+# No definir publish: el plugin Next.js de Netlify usa su propio output.
 [build]
   command = "npm run build"
-  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
