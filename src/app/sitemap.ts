@@ -1,3 +1,9 @@
+// Node (Netlify build) no tiene global File; Payload/lexical lo usan. Polyfill antes de cualquier import.
+import { File as NodeFile } from "node:buffer";
+if (typeof globalThis.File === "undefined") {
+  (globalThis as unknown as { File: typeof NodeFile }).File = NodeFile as unknown as typeof globalThis.File;
+}
+
 import { MetadataRoute } from "next";
 import { getProjectSlugs } from "@/lib/content";
 import { LOCALES } from "@/lib/i18n";
