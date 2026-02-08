@@ -85,7 +85,7 @@ function sanitizeHtml(html: string): string {
   const stripExceptAllowed = out.replace(/<[^>]+>/g, (tag) => {
     const match = tag.match(/^<\/?([a-zA-Z0-9]+)/);
     const name = match ? match[1].toLowerCase() : "";
-    if ["p", "h2", "h3", "h4", "ul", "ol", "li", "strong", "em", "a", "blockquote", "br"].includes(name)) {
+    if (["p", "h2", "h3", "h4", "ul", "ol", "li", "strong", "em", "a", "blockquote", "br"].includes(name)) {
       if (name === "a") {
         const hrefMatch = tag.match(/href=["']([^"']*)["']/i);
         const href = hrefMatch ? hrefMatch[1] : "#";
