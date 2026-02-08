@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { getPageBySlug, getFeaturedProjects } from "@/lib/content";
 import { VideoEmbed } from "@/components/VideoEmbed";
-import { SafeHtml } from "@/components/SafeHtml";
 
 const PRIMARY_REEL_VIMEO = "884669410";
 
@@ -11,10 +10,12 @@ function extractFirstVimeo(content: string): string | null {
   return m ? m[1] : null;
 }
 
-export default function HomePage() {
-  const homePage = getPageBySlug("home");
-  const featured = getFeaturedProjects(6);
-  const reelId = homePage ? extractFirstVimeo(homePage.content) || PRIMARY_REEL_VIMEO : PRIMARY_REEL_VIMEO;
+export default async function HomePage() {
+  const homePage = await getPageBySlug("home");
+  const featured = await getFeaturedProjects(6);
+  const reelId = homePage
+    ? extractFirstVimeo(homePage.content) || PRIMARY_REEL_VIMEO
+    : PRIMARY_REEL_VIMEO;
 
   return (
     <div>
@@ -39,7 +40,12 @@ export default function HomePage() {
             Reel
           </h2>
           <div className="mx-auto max-w-4xl">
-            <VideoEmbed type="vimeo" id={reelId} title="Director showreel" className="rounded-lg" />
+            <VideoEmbed
+              type="vimeo"
+              id={reelId}
+              title="Director showreel"
+              className="rounded-lg"
+            />
           </div>
         </div>
       </section>

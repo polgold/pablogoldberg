@@ -3,8 +3,8 @@ import { getProjectSlugs } from "@/lib/content";
 
 const BASE = "https://pablogoldberg.com";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const slugs = getProjectSlugs();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const slugs = await getProjectSlugs();
   const workEntries = slugs.map((slug) => ({
     url: `${BASE}/work/${slug}`,
     lastModified: new Date(),

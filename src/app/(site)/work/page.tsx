@@ -1,8 +1,8 @@
 import { getProjects } from "@/lib/content";
 import { WorkPageClient } from "./WorkPageClient";
 
-export default function WorkPage() {
-  const projects = getProjects();
+export default async function WorkPage() {
+  const projects = await getProjects();
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-10">

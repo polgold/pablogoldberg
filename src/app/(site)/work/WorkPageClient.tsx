@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ProjectItem } from "@/types/content";
 
-const ROLES = ["Director", "Cinematography / DP", "Producer", "Photography"] as const;
+const ROLES = ["Director", "Cinematography/DP", "Producer", "Drone", "Photography"] as const;
 
 interface WorkPageClientProps {
   projects: ProjectItem[];
@@ -26,8 +26,11 @@ export function WorkPageClient({ projects }: WorkPageClientProps) {
           (p.roles && p.roles.some((r) => r.toLowerCase().includes(q)))
       );
     }
+    if (role) {
+      list = list.filter((p) => p.roles?.includes(role));
+    }
     return list;
-  }, [projects, search]);
+  }, [projects, search, role]);
 
   return (
     <>

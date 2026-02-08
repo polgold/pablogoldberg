@@ -14,12 +14,13 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  return getProjectSlugs().map((slug) => ({ slug }));
+  const slugs = await getProjectSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await getProjectBySlug(slug);
   if (!project) return { title: "Proyecto" };
   const desc =
     project.excerpt?.slice(0, 160) ||
@@ -38,16 +39,17 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function ProjectPage({ params }: PageProps) {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await getProjectBySlug(slug);
   if (!project) notFound();
 
-  const { prev, next } = getAdjacentProjects(slug);
+  const { prev, next } = await getAdjacentProjects(slug);
   const primaryVideo = project.primaryVideo;
-  const gallery = project.galleryImages?.length
-    ? project.galleryImages
-    : project.featuredImage
-      ? [project.featuredImage]
-      : [];
+  const gallery =
+    project.galleryImages?.length > 0
+      ? project.galleryImages
+      : project.featuredImage
+        ? [project.featuredImage]
+        : [];
 
   return (
     <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
@@ -93,7 +95,10 @@ export default async function ProjectPage({ params }: PageProps) {
           </h2>
           <ul className="grid gap-4 sm:grid-cols-2">
             {gallery.map((src, i) => (
-              <li key={i} className="relative aspect-video overflow-hidden rounded-lg bg-white/5">
+              <li
+                key={i}
+                className="relative aspect-video overflow-hidden rounded-lg bg-white/5"
+              >
                 <Image
                   src={src}
                   alt=""

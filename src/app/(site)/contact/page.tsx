@@ -11,8 +11,8 @@ export const metadata = {
   },
 };
 
-export default function ContactPage() {
-  const page = getPageBySlug("contact");
+export default async function ContactPage() {
+  const page = await getPageBySlug("contact");
   const title = page?.title || "Contacto";
   const content = page?.content?.trim() || "";
 

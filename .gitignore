@@ -23,5 +23,5 @@ npm-debug.log*
 # Vercel
 .vercel
 
-# Optional: keep generated content in git (uncomment to ignore and regenerate on deploy)
-# content/generated/
+# Payload local uploads (use S3/R2 in production so images are not in git)
+media/

@@ -11,8 +11,8 @@ export const metadata = {
   },
 };
 
-export default function AboutPage() {
-  const page = getPageBySlug("about");
+export default async function AboutPage() {
+  const page = await getPageBySlug("about");
   const title = page?.title || "Sobre mí";
   const content = page?.content?.trim() || "";
 
