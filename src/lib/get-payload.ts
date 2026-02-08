@@ -1,3 +1,9 @@
+// Asegura global File antes de cargar Payload (runtime Node en Netlify puede no tenerlo).
+import { File as NodeFile } from "node:buffer";
+if (typeof globalThis.File === "undefined") {
+  (globalThis as unknown as { File: typeof NodeFile }).File = NodeFile as unknown as typeof globalThis.File;
+}
+
 import { getPayload } from "payload";
 import config from "@payload-config";
 
