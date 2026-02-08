@@ -21,11 +21,13 @@ function getDatabaseUrl(): string {
   return `${url}${sep}sslmode=require`;
 }
 
-/** Opciones SSL para el pool de pg. Managed DBs (Neon, Supabase, etc.) suelen usar certs que Node rechaza por defecto. */
+/** Opciones SSL para el pool de pg. Managed DBs (Neon, Supabase, etc.) usan certs que Node rechaza → SELF_SIGNED_CERT_IN_CHAIN. */
 function getPoolSsl(): { rejectUnauthorized: boolean } | undefined {
   const url = process.env.DATABASE_URL || "";
   if (!url) return undefined;
-  return { rejectUnauthorized: false };
+  // En producción (Netlify) siempre aceptar cert; en dev solo si pide SSL (sslmode en URL).
+  if (process.env.NODE_ENV === "production") return { rejectUnauthorized: false };
+  return url.includes("sslmode=") ? { rejectUnauthorized: false } : undefined;
 }
 
 const useS3 =
