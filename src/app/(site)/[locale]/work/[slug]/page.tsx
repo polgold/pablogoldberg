@@ -1,29 +1,26 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  getProjectBySlug,
-  getProjectSlugs,
-  getAdjacentProjects,
-} from "@/lib/content";
+import { getProjectBySlug, getAdjacentProjects } from "@/lib/content";
+import { getLocaleFromParam } from "@/lib/i18n";
+import { COPY } from "@/lib/i18n";
 import { SafeHtml } from "@/components/SafeHtml";
 import { VideoEmbed } from "@/components/VideoEmbed";
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }
 
-export async function generateStaticParams() {
-  const slugs = await getProjectSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
+export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps) {
-  const { slug } = await params;
-  const project = await getProjectBySlug(slug);
-  if (!project) return { title: "Proyecto" };
+  const { locale, slug } = await params;
+  const loc = getLocaleFromParam(locale);
+  const project = await getProjectBySlug(slug, loc);
+  if (!project) return { title: loc === "es" ? "Proyecto" : "Project" };
   const desc =
-    project.excerpt?.slice(0, 160) ||
+    (project.summary || project.excerpt)?.slice(0, 160) ||
     `${project.title}${project.year ? ` (${project.year})` : ""}. Director, DP, Producer.`;
   return {
     title: project.title,
@@ -38,11 +35,12 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function ProjectPage({ params }: PageProps) {
-  const { slug } = await params;
-  const project = await getProjectBySlug(slug);
+  const { locale, slug } = await params;
+  const loc = getLocaleFromParam(locale);
+  const project = await getProjectBySlug(slug, loc);
   if (!project) notFound();
 
-  const { prev, next } = await getAdjacentProjects(slug);
+  const { prev, next } = await getAdjacentProjects(slug, loc);
   const primaryVideo = project.primaryVideo;
   const gallery =
     project.galleryImages?.length > 0
@@ -50,6 +48,7 @@ export default async function ProjectPage({ params }: PageProps) {
       : project.featuredImage
         ? [project.featuredImage]
         : [];
+  const t = COPY[loc].workDetail;
 
   return (
     <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
@@ -58,6 +57,9 @@ export default async function ProjectPage({ params }: PageProps) {
           {project.title}
         </h1>
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/70">
+          {project.client ? <span>{project.client}</span> : null}
+          {project.pieceType ? <span>{project.pieceType}</span> : null}
+          {project.duration ? <span>{project.duration}</span> : null}
           {project.roles?.length ? (
             <span>{project.roles.join(" · ")}</span>
           ) : null}
@@ -65,9 +67,9 @@ export default async function ProjectPage({ params }: PageProps) {
         </div>
       </header>
 
-      {project.excerpt ? (
+      {(project.summary || project.excerpt) ? (
         <div className="prose-safe mb-10 text-white/90">
-          <SafeHtml html={project.excerpt} />
+          <SafeHtml html={(project.summary || project.excerpt) ?? ""} />
         </div>
       ) : null}
 
@@ -91,7 +93,7 @@ export default async function ProjectPage({ params }: PageProps) {
       {gallery.length > 0 ? (
         <section className="mb-12">
           <h2 className="mb-6 text-sm font-medium uppercase tracking-widest text-white/60">
-            Galería
+            {t.gallery}
           </h2>
           <ul className="grid gap-4 sm:grid-cols-2">
             {gallery.map((src, i) => (
@@ -115,7 +117,7 @@ export default async function ProjectPage({ params }: PageProps) {
       {project.credits?.trim() ? (
         <section className="mb-12 border-t border-white/10 pt-8">
           <h2 className="mb-4 text-sm font-medium uppercase tracking-widest text-white/60">
-            Créditos
+            {t.credits}
           </h2>
           <div className="prose-safe text-sm text-white/70">
             <SafeHtml html={project.credits} />
@@ -123,14 +125,27 @@ export default async function ProjectPage({ params }: PageProps) {
         </section>
       ) : null}
 
+      {project.externalLink?.trim() ? (
+        <p className="mb-12">
+          <a
+            href={project.externalLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand hover:underline focus:outline-none focus:ring-2 focus:ring-brand"
+          >
+            {locale === "es" ? "Ver proyecto" : "View project"} →
+          </a>
+        </p>
+      ) : null}
+
       <nav
         className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-8"
-        aria-label="Navegación entre proyectos"
+        aria-label={locale === "es" ? "Navegación entre proyectos" : "Project navigation"}
       >
         <div className="min-w-0 flex-1">
           {prev ? (
             <Link
-              href={`/work/${prev.slug}`}
+              href={`/${locale}/work/${prev.slug}`}
               className="group inline-flex items-center gap-2 text-brand hover:underline focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <span aria-hidden>←</span>
@@ -141,15 +156,15 @@ export default async function ProjectPage({ params }: PageProps) {
           )}
         </div>
         <Link
-          href="/work"
+          href={`/${locale}/work`}
           className="text-white/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand"
         >
-          Ver todos
+          {t.viewAll}
         </Link>
         <div className="min-w-0 flex-1 text-right">
           {next ? (
             <Link
-              href={`/work/${next.slug}`}
+              href={`/${locale}/work/${next.slug}`}
               className="group inline-flex items-center gap-2 text-brand hover:underline focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <span className="truncate">{next.title}</span>

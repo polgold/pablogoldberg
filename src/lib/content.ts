@@ -6,6 +6,10 @@ import type { SerializedEditorState, SerializedLexicalNode } from "lexical";
 import { getPayloadClient } from "./get-payload";
 import type { PageItem, ProjectItem } from "@/types/content";
 
+export type Locale = "es" | "en";
+
+const DEFAULT_LOCALE: Locale = "es";
+
 function lexicalToHtml(lexical: unknown): string {
   if (
     !lexical ||
@@ -41,7 +45,44 @@ function parseVideoUrl(url: string | null | undefined): { type: "vimeo" | "youtu
   return undefined;
 }
 
-export async function getPages(): Promise<PageItem[]> {
+function docToProjectItem(doc: Record<string, unknown>): ProjectItem {
+  const cover = doc.cover as Record<string, unknown> | number | null | undefined;
+  const gallery = (doc.gallery as Array<{ image?: unknown }> | null) ?? [];
+  const coverUrl = typeof cover === "object" && cover ? mediaUrl(cover) : undefined;
+  const galleryImages = gallery
+    .map((g) => mediaUrl(g.image))
+    .filter((u): u is string => Boolean(u));
+  const primaryVideo = parseVideoUrl(doc.videoUrl as string | undefined);
+  const roles = (doc.roles as string[] | undefined) ?? [];
+  const content = lexicalToHtml(doc.description);
+  const summaryRaw = (doc.summary as string) ?? "";
+  const excerpt = summaryRaw.trim()
+    ? summaryRaw
+    : content.slice(0, 300);
+  return {
+    slug: String(doc.slug),
+    title: String(doc.title),
+    content,
+    excerpt,
+    date: "",
+    modified: "",
+    year: doc.year != null ? String(doc.year) : "",
+    roles,
+    client: doc.client != null ? String(doc.client) : undefined,
+    pieceType: doc.pieceType != null ? String(doc.pieceType) : undefined,
+    duration: doc.duration != null ? String(doc.duration) : undefined,
+    summary: summaryRaw.trim() || undefined,
+    credits: doc.credits != null ? lexicalToHtml(doc.credits) : undefined,
+    externalLink: doc.externalLink != null ? String(doc.externalLink) : undefined,
+    order: typeof doc.order === "number" ? doc.order : undefined,
+    featuredImage: coverUrl,
+    videoUrls: { vimeo: undefined, youtube: undefined },
+    primaryVideo,
+    galleryImages,
+  };
+}
+
+export async function getPages(locale: Locale = DEFAULT_LOCALE): Promise<PageItem[]> {
   const payload = await getPayloadClient();
   if (!payload) return [];
   const result = await payload.find({
@@ -49,6 +90,8 @@ export async function getPages(): Promise<PageItem[]> {
     depth: 0,
     limit: 100,
     pagination: false,
+    locale,
+    fallbackLocale: "es",
   });
   const docs = (result.docs ?? []) as Array<Record<string, unknown>>;
   return docs.map((doc) => ({
@@ -61,49 +104,47 @@ export async function getPages(): Promise<PageItem[]> {
   }));
 }
 
-export async function getProjects(): Promise<ProjectItem[]> {
+export async function getPageBySlug(slug: string, locale: Locale = DEFAULT_LOCALE): Promise<PageItem | undefined> {
+  const payload = await getPayloadClient();
+  if (!payload) return undefined;
+  const result = await payload.find({
+    collection: "pages",
+    depth: 0,
+    where: { slug: { equals: slug } },
+    limit: 1,
+    pagination: false,
+    locale,
+    fallbackLocale: "es",
+  });
+  const doc = result.docs?.[0] as Record<string, unknown> | undefined;
+  if (!doc) return undefined;
+  return {
+    slug: String(doc.slug ?? ""),
+    title: String(doc.title ?? ""),
+    content: lexicalToHtml(doc.content),
+    date: "",
+    modified: "",
+    excerpt: "",
+  };
+}
+
+export async function getProjects(locale: Locale = DEFAULT_LOCALE): Promise<ProjectItem[]> {
   const payload = await getPayloadClient();
   if (!payload) return [];
   const result = await payload.find({
     collection: "projects",
     depth: 2,
     limit: 500,
-    sort: "-year",
+    sort: "-order,-year",
     pagination: false,
+    locale,
+    fallbackLocale: "es",
   });
   const docs = (result.docs ?? []) as Array<Record<string, unknown>>;
-  return docs.map((doc) => {
-    const cover = doc.cover as Record<string, unknown> | number | null | undefined;
-    const gallery = (doc.gallery as Array<{ image?: unknown }> | null) ?? [];
-    const coverUrl = typeof cover === "object" && cover ? mediaUrl(cover) : undefined;
-    const galleryImages = gallery
-      .map((g) => mediaUrl(g.image))
-      .filter((u): u is string => Boolean(u));
-    const primaryVideo = parseVideoUrl(doc.videoUrl as string | undefined);
-    const roles = (doc.roles as string[] | undefined) ?? [];
-    return {
-      slug: String(doc.slug),
-      title: String(doc.title),
-      content: lexicalToHtml(doc.description),
-      excerpt: lexicalToHtml(doc.description).slice(0, 300),
-      date: "",
-      modified: "",
-      year: doc.year != null ? String(doc.year) : "",
-      roles,
-      featuredImage: coverUrl,
-      videoUrls: { vimeo: undefined, youtube: undefined },
-      primaryVideo,
-      galleryImages,
-    };
-  });
+  return docs.map((doc) => docToProjectItem(doc));
 }
 
-export async function getPageBySlug(slug: string): Promise<PageItem | undefined> {
-  const pages = await getPages();
-  return pages.find((p) => p.slug === slug);
-}
-
-export async function getProjectBySlug(slug: string): Promise<ProjectItem | undefined> {
+export async function getProjectBySlug(slug: string, locale: Locale = DEFAULT_LOCALE): Promise<ProjectItem | undefined> {
   const payload = await getPayloadClient();
   if (!payload) return undefined;
   const result = await payload.find({
@@ -111,34 +152,15 @@ export async function getProjectBySlug(slug: string): Promise<ProjectItem | unde
     depth: 2,
     where: { slug: { equals: slug } },
     limit: 1,
+    locale,
+    fallbackLocale: "es",
   });
   const doc = result.docs?.[0] as Record<string, unknown> | undefined;
   if (!doc) return undefined;
-  const cover = doc.cover as Record<string, unknown> | number | null | undefined;
-  const gallery = (doc.gallery as Array<{ image?: unknown }> | null) ?? [];
-  const coverUrl = typeof cover === "object" && cover ? mediaUrl(cover) : undefined;
-  const galleryImages = gallery
-    .map((g) => mediaUrl(g.image))
-    .filter((u): u is string => Boolean(u));
-  const primaryVideo = parseVideoUrl(doc.videoUrl as string | undefined);
-  const roles = (doc.roles as string[] | undefined) ?? [];
-  return {
-    slug: String(doc.slug),
-    title: String(doc.title),
-    content: lexicalToHtml(doc.description),
-    excerpt: lexicalToHtml(doc.description).slice(0, 300),
-    date: "",
-    modified: "",
-    year: doc.year != null ? String(doc.year) : "",
-    roles,
-    featuredImage: coverUrl,
-    videoUrls: { vimeo: undefined, youtube: undefined },
-    primaryVideo,
-    galleryImages,
-  };
+  return docToProjectItem(doc);
 }
 
-export async function getFeaturedProjects(limit = 6): Promise<ProjectItem[]> {
+export async function getFeaturedProjects(limit = 6, locale: Locale = DEFAULT_LOCALE): Promise<ProjectItem[]> {
   const payload = await getPayloadClient();
   if (!payload) return [];
   const result = await payload.find({
@@ -146,30 +168,13 @@ export async function getFeaturedProjects(limit = 6): Promise<ProjectItem[]> {
     depth: 2,
     where: { isFeatured: { equals: true } },
     limit: limit || 6,
-    sort: "-year",
+    sort: "-order,-year",
     pagination: false,
+    locale,
+    fallbackLocale: "es",
   });
   const docs = (result.docs ?? []) as Array<Record<string, unknown>>;
-  return docs.map((doc) => {
-    const cover = doc.cover as Record<string, unknown> | number | null | undefined;
-    const coverUrl = typeof cover === "object" && cover ? mediaUrl(cover) : undefined;
-    const primaryVideo = parseVideoUrl(doc.videoUrl as string | undefined);
-    const roles = (doc.roles as string[] | undefined) ?? [];
-    return {
-      slug: String(doc.slug),
-      title: String(doc.title),
-      content: lexicalToHtml(doc.description),
-      excerpt: "",
-      date: "",
-      modified: "",
-      year: doc.year != null ? String(doc.year) : "",
-      roles,
-      featuredImage: coverUrl,
-      videoUrls: { vimeo: undefined, youtube: undefined },
-      primaryVideo,
-      galleryImages: [],
-    };
-  });
+  return docs.map((doc) => docToProjectItem(doc));
 }
 
 export async function getProjectSlugs(): Promise<string[]> {
@@ -186,14 +191,14 @@ export async function getProjectSlugs(): Promise<string[]> {
 }
 
 export async function getAdjacentProjects(
-  slug: string
+  slug: string,
+  locale: Locale = DEFAULT_LOCALE
 ): Promise<{ prev: ProjectItem | null; next: ProjectItem | null }> {
-  const projects = await getProjects();
-  const list = projects.sort((a, b) => (b.year || "").localeCompare(a.year || ""));
-  const i = list.findIndex((p) => p.slug === slug);
+  const projects = await getProjects(locale);
+  const i = projects.findIndex((p) => p.slug === slug);
   if (i < 0) return { prev: null, next: null };
   return {
-    prev: i > 0 ? list[i - 1] ?? null : null,
-    next: i < list.length - 1 ? list[i + 1] ?? null : null,
+    prev: i > 0 ? projects[i - 1] ?? null : null,
+    next: i < projects.length - 1 ? projects[i + 1] ?? null : null,
   };
 }

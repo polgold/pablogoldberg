@@ -15,6 +15,7 @@ export const Pages: CollectionConfig = {
       name: "title",
       type: "text",
       required: true,
+      localized: true,
     },
     {
       name: "slug",
@@ -29,6 +30,7 @@ export const Pages: CollectionConfig = {
       name: "content",
       type: "richText",
       editor: lexicalEditor(),
+      localized: true,
     },
   ],
 };

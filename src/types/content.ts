@@ -16,11 +16,17 @@ export interface ProjectItem {
   modified: string;
   year: string;
   roles: string[];
+  client?: string;
+  pieceType?: string;
+  duration?: string;
+  summary?: string;
+  credits?: string;
+  externalLink?: string;
+  order?: number;
   featuredImage?: string;
   videoUrls: { vimeo?: string[]; youtube?: string[] };
   primaryVideo?: { type: "vimeo" | "youtube"; id: string };
   galleryImages: string[];
-  credits?: string;
 }
 
 export interface Taxonomy {

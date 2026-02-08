@@ -1,3 +1,9 @@
+/**
+ * LEGACY: No usado por la aplicación.
+ * La web usa únicamente src/lib/content.ts, que obtiene datos de Payload CMS.
+ * Este archivo leía proyectos desde content/generated/projects.json (export WordPress).
+ * Se mantiene por referencia; no importar en el proyecto.
+ */
 import fs from "node:fs";
 import path from "node:path";
 

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getPageBySlug, getFeaturedProjects } from "@/lib/content";
+import { getLocaleFromParam } from "@/lib/i18n";
+import { COPY } from "@/lib/i18n";
 import { VideoEmbed } from "@/components/VideoEmbed";
 
 const PRIMARY_REEL_VIMEO = "884669410";
@@ -10,12 +12,19 @@ function extractFirstVimeo(content: string): string | null {
   return m ? m[1] : null;
 }
 
-export default async function HomePage() {
-  const homePage = await getPageBySlug("home");
-  const featured = await getFeaturedProjects(6);
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const loc = getLocaleFromParam(locale);
+  const homePage = await getPageBySlug("home", loc);
+  const featured = await getFeaturedProjects(6, loc);
   const reelId = homePage
     ? extractFirstVimeo(homePage.content) || PRIMARY_REEL_VIMEO
     : PRIMARY_REEL_VIMEO;
+  const t = COPY[loc].home;
 
   return (
     <div>
@@ -25,19 +34,15 @@ export default async function HomePage() {
           <h1 className="font-display text-4xl tracking-wide text-white sm:text-5xl md:text-6xl">
             PABLO GOLDBERG
           </h1>
-          <p className="mt-4 text-lg text-white/80 sm:text-xl">
-            Director · Director de fotografía · Productor
-          </p>
-          <p className="mt-2 text-sm text-white/60">
-            Más de 20 años contando historias. Buenos Aires.
-          </p>
+          <p className="mt-4 text-lg text-white/80 sm:text-xl">{t.tagline}</p>
+          <p className="mt-2 text-sm text-white/60">{t.more}</p>
         </div>
       </section>
 
       <section className="border-t border-white/10 bg-surface px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <h2 className="mb-2 text-center text-sm font-medium uppercase tracking-widest text-brand">
-            Reel
+            {t.reel}
           </h2>
           <div className="mx-auto max-w-4xl">
             <VideoEmbed
@@ -54,20 +59,20 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl">
           <div className="mb-10 flex flex-col items-center justify-between gap-4 sm:flex-row sm:items-end">
             <h2 className="text-2xl font-semibold tracking-tight text-white">
-              Trabajo destacado
+              {t.featured}
             </h2>
             <Link
-              href="/work"
+              href={`/${locale}/work`}
               className="text-sm font-medium text-brand hover:underline focus:outline-none focus:ring-2 focus:ring-brand"
             >
-              Ver todo →
+              {locale === "es" ? "Ver todo →" : "View all →"}
             </Link>
           </div>
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((project) => (
               <li key={project.slug}>
                 <Link
-                  href={`/work/${project.slug}`}
+                  href={`/${locale}/work/${project.slug}`}
                   className="group block overflow-hidden rounded-lg border border-white/10 bg-surface-card transition-colors hover:border-white/20"
                 >
                   <div className="relative aspect-[16/10] overflow-hidden bg-white/5">
@@ -81,7 +86,7 @@ export default async function HomePage() {
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-white/30">
-                        Sin imagen
+                        {locale === "es" ? "Sin imagen" : "No image"}
                       </div>
                     )}
                     <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 to-transparent p-4 opacity-0 transition-opacity group-hover:opacity-100">
@@ -107,16 +112,14 @@ export default async function HomePage() {
       <section className="border-t border-white/10 bg-surface-light px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-2xl font-semibold tracking-tight text-white">
-            ¿Proyecto en mente?
+            {t.ctaTitle}
           </h2>
-          <p className="mt-3 text-white/80">
-            Hablemos de tu próximo spot, videoclip o documental.
-          </p>
+          <p className="mt-3 text-white/80">{t.ctaText}</p>
           <Link
-            href="/contact"
+            href={`/${locale}/contact`}
             className="mt-6 inline-block rounded bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-surface"
           >
-            Contacto / Booking
+            {t.ctaButton}
           </Link>
         </div>
       </section>

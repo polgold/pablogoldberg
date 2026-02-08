@@ -18,6 +18,14 @@ const useS3 =
   process.env.S3_SECRET_ACCESS_KEY;
 
 export default buildConfig({
+  localization: {
+    locales: [
+      { label: "Español", code: "es" },
+      { label: "English", code: "en" },
+    ],
+    defaultLocale: "es",
+    fallback: true,
+  },
   admin: {
     user: Users.slug,
     importMap: {

@@ -1,6 +1,6 @@
 # Pablo Goldberg — Portfolio
 
-Sitio en Next.js (App Router) con Payload CMS 3 como backend. Contenido gestionado desde `/admin` (proyectos, páginas, media). Base de datos Postgres; medios en disco o S3/R2.
+Sitio en Next.js (App Router) con Payload CMS 3 como backend. Contenido gestionado desde `/admin` (proyectos, páginas, media). Base de datos Postgres; medios en disco o S3/R2. Versión ES/EN con selector en el header.
 
 ## Requisitos
 
@@ -21,6 +21,8 @@ cp .env.example .env
 | `DATABASE_URL` | URL de conexión Postgres |
 | `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_ENDPOINT` | Opcional. Si están definidas, los medios se suben a S3/R2 en lugar de disco. Para R2 usa `S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com` y `S3_REGION=auto`. |
 
+**Producción:** asegura tener `DATABASE_URL` y `PAYLOAD_SECRET` configurados para que `/admin` y el sitio funcionen correctamente.
+
 ## Instalación
 
 ```bash
@@ -32,12 +34,14 @@ npm install
 Tras configurar `DATABASE_URL`:
 
 ```bash
-# Crear/actualizar tablas (desarrollo)
+# Aplicar migraciones (crear/actualizar tablas)
 npm run payload:migrate
 
-# Crear nueva migración (cuando cambies colecciones)
+# Crear nueva migración (solo cuando cambies colecciones en el código)
 npm run payload:migrate:create
 ```
+
+Si añadiste o modificaste campos en Projects o Pages, ejecuta `payload:migrate` antes de usar el admin.
 
 ## Desarrollo
 
@@ -45,8 +49,24 @@ npm run payload:migrate:create
 npm run dev
 ```
 
-- Sitio: [http://localhost:3000](http://localhost:3000)
+- Sitio: [http://localhost:3000](http://localhost:3000) (redirige a `/es`)
+- Español: [http://localhost:3000/es](http://localhost:3000/es)
+- English: [http://localhost:3000/en](http://localhost:3000/en)
 - Admin Payload: [http://localhost:3000/admin](http://localhost:3000/admin) (crea el primer usuario al entrar)
+
+## Cargar contenido desde /admin
+
+1. Entra en **http://localhost:3000/admin** (o tu dominio/admin).
+2. Crea un usuario la primera vez.
+3. **Projects**: cada proyecto puede tener:
+   - **Título** (ES/EN), **slug**, **Cliente** (obligatorio), **Tipo de pieza** (Ad, Documentary, Brand Film, Music Video, Social, Other), **Año**, **Orden** (opcional; si lo usas, los proyectos se ordenan por este número).
+   - **Roles** (Director, DP, Producer, etc.), **Resumen** (corto, para listados y SEO), **Descripción** (texto largo), **Créditos** (rich text).
+   - **Duración** (ej. 30s, 2:15), **Video** (URL Vimeo/YouTube), **Cover**, **Galería**, **Enlace externo** (opcional).
+   - **Destacado**: marcar para que aparezca en la home.
+4. **Pages**: crea páginas con slug `home`, `about`, `contact`. Título y contenido son localizables (ES/EN).
+5. **Media**: sube imágenes para portadas y galerías. Con S3/R2 configurado, se suben a la nube.
+
+La web usa solo el contenido de Payload; no hay que tocar JSON ni scripts para el contenido en vivo.
 
 ## Build y producción
 
@@ -55,24 +75,27 @@ npm run build
 npm start
 ```
 
-En Netlify (o similar): configura `DATABASE_URL`, `PAYLOAD_SECRET` y, si usas medios externos, las variables S3/R2. El build ya no ejecuta ningún parse de WordPress.
+En Netlify (o similar): configura `DATABASE_URL`, `PAYLOAD_SECRET` y, si usas medios externos, las variables S3/R2.
 
 ## Estructura de rutas
 
 | Ruta | Contenido |
 |------|-----------|
-| `/` | Home: hero, reel, proyectos destacados, CTA |
-| `/work` | Listado de proyectos (filtros por rol, búsqueda) |
-| `/work/[slug]` | Detalle de proyecto (vídeo, galería, prev/next) |
-| `/about` | Página «about» (Payload collection Pages) |
-| `/contact` | Página «contact» + CTA / mailto |
-| `/admin` | Payload CMS — gestionar Projects, Pages, Media, Users |
+| `/` | Redirige a `/es` |
+| `/es`, `/en` | Home: hero, reel, proyectos destacados, CTA (contenido en ese idioma) |
+| `/es/work`, `/en/work` | Listado de proyectos (filtros, búsqueda; muestra cliente y tipo de pieza) |
+| `/es/work/[slug]`, `/en/work/[slug]` | Detalle de proyecto (vídeo, galería, créditos, enlace externo) |
+| `/es/about`, `/en/about` | Página «about» (Payload Pages, localizada) |
+| `/es/contact`, `/en/contact` | Página «contact» + CTA / mailto |
+| `/admin` | Payload CMS — Projects, Pages, Media, Users |
 
-## Contenido desde Payload
+Selector de idioma **ES | EN** en el header para cambiar de idioma manteniendo la misma página.
 
-- **Projects**: title, slug, year, roles, description (rich text), videoUrl (Vimeo/YouTube), cover, gallery, isFeatured.
-- **Pages**: slug (home, about, contact), title, content (rich text).
-- **Media**: upload + alt; opcional width/height. Si usas S3/R2, las imágenes no se guardan en git.
+## Contenido desde Payload (resumen)
+
+- **Projects**: title (localizado), slug, **client**, **pieceType**, year, **order**, roles, **summary** (localizado), description (localizado), **credits** (localizado), **duration**, videoUrl, **externalLink**, cover, gallery, isFeatured.
+- **Pages**: slug (home, about, contact), title y content (localizados).
+- **Media**: upload + alt. Con S3/R2, las imágenes no se guardan en git.
 
 ## Resumen de comandos
 
@@ -83,4 +106,4 @@ En Netlify (o similar): configura `DATABASE_URL`, `PAYLOAD_SECRET` y, si usas me
 | `npm run build` | Build de producción |
 | `npm start` | Servir build |
 | `npm run payload:migrate` | Aplicar migraciones Payload |
-| `npm run payload:migrate:create` | Crear nueva migración |
+| `npm run payload:migrate:create` | Crear nueva migración (tras cambiar colecciones) |
