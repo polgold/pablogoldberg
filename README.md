@@ -43,6 +43,19 @@ npm run payload:migrate:create
 
 Si añadiste o modificaste campos en Projects o Pages, ejecuta `payload:migrate` antes de usar el admin.
 
+### Migraciones en producción (Netlify / DB remota)
+
+Las migraciones no se ejecutan automáticamente en el deploy. Si el sitio en producción falla por tablas faltantes o esquema desactualizado:
+
+1. Configura localmente (o en un entorno seguro) la **misma base de datos de producción**: copia `DATABASE_URL` de las variables de entorno del sitio en Netlify (Site settings → Environment variables).
+2. Ejecuta las migraciones contra esa DB:
+   ```bash
+   npm run payload:migrate
+   ```
+3. Acepta las migraciones pendientes cuando el CLI lo pida. No hace falta redeploy: los cambios se aplican en la DB y el sitio ya desplegado los usará.
+
+Solo necesitas repetir este paso cuando cambies colecciones o campos en el código y subas un nuevo deploy.
+
 ## Desarrollo
 
 ```bash

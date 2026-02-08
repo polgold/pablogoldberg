@@ -5,7 +5,13 @@ import { LOCALES } from "@/lib/i18n";
 const BASE = "https://pablogoldberg.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const slugs = await getProjectSlugs();
+  let slugs: string[] = [];
+  try {
+    slugs = await getProjectSlugs();
+  } catch {
+    // Tablas aún no creadas (migraciones no corridas) o DB no disponible en build
+    slugs = [];
+  }
   const entries: MetadataRoute.Sitemap = [];
 
   for (const locale of LOCALES) {

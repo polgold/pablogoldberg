@@ -1,0 +1,6 @@
+[build]
+  command = "npm run payload:migrate && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"

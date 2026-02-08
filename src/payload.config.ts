@@ -12,6 +12,15 @@ import { Projects } from "./collections/Projects";
 
 const srcDir = path.resolve(process.cwd(), "src");
 
+/** Asegura sslmode=require para conexiones Postgres en entornos que lo exigen (ej. Netlify + DB managed). */
+function getDatabaseUrl(): string {
+  const url = process.env.DATABASE_URL || "";
+  if (!url) return url;
+  if (url.includes("sslmode=")) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}sslmode=require`;
+}
+
 const useS3 =
   process.env.S3_BUCKET &&
   process.env.S3_ACCESS_KEY_ID &&
@@ -40,7 +49,7 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || "",
+      connectionString: getDatabaseUrl(),
     },
   }),
   sharp,
