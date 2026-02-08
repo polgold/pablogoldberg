@@ -43,6 +43,7 @@ function parseVideoUrl(url: string | null | undefined): { type: "vimeo" | "youtu
 
 export async function getPages(): Promise<PageItem[]> {
   const payload = await getPayloadClient();
+  if (!payload) return [];
   const result = await payload.find({
     collection: "pages",
     depth: 0,
@@ -62,6 +63,7 @@ export async function getPages(): Promise<PageItem[]> {
 
 export async function getProjects(): Promise<ProjectItem[]> {
   const payload = await getPayloadClient();
+  if (!payload) return [];
   const result = await payload.find({
     collection: "projects",
     depth: 2,
@@ -103,6 +105,7 @@ export async function getPageBySlug(slug: string): Promise<PageItem | undefined>
 
 export async function getProjectBySlug(slug: string): Promise<ProjectItem | undefined> {
   const payload = await getPayloadClient();
+  if (!payload) return undefined;
   const result = await payload.find({
     collection: "projects",
     depth: 2,
@@ -137,6 +140,7 @@ export async function getProjectBySlug(slug: string): Promise<ProjectItem | unde
 
 export async function getFeaturedProjects(limit = 6): Promise<ProjectItem[]> {
   const payload = await getPayloadClient();
+  if (!payload) return [];
   const result = await payload.find({
     collection: "projects",
     depth: 2,
@@ -170,6 +174,7 @@ export async function getFeaturedProjects(limit = 6): Promise<ProjectItem[]> {
 
 export async function getProjectSlugs(): Promise<string[]> {
   const payload = await getPayloadClient();
+  if (!payload) return [];
   const result = await payload.find({
     collection: "projects",
     depth: 0,
