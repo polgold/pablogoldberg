@@ -1,3 +1,9 @@
+// Node (Netlify build) no tiene global File; Payload lo usa. Polyfill para que el build no falle.
+import { File as NodeFile } from "node:buffer";
+if (typeof globalThis.File === "undefined") {
+  (globalThis as unknown as { File: typeof NodeFile }).File = NodeFile as unknown as typeof globalThis.File;
+}
+
 import config from "@payload-config";
 import "@payloadcms/next/css";
 import {
