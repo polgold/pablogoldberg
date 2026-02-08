@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Bebas Neue", "Impact", system-ui, sans-serif;
+  --color-brand: #fb2056;
+  --color-surface: #0a0a0a;
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth antialiased;
+  }
+  body {
+    @apply bg-surface text-white;
+  }
+  a:focus-visible,
+  button:focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
+  }
+}
+
+@layer components {
+  .prose-safe a {
+    @apply text-brand underline decoration-brand/50 underline-offset-2 transition-colors hover:decoration-brand;
+  }
+  .prose-safe h2 {
+    @apply mt-8 mb-4 text-xl font-semibold tracking-tight;
+  }
+  .prose-safe h3,
+  .prose-safe h4 {
+    @apply mt-6 mb-3 text-lg font-semibold;
+  }
+  .prose-safe ul,
+  .prose-safe ol {
+    @apply my-4 pl-6;
+  }
+  .prose-safe blockquote {
+    @apply border-l-2 border-brand/60 pl-4 italic text-white/90;
+  }
+}

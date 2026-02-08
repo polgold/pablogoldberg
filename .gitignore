@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+.next/
+out/
+build/
+dist/
+
+# Env
+.env
+.env*.local
+
+# Debug / IDE
+.DS_Store
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+
+# Vercel
+.vercel
+
+# Optional: keep generated content in git (uncomment to ignore and regenerate on deploy)
+# content/generated/
