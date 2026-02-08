@@ -1,5 +1,6 @@
+# Migraciones: correr a mano con DATABASE_URL de prod (ver README). No en build (undici/Node falla).
 [build]
-  command = "npm run payload:migrate && npm run build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
