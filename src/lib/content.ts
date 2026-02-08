@@ -49,9 +49,10 @@ export async function getPages(): Promise<PageItem[]> {
     limit: 100,
     pagination: false,
   });
-  return (result.docs ?? []).map((doc: { slug: string; title: string; content?: unknown }) => ({
-    slug: doc.slug,
-    title: doc.title,
+  const docs = (result.docs ?? []) as Array<Record<string, unknown>>;
+  return docs.map((doc) => ({
+    slug: String(doc.slug ?? ""),
+    title: String(doc.title ?? ""),
     content: lexicalToHtml(doc.content),
     date: "",
     modified: "",
@@ -68,7 +69,8 @@ export async function getProjects(): Promise<ProjectItem[]> {
     sort: "-year",
     pagination: false,
   });
-  return (result.docs ?? []).map((doc: Record<string, unknown>) => {
+  const docs = (result.docs ?? []) as Array<Record<string, unknown>>;
+  return docs.map((doc) => {
     const cover = doc.cover as Record<string, unknown> | number | null | undefined;
     const gallery = (doc.gallery as Array<{ image?: unknown }> | null) ?? [];
     const coverUrl = typeof cover === "object" && cover ? mediaUrl(cover) : undefined;
@@ -143,8 +145,8 @@ export async function getFeaturedProjects(limit = 6): Promise<ProjectItem[]> {
     sort: "-year",
     pagination: false,
   });
-  const docs = result.docs ?? [];
-  return docs.map((doc: Record<string, unknown>) => {
+  const docs = (result.docs ?? []) as Array<Record<string, unknown>>;
+  return docs.map((doc) => {
     const cover = doc.cover as Record<string, unknown> | number | null | undefined;
     const coverUrl = typeof cover === "object" && cover ? mediaUrl(cover) : undefined;
     const primaryVideo = parseVideoUrl(doc.videoUrl as string | undefined);
@@ -174,7 +176,8 @@ export async function getProjectSlugs(): Promise<string[]> {
     limit: 1000,
     pagination: false,
   });
-  return (result.docs ?? []).map((d: { slug: string }) => d.slug);
+  const docs = (result.docs ?? []) as Array<Record<string, unknown>>;
+  return docs.map((d) => String(d.slug ?? ""));
 }
 
 export async function getAdjacentProjects(
