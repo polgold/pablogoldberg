@@ -20,7 +20,7 @@ export const COPY: Record<
     workDetail: { gallery: string; credits: string; viewAll: string };
     home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; ctaTitle: string; ctaText: string; ctaButton: string };
     about: { defaultTitle: string };
-    contact: { defaultTitle: string; ctaButton: string; emailNote: string };
+    contact: { defaultTitle: string; ctaButton: string };
     metadata: { about: string; contact: string };
   }
 > = {
@@ -47,7 +47,7 @@ export const COPY: Record<
       ctaButton: "Contacto / Booking",
     },
     about: { defaultTitle: "Sobre mí" },
-    contact: { defaultTitle: "Contacto", ctaButton: "Contacto / Booking", emailNote: "Para consultas profesionales: hola@pablogoldberg.com" },
+    contact: { defaultTitle: "Contacto", ctaButton: "Contacto / Booking" },
     metadata: { about: "Sobre mí | Pablo Goldberg", contact: "Contacto | Pablo Goldberg" },
   },
   en: {
@@ -73,7 +73,7 @@ export const COPY: Record<
       ctaButton: "Contact / Booking",
     },
     about: { defaultTitle: "About" },
-    contact: { defaultTitle: "Contact", ctaButton: "Contact / Booking", emailNote: "For professional inquiries: hola@pablogoldberg.com" },
+    contact: { defaultTitle: "Contact", ctaButton: "Contact / Booking" },
     metadata: { about: "About | Pablo Goldberg", contact: "Contact | Pablo Goldberg" },
   },
 };

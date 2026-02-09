@@ -21,6 +21,8 @@ cp .env.example .env
 | `DATABASE_URL` | URL de conexión Postgres |
 | `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_ENDPOINT` | Opcional. Si están definidas, los medios se suben a S3/R2 en lugar de disco. Para R2 usa `S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com` y `S3_REGION=auto`. |
 
+**SEO:** opcional `NEXT_PUBLIC_SITE_URL` (ej. `https://pablogoldberg.com`) para canonicals, OG y sitemap; si no está definida se usa `https://pablogoldberg.com`.
+
 **Producción:** asegura tener `DATABASE_URL` y `PAYLOAD_SECRET` configurados para que `/admin` y el sitio funcionen correctamente.
 
 ## Instalación

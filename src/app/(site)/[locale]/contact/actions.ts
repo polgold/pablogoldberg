@@ -31,5 +31,6 @@ export async function submitContactForm(
     console.error("[contact] submit error:", error.message);
     return { ok: false, error: "No se pudo enviar. Intenta más tarde." };
   }
+
   return { ok: true };
 }

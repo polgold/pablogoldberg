@@ -2,6 +2,7 @@ import Image from "next/image";
 import { getPageBySlug } from "@/lib/content";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
+import { getHreflangUrls } from "@/lib/site";
 import { SafeHtml } from "@/components/SafeHtml";
 
 const BIO_ES = `
@@ -15,6 +16,27 @@ const BIO_EN = `
 `;
 
 const PORTRAIT_PATH = "/images/about-portrait.jpg";
+
+const PRODUCTIONS = [
+  {
+    name: "Sun Factory",
+    href: "https://www.sunfactory.com.ar",
+    lineEs: "Productora de cine. Argentina.",
+    lineEn: "Film production company. Argentina.",
+  },
+  {
+    name: "BESTEFAR",
+    href: "https://bestefarmovie.com",
+    lineEs: "Largometraje.",
+    lineEn: "Feature film.",
+  },
+  {
+    name: "Accerts Productions",
+    href: "https://www.accerts.com",
+    lineEs: "Producción. Argentina.",
+    lineEn: "Production. Argentina.",
+  },
+];
 
 export default async function AboutPage({
   params,
@@ -49,6 +71,28 @@ export default async function AboutPage({
             <div className="prose-safe mt-8 text-base leading-relaxed text-white/88 md:text-lg">
               <SafeHtml html={content} />
             </div>
+            <section className="mt-14 pt-10 border-t border-white/10" aria-label={loc === "es" ? "Producciones / Productor para" : "Productions / Producer for"}>
+              <h2 className="text-xs font-medium uppercase tracking-wider text-white/50">
+                {loc === "es" ? "Producciones / Productor para" : "Productions / Producer for"}
+              </h2>
+              <ul className="mt-6 space-y-6">
+                {PRODUCTIONS.map((p) => (
+                  <li key={p.name}>
+                    <a
+                      href={p.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block text-white/80 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black rounded"
+                    >
+                      <span className="font-medium">{p.name}</span>
+                      <span className="ml-2 text-sm text-white/60 group-hover:text-white/80">
+                        {loc === "es" ? p.lineEs : p.lineEn}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
         </div>
       </div>
@@ -69,9 +113,14 @@ export async function generateMetadata({
     loc === "es"
       ? "Pablo Goldberg — Director, creativo, fotógrafo y editor. Sun Factory. Buenos Aires."
       : "Pablo Goldberg — Director, creative, photographer and editor. Sun Factory. Buenos Aires.";
+  const urls = getHreflangUrls("/about");
   return {
     title,
     description,
+    alternates: {
+      canonical: urls[loc],
+      languages: { es: urls.es, en: urls.en, "x-default": urls.es },
+    },
     openGraph: {
       title: `${title} | Pablo Goldberg`,
       description,

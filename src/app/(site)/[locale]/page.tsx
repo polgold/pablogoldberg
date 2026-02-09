@@ -1,11 +1,31 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getFeaturedProjects, getProjects } from "@/lib/content";
+import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
+import { getHreflangUrls } from "@/lib/site";
+import { HeroReel } from "@/components/HeroReel";
 
 const HOME_PROJECTS_MIN = 8;
 const HOME_PROJECTS_MAX = 16;
+
+export const revalidate = 300;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const urls = getHreflangUrls("");
+  return {
+    alternates: {
+      canonical: urls[getLocaleFromParam(locale) as "es" | "en"],
+      languages: { es: urls.es, en: urls.en, "x-default": urls.es },
+    },
+  };
+}
 
 export default async function HomePage({
   params,
@@ -14,18 +34,41 @@ export default async function HomePage({
 }) {
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
-  const featured = await getFeaturedProjects(HOME_PROJECTS_MAX, loc);
+  const heroVimeoEnv = process.env.HERO_VIMEO_ID?.trim();
+
+  // Evitar llamada a API de Vimeo si ya tenemos el ID en env (mejora TTFB)
+  const [featured, allProjects, vimeoVideos] = await Promise.all([
+    getFeaturedProjects(HOME_PROJECTS_MAX, loc),
+    getProjects(loc),
+    heroVimeoEnv ? Promise.resolve([]) : getVimeoPortfolioVideos(),
+  ]);
   const projects =
     featured.length >= HOME_PROJECTS_MIN
       ? featured
-      : [...featured, ...(await getProjects(loc)).filter((p) => !featured.find((f) => f.slug === p.slug))].slice(
+      : [...featured, ...allProjects.filter((p) => !featured.find((f) => f.slug === p.slug))].slice(
           0,
           HOME_PROJECTS_MAX
         );
+
+  const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
+  const heroPoster =
+    featured[0]?.featuredImage || allProjects[0]?.featuredImage || undefined;
+  const hasHero = Boolean(heroVimeoId || heroPoster);
+
   const t = COPY[loc].home;
 
   return (
     <div className="min-h-screen bg-black">
+      {hasHero && (
+        <section className="relative h-[70vh] min-h-[400px] w-full border-b border-white/5">
+          <HeroReel
+            vimeoId={heroVimeoId}
+            title={t.reel}
+            fallbackImageSrc={heroPoster}
+          />
+        </section>
+      )}
+
       <section className="border-b border-white/5 px-4 py-8 sm:px-6 md:px-8">
         <div className="mx-auto max-w-[1600px]">
           <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">

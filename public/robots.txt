@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /wp-admin
+Disallow: /wp-login.php
+Sitemap: https://pablogoldberg.com/sitemap.xml

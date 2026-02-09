@@ -1,0 +1,30 @@
+# Pablo Goldberg — Director
+
+[site]
+name: Pablo Goldberg
+type: Film director portfolio
+location: Buenos Aires, Argentina
+languages: Spanish (es), English (en)
+focus: Commercials, music videos, documentaries, branded content. Director, director of photography, producer.
+
+[about]
+Pablo Goldberg is a film director and cinematographer based in Buenos Aires. Owner of Sun Factory, a film production company in Argentina. Graduated in Visual Arts & Design, Panamerican School of Design & Advertising, 1997. Over 20 years directing and shooting short films, documentaries, commercials, music videos, feature films, television, live events, and advertising photography.
+
+[content]
+Canonical URLs (default locale: es):
+- Home: https://pablogoldberg.com/es
+- Work (projects): https://pablogoldberg.com/es/work
+- About: https://pablogoldberg.com/es/about
+- Contact: https://pablogoldberg.com/es/contact
+English (en): same paths with /en prefix (e.g. https://pablogoldberg.com/en/work).
+Project detail: https://pablogoldberg.com/es/work/<slug> (or /en/work/<slug>).
+
+[media]
+Video: Vimeo, YouTube (embeds). Images: Supabase Storage (project covers and galleries), local assets in /images.
+
+[crawl]
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /wp-admin
+Disallow: /wp-login.php

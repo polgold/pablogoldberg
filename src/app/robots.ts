@@ -1,10 +1,13 @@
 import { MetadataRoute } from "next";
-
-const BASE = "https://pablogoldberg.com";
+import { SITE_URL } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: "*", allow: "/", disallow: [] },
-    sitemap: `${BASE}/sitemap.xml`,
+    rules: {
+      userAgent: "*",
+      allow: "/",
+      disallow: ["/admin", "/login", "/wp-admin", "/wp-login.php"],
+    },
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

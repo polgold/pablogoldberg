@@ -1,5 +1,6 @@
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
+import { getHreflangUrls } from "@/lib/site";
 import { ContactForm } from "./ContactForm";
 
 export default async function ContactPage({
@@ -42,9 +43,14 @@ export async function generateMetadata({
     loc === "es"
       ? "Contacto y booking. Pablo Goldberg."
       : "Contact and booking. Pablo Goldberg.";
+  const urls = getHreflangUrls("/contact");
   return {
     title,
     description,
+    alternates: {
+      canonical: urls[loc],
+      languages: { es: urls.es, en: urls.en, "x-default": urls.es },
+    },
     openGraph: {
       title: `${title} | Pablo Goldberg`,
       description,

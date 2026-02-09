@@ -9,9 +9,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seo:validate": "bash scripts/seo-validate.sh"
   },
   "dependencies": {
+    "nodemailer": "^6.9.16",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.49.1",
     "next": "^15.5.12",

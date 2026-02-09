@@ -48,6 +48,7 @@ export function HeroReel({
             className="absolute left-1/2 top-1/2 h-[56.25vw] min-h-[100vh] w-[177.78vh] min-w-[100vw] -translate-x-1/2 -translate-y-1/2 object-cover"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
+            loading="lazy"
           />
         </div>
       )}

@@ -1,0 +1,25 @@
+Formulario de contacto — SMTP
+============================
+
+El formulario envía a: hola@pablogoldberg.com
+Y guarda una copia en Supabase (tabla contact_messages).
+
+Variables en .env (Hostinger o Gmail):
+
+  SMTP_HOST=smtp.hostinger.com
+  SMTP_PORT=587
+  SMTP_USER=tu-email@tudominio.com
+  SMTP_PASS=tu-contraseña
+  SMTP_FROM=tu-email@tudominio.com
+
+Para Gmail:
+  SMTP_HOST=smtp.gmail.com
+  SMTP_PORT=587
+  SMTP_USER=tu@gmail.com
+  SMTP_PASS=contraseña de aplicación (no la normal)
+  SMTP_FROM=tu@gmail.com
+
+En Gmail: Cuenta → Seguridad → Verificación en 2 pasos → Contraseñas de aplicación.
+
+Tabla Supabase: ejecutá la migración contact_messages si aún no existe:
+  supabase/migrations/20250210100000_contact_messages.sql
