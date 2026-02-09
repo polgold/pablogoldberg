@@ -12,9 +12,17 @@ import { Projects } from "./collections/Projects";
 
 const srcDir = path.resolve(process.cwd(), "src");
 
-/** DATABASE_URL sin modificar (params existentes intactos). SSL se controla solo por opción ssl del pool. */
+/** Connection string para el pool: DATABASE_URL con sslmode normalizado para evitar SELF_SIGNED_CERT_IN_CHAIN.
+ *  Si la URL tiene sslmode=require|prefer|verify-ca|verify-full (tratados como verify-full por pg), se reemplaza por sslmode=no-verify.
+ *  No se borran otros params ni se toca user/pass/host/db. */
 function getDatabaseUrl(): string {
-  return process.env.DATABASE_URL || "";
+  const url = process.env.DATABASE_URL || "";
+  if (!url) return url;
+  const normalized = url.replace(
+    /sslmode=(require|prefer|verify-ca|verify-full)/gi,
+    "sslmode=no-verify"
+  );
+  return normalized;
 }
 
 /** SSL a nivel conexión pg: evita SELF_SIGNED_CERT_IN_CHAIN en managed DBs (Neon, Supabase, etc.). */
