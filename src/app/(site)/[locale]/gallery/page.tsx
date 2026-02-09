@@ -8,7 +8,11 @@ export default async function GalleryPage() {
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-5 py-10 md:px-8">
         <h1 className="sr-only">Portfolio</h1>
-        {urls.length === 0 ? null : (
+        {urls.length === 0 ? (
+          <p className="text-sm text-white/40">
+            Sin imágenes. Subí fotos en Supabase Storage: bucket <strong>projects</strong>, carpeta <strong>portfolio</strong> o <strong>uploads</strong>. Opcional: env <code className="text-white/60">PORTFOLIO_GALLERY_FOLDER</code> = nombre de la carpeta.
+          </p>
+        ) : (
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {urls.map((url, i) => (
               <li key={i} className="relative aspect-square overflow-hidden bg-white/5">

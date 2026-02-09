@@ -1,0 +1,15 @@
+Galería Portfolio (fotos desde Supabase)
+========================================
+
+Las fotos se leen del bucket "projects", carpeta "portfolio" (donde ya tenés los .jpg).
+
+Para que funcione en producción (Netlify) tené en Site settings → Environment variables:
+
+  NEXT_PUBLIC_SUPABASE_URL    = https://yetitiksusqgikujfzoh.supabase.co
+  SUPABASE_SERVICE_ROLE_KEY  = (tu service role key de Supabase)
+
+Sin SUPABASE_SERVICE_ROLE_KEY el servidor no puede listar archivos y la galería queda vacía.
+
+Opcional:
+  PORTFOLIO_GALLERY_FOLDER   = portfolio   (si usás otra carpeta)
+  PORTFOLIO_GALLERY_BUCKET   = projects    (si usás otro bucket)
