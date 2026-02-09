@@ -1,5 +1,27 @@
-Formulario de contacto y tabla de Vimeo ocultos
-================================================
+Errores frecuentes Supabase + Netlify
+=====================================
+
+--- "new row violates row-level security policy for table projects" ---
+
+Al crear o editar un proyecto en /admin:
+
+1. Ejecutar el SQL en Supabase (solo una vez):
+   - Supabase Dashboard → SQL Editor → New query
+   - Copiá TODO el contenido de supabase/run-projects-rls.sql
+   - Pegá y Run
+
+2. En Netlify (Site → Environment variables) tenés que tener:
+   SUPABASE_SERVICE_ROLE_KEY = el valor "service_role" (secret) de Supabase.
+   - Entrá a Supabase → Project Settings → API
+   - Copiá la clave "service_role" (secret), no la "anon" (public).
+   - En Netlify agregá la variable SUPABASE_SERVICE_ROLE_KEY con ese valor y redeploy.
+
+Si usás la anon key en vez de la service_role, RLS sigue activo y no podés insertar.
+
+---
+
+Formulario de contacto — "No se pudo guardar"
+==============================================
 
 Si ves "No se pudo guardar. Intenta más tarde." al enviar el formulario:
 
@@ -22,16 +44,17 @@ Si ves "No se pudo guardar. Intenta más tarde." al enviar el formulario:
 
 ---
 
-Videos Vimeo ocultos — "Could not find the table 'public.hidden_vimeo_ids'"
-===========================================================================
+Videos Vimeo ocultos — tabla o RLS
+====================================
 
-Si en /admin/vimeo-hidden al hacer Hide te sale ese error:
+"Could not find the table 'public.hidden_vimeo_ids'":
+  1. SQL Editor → ejecutá supabase/run-hidden-vimeo.sql (crea la tabla y políticas).
 
-1. En Supabase: SQL Editor → New query
-2. Abrí el archivo supabase/run-hidden-vimeo.sql de este repo
-3. Copiá todo el contenido, pegá en el editor y Run.
+"new row violates row-level security policy for table hidden_vimeo_ids":
+  1. Ejecutá de nuevo supabase/run-hidden-vimeo.sql (ahora incluye políticas INSERT/UPDATE/DELETE para service_role).
+  O ejecutá todo de una: supabase/run-all-rls-policies.sql (proyectos, pages, hidden_vimeo_ids).
 
-Listo: la tabla hidden_vimeo_ids queda creada y Hide/Unhide va a funcionar.
+Asegurate de tener SUPABASE_SERVICE_ROLE_KEY en Netlify con la clave "service_role" (secret) de Supabase.
 
 Comportamiento: la web pública /work muestra hasta 40 videos (los primeros 40 no ocultos).
 Cuando ocultás uno, el siguiente de la lista de Vimeo pasa a ocupar su lugar (pedimos 60 a la API, filtramos ocultos, mostramos 40).
