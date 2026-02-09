@@ -35,7 +35,8 @@ export async function getPortfolioGalleryUrls(): Promise<string[]> {
       if (error) continue;
       const raw = Array.isArray(data) ? data : [];
       const files = raw
-        .filter((f): f is { name: string } => typeof (f as { name?: unknown }).name === "string" && IMAGE_EXT.test((f as { name: string }).name))
+        .filter((f) => typeof (f as { name?: string }).name === "string" && IMAGE_EXT.test((f as { name: string }).name))
+        .map((f) => ({ name: (f as { name: string }).name }))
         .sort((a, b) => a.name.localeCompare(b.name));
       if (files.length === 0) continue;
       return files.map((f) =>
