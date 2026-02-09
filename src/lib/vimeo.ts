@@ -87,7 +87,15 @@ export async function fetchVimeoVideoById(videoId: string): Promise<VimeoVideo |
       release_time?: string;
       pictures?: { sizes?: Array<{ width: number; link: string }> };
     };
-    return parseVideos([v])[0] ?? null;
+    const normalized = {
+      uri: v.uri ?? "",
+      name: v.name ?? "",
+      link: v.link ?? "",
+      duration: v.duration ?? 0,
+      release_time: v.release_time,
+      pictures: v.pictures,
+    };
+    return parseVideos([normalized])[0] ?? null;
   } catch {
     return null;
   }
