@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
-import config from "@payload-config";
-import { RootPage, generatePageMetadata } from "@payloadcms/next/views";
-import { importMap } from "../importMap";
 
-type Args = {
-  params: Promise<{ segments: string[] }>;
-  searchParams: Promise<{ [key: string]: string | string[] }>;
+export const metadata: Metadata = {
+  title: "Admin",
+  description: "Content is managed via Supabase.",
 };
 
-export const generateMetadata = ({ params, searchParams }: Args): Promise<Metadata> =>
-  generatePageMetadata({ config, params, searchParams });
-
-const Page = ({ params, searchParams }: Args) =>
-  RootPage({ config, params, searchParams, importMap });
-
-export default Page;
+export default function AdminPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-zinc-900 text-white">
+      <p>Content is managed via Supabase. No Payload admin.</p>
+    </div>
+  );
+}

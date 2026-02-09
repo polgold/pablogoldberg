@@ -1,5 +1,5 @@
-# Migraciones: correr a mano con DATABASE_URL de prod (ver README). No en build (undici/Node falla).
-# No definir publish: el plugin Next.js de Netlify usa su propio output.
+# Build sin DB: datos vía Supabase (HTTP). Configurar en Netlify: Site settings → Environment variables.
+# SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET
 [build]
   command = "npm run build"
 

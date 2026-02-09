@@ -1,25 +1,22 @@
-// Node (Netlify build) no tiene global File; Payload lo usa. Polyfill para que el build no falle.
-import { File as NodeFile } from "node:buffer";
-if (typeof globalThis.File === "undefined") {
-  (globalThis as unknown as { File: typeof NodeFile }).File = NodeFile as unknown as typeof globalThis.File;
-}
-
-import config from "@payload-config";
-import "@payloadcms/next/css";
-import {
-  REST_DELETE,
-  REST_GET,
-  REST_OPTIONS,
-  REST_PATCH,
-  REST_POST,
-  REST_PUT,
-} from "@payloadcms/next/routes";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-export const GET = REST_GET(config);
-export const POST = REST_POST(config);
-export const DELETE = REST_DELETE(config);
-export const PATCH = REST_PATCH(config);
-export const PUT = REST_PUT(config);
-export const OPTIONS = REST_OPTIONS(config);
+export function GET() {
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
+}
+export function POST() {
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
+}
+export function PUT() {
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
+}
+export function PATCH() {
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
+}
+export function DELETE() {
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
+}
+export function OPTIONS() {
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
+}
