@@ -35,12 +35,14 @@ export function PortfolioPhotosClient({
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [reorderLoading, setReorderLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [newGalleryName, setNewGalleryName] = useState("");
-  const [addingGallery, setAddingGallery] = useState(false);
+  const [newGalleryNamesText, setNewGalleryNamesText] = useState("");
+  const [addingGalleries, setAddingGalleries] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadCancelledRef = useRef(false);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -155,19 +157,48 @@ export function PortfolioPhotosClient({
     e.currentTarget.classList.remove("border-amber-500", "bg-amber-500/10");
   }, []);
 
+  const cancelUpload = useCallback(() => {
+    uploadCancelledRef.current = true;
+  }, []);
+
   const doUpload = useCallback(
     async (files: File[], galleryId: string) => {
+      uploadCancelledRef.current = false;
       setUploading(true);
+      setUploadProgress(0);
       const formData = new FormData();
       files.forEach((f) => formData.append("file", f));
-      const { uploaded, error } = await uploadPortfolioPhotos(formData, galleryId);
-      setUploading(false);
-      if (error) {
-        showToast(error);
-        return;
+
+      const progressInterval = setInterval(() => {
+        if (uploadCancelledRef.current) return;
+        setUploadProgress((p) => (p === null ? 0 : Math.min(90, p + 8)));
+      }, 400);
+
+      try {
+        const { uploaded, error } = await uploadPortfolioPhotos(formData, galleryId);
+        clearInterval(progressInterval);
+        if (uploadCancelledRef.current) {
+          setUploading(false);
+          setUploadProgress(null);
+          showToast("Cancelado");
+          return;
+        }
+        setUploadProgress(100);
+        await new Promise((r) => setTimeout(r, 300));
+        setUploading(false);
+        setUploadProgress(null);
+        if (error) {
+          showToast(error);
+          return;
+        }
+        showToast(`${uploaded ?? 0} foto(s) subida(s)`);
+        await loadPhotosForGallery(selectedGalleryId);
+      } catch {
+        clearInterval(progressInterval);
+        setUploading(false);
+        setUploadProgress(null);
+        if (!uploadCancelledRef.current) showToast("Error al subir");
       }
-      showToast(`${uploaded ?? 0} foto(s) subida(s)`);
-      await loadPhotosForGallery(selectedGalleryId);
     },
     [selectedGalleryId, showToast, loadPhotosForGallery]
   );
@@ -186,22 +217,35 @@ export function PortfolioPhotosClient({
     [selectedGalleryId, showToast, doUpload]
   );
 
-  const handleCreateGallery = useCallback(async () => {
-    const name = newGalleryName.trim();
-    if (!name) return;
-    setAddingGallery(true);
-    const { gallery, error } = await createPortfolioGallery(name);
-    setAddingGallery(false);
-    setNewGalleryName("");
-    if (error) {
-      showToast(error);
-      return;
+  const handleCreateGalleries = useCallback(async () => {
+    const names = newGalleryNamesText
+      .split(/\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (names.length === 0) return;
+    setAddingGalleries(true);
+    const created: PortfolioGallery[] = [];
+    let errors = 0;
+    for (const name of names) {
+      const { gallery, error } = await createPortfolioGallery(name);
+      if (error) {
+        showToast(error);
+        errors++;
+      } else if (gallery) {
+        created.push(gallery);
+        setGalleries((prev) => [...prev, gallery]);
+      }
     }
-    if (gallery) {
-      setGalleries((prev) => [...prev, gallery]);
-      showToast(`Galería "${gallery.name}" creada`);
+    setAddingGalleries(false);
+    setNewGalleryNamesText("");
+    if (created.length > 0) {
+      showToast(
+        errors > 0
+          ? `${created.length} galería(s) creada(s). ${errors} fallo(s).`
+          : `${created.length} galería(s) creada(s)`
+      );
     }
-  }, [newGalleryName, showToast]);
+  }, [newGalleryNamesText, showToast]);
 
   const currentGallery = galleries.find((g) => g.id === selectedGalleryId);
 
@@ -247,21 +291,20 @@ export function PortfolioPhotosClient({
           ))}
         </ul>
         <div className="mt-3 border-t border-zinc-800 pt-3">
-          <input
-            type="text"
-            value={newGalleryName}
-            onChange={(e) => setNewGalleryName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleCreateGallery()}
-            placeholder="Nueva galería"
-            className="mb-2 w-full rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm text-white placeholder-zinc-500"
+          <textarea
+            value={newGalleryNamesText}
+            onChange={(e) => setNewGalleryNamesText(e.target.value)}
+            placeholder={"Una galería por línea\nEj: Retratos\nPaisajes\nEventos"}
+            rows={4}
+            className="mb-2 w-full resize-y rounded border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-sm text-white placeholder-zinc-500"
           />
           <button
             type="button"
-            onClick={handleCreateGallery}
-            disabled={addingGallery || !newGalleryName.trim()}
+            onClick={handleCreateGalleries}
+            disabled={addingGalleries || !newGalleryNamesText.trim()}
             className="w-full rounded bg-zinc-700 px-3 py-1.5 text-sm text-white hover:bg-zinc-600 disabled:opacity-50"
           >
-            {addingGallery ? "…" : "Crear galería"}
+            {addingGalleries ? "Creando…" : "Crear galerías"}
           </button>
         </div>
       </aside>
@@ -287,14 +330,36 @@ export function PortfolioPhotosClient({
               ? `Subir a «${currentGallery.name}»`
               : "Elegí una galería a la izquierda para subir fotos"}
           </p>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading || !selectedGalleryId}
-            className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
-          >
-            {uploading ? "Subiendo…" : "Seleccionar archivos"}
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || !selectedGalleryId}
+              className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+            >
+              {uploading ? "Subiendo…" : "Seleccionar archivos"}
+            </button>
+            {uploading && (
+              <button
+                type="button"
+                onClick={cancelUpload}
+                className="rounded border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
+          {uploading && uploadProgress !== null && (
+            <div className="mt-4 w-full max-w-xs">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-700">
+                <div
+                  className="h-full rounded-full bg-amber-500 transition-[width] duration-200"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="mt-1 text-center text-xs text-zinc-500">{uploadProgress}%</p>
+            </div>
+          )}
           <p className="mt-2 text-xs text-zinc-500">
             o arrastrá imágenes aquí · JPG, PNG, WebP, GIF, AVIF
           </p>
