@@ -69,6 +69,30 @@ function userIdFromUri(uri: string): string {
   return m ? m[1] : "";
 }
 
+/** Fetch a single video by ID (for custom IDs). Returns null if not found or no token. */
+export async function fetchVimeoVideoById(videoId: string): Promise<VimeoVideo | null> {
+  const token = getToken();
+  const id = String(videoId).trim().replace(/\D/g, "");
+  if (!token || !id) return null;
+  const headers = { Authorization: `Bearer ${token}` };
+  const opts = { headers, next: { revalidate: 300 } as const };
+  try {
+    const res = await fetch(`${API}/videos/${id}`, opts);
+    if (!res.ok) return null;
+    const v = (await res.json()) as {
+      uri?: string;
+      name?: string;
+      link?: string;
+      duration?: number;
+      release_time?: string;
+      pictures?: { sizes?: Array<{ width: number; link: string }> };
+    };
+    return parseVideos([v])[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Fetches raw list from API (same source as public work). Does not filter by hidden. */
 async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
   const token = getToken();
@@ -79,7 +103,7 @@ async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
 
   try {
     let list: VimeoVideo[] = [];
-    const meRes = await fetch(`${API}/me/videos?per_page=40&sort=date`, opts);
+    const meRes = await fetch(`${API}/me/videos?per_page=60&sort=date`, opts);
     if (meRes.ok) {
       const json = (await meRes.json()) as VideosResponse;
       const data = json.data ?? [];
@@ -92,7 +116,7 @@ async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
       const user = searchJson.data?.[0];
       const userId = user ? userIdFromUri(user.uri) : "";
       if (!userId) return [];
-      const videosRes = await fetch(`${API}/users/${userId}/videos?per_page=40&sort=date`, opts);
+      const videosRes = await fetch(`${API}/users/${userId}/videos?per_page=60&sort=date`, opts);
       if (!videosRes.ok) return [];
       const videosJson = (await videosRes.json()) as VideosResponse;
       list = parseVideos(videosJson.data ?? []);
@@ -104,21 +128,39 @@ async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
 }
 
 /**
- * Lista los últimos 40 videos de vimeo.com/sunfactory.
- * Excluye los IDs marcados como ocultos en admin (hidden_vimeo_ids).
+ * Lista hasta 40 videos visibles: custom por ID + 60 del portfolio, sin ocultos, primeros 40.
  */
 export async function getVimeoPortfolioVideos(): Promise<VimeoVideo[]> {
-  const [list, hiddenIds] = await Promise.all([
+  const [rawList, hiddenIds, customIds] = await Promise.all([
     fetchVimeoPortfolioVideosRaw(),
     import("./hidden-vimeo").then((m) => m.getHiddenVimeoIds()),
+    import("./hidden-vimeo").then((m) => m.getCustomVimeoIds()),
   ]);
-  return list.filter((v) => !hiddenIds.has(v.id));
+  const rawIds = new Set(rawList.map((v) => v.id));
+  const customVideos: VimeoVideo[] = [];
+  for (const id of customIds) {
+    if (rawIds.has(id)) continue;
+    const v = await fetchVimeoVideoById(id);
+    if (v) customVideos.push(v);
+  }
+  const merged = [...customVideos, ...rawList];
+  return merged.filter((v) => !hiddenIds.has(v.id)).slice(0, 40);
 }
 
 /**
- * Lista TODOS los videos del portfolio Vimeo (sin filtrar ocultos).
- * Para uso en /admin/vimeo-hidden.
+ * Lista TODOS (custom + 60 del portfolio) para /admin/vimeo-hidden.
  */
 export async function getVimeoPortfolioVideosAll(): Promise<VimeoVideo[]> {
-  return fetchVimeoPortfolioVideosRaw();
+  const [rawList, customIds] = await Promise.all([
+    fetchVimeoPortfolioVideosRaw(),
+    import("./hidden-vimeo").then((m) => m.getCustomVimeoIds()),
+  ]);
+  const rawIds = new Set(rawList.map((v) => v.id));
+  const customVideos: VimeoVideo[] = [];
+  for (const id of customIds) {
+    if (rawIds.has(id)) continue;
+    const v = await fetchVimeoVideoById(id);
+    if (v) customVideos.push(v);
+  }
+  return [...customVideos, ...rawList];
 }

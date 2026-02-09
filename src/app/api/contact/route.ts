@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       message,
     });
     if (error) {
-      console.error("[api/contact] Supabase insert error:", error.message);
+      console.error("[api/contact] Supabase insert error:", error.message, error.code, error.details);
       return NextResponse.json(
         { error: "No se pudo guardar. Intenta más tarde." },
         { status: 500 }

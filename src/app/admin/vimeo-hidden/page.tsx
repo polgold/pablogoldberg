@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getVimeoPortfolioVideosAll } from "@/lib/vimeo";
-import { listHiddenVimeoIds } from "../actions";
+import { listHiddenVimeoIds, listCustomVimeoIds } from "../actions";
 import { VimeoHiddenClient } from "./VimeoHiddenClient";
 import type { WorkItem } from "@/types/work";
 
@@ -13,9 +13,10 @@ function yearFromReleaseTime(releaseTime: string): string {
 }
 
 export default async function VimeoHiddenPage() {
-  const [videos, hiddenIds] = await Promise.all([
+  const [videos, hiddenIds, customIds] = await Promise.all([
     getVimeoPortfolioVideosAll(),
     listHiddenVimeoIds(),
+    listCustomVimeoIds(),
   ]);
 
   const items: WorkItem[] = videos.map((v) => ({
@@ -36,9 +37,13 @@ export default async function VimeoHiddenPage() {
         <h1 className="text-2xl font-semibold text-white">Videos Vimeo ocultos</h1>
       </div>
       <p className="mb-4 text-sm text-zinc-400">
-        Misma lista que en /work. Oculta o muestra videos para el portfolio público.
+        Misma lista que en /work. Oculta o muestra videos. Agregá por ID para que aparezca en /work aunque no esté en los 60.
       </p>
-      <VimeoHiddenClient initialItems={items} initialHiddenIds={hiddenIds} />
+      <VimeoHiddenClient
+        initialItems={items}
+        initialHiddenIds={hiddenIds}
+        initialCustomIds={customIds}
+      />
     </div>
   );
 }

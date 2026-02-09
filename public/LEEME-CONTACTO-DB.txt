@@ -1,0 +1,48 @@
+Formulario de contacto y tabla de Vimeo ocultos
+================================================
+
+Si ves "No se pudo guardar. Intenta más tarde." al enviar el formulario:
+
+1. Crear la tabla en Supabase (solo una vez)
+   - Entrá a: https://supabase.com/dashboard → tu proyecto → SQL Editor
+   - Abrí el archivo: supabase/migrations/20250210100000_contact_messages.sql
+   - Copiá TODO el contenido y ejecutalo (Run).
+   - Opcional: ejecutá también 20250210100001_contact_messages_policy.sql
+
+2. Variables de entorno en producción (Netlify / Vercel)
+   El API de contacto necesita:
+   - NEXT_PUBLIC_SUPABASE_URL
+   - SUPABASE_SERVICE_ROLE_KEY   ← importante: tiene que estar definida (no la anon key)
+
+   Sin SUPABASE_SERVICE_ROLE_KEY la API no puede escribir en la tabla.
+
+3. Ver el error real
+   En los logs del deploy (Netlify: Deploys → Function logs, o "No se pudo guardar" en la request)
+   deberías ver algo como "[api/contact] Supabase insert error: ...". Si dice "relation contact_messages does not exist", creá la tabla con el paso 1.
+
+---
+
+Videos Vimeo ocultos — "Could not find the table 'public.hidden_vimeo_ids'"
+===========================================================================
+
+Si en /admin/vimeo-hidden al hacer Hide te sale ese error:
+
+1. En Supabase: SQL Editor → New query
+2. Abrí el archivo supabase/run-hidden-vimeo.sql de este repo
+3. Copiá todo el contenido, pegá en el editor y Run.
+
+Listo: la tabla hidden_vimeo_ids queda creada y Hide/Unhide va a funcionar.
+
+Comportamiento: la web pública /work muestra hasta 40 videos (los primeros 40 no ocultos).
+Cuando ocultás uno, el siguiente de la lista de Vimeo pasa a ocupar su lugar (pedimos 60 a la API, filtramos ocultos, mostramos 40).
+
+---
+
+Videos personalizados por ID (agregar a /work)
+==============================================
+
+Para que un video de Vimeo aparezca en /work aunque no esté en los 60 del portfolio:
+
+1. Crear la tabla en Supabase (solo una vez): SQL Editor → ejecutar supabase/run-custom-vimeo.sql
+2. En /admin/vimeo-hidden, desplegá "Añadir por ID" y pegá el ID del video (ej. de la URL vimeo.com/123456789).
+3. Clic en "Agregar a trabajo". El video entra en la lista y en /work (al tope). Para quitarlo: en la card del video, "Quitar de trabajo".

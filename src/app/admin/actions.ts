@@ -354,3 +354,45 @@ export async function removeHiddenVimeoId(vimeoId: string): Promise<{ error?: st
   }
   return error ? { error: error.message } : {};
 }
+
+// ——— Custom Vimeo IDs (agregar por ID para que aparezca en /work) ———
+export async function listCustomVimeoIds(): Promise<string[]> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase.from("custom_vimeo_ids").select("vimeo_id").order("created_at", { ascending: false });
+    if (error) return [];
+    return (data ?? []).map((r) => String(r.vimeo_id ?? "")).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export async function addCustomVimeoId(vimeoId: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const id = String(vimeoId).trim().replace(/\D/g, "");
+  if (!id) return { error: "ID inválido" };
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const { error } = await supabase.from("custom_vimeo_ids").upsert({ vimeo_id: id }, { onConflict: "vimeo_id" });
+  if (!error) {
+    revalidatePath("/es/work");
+    revalidatePath("/en/work");
+    revalidatePath("/admin/vimeo-hidden");
+  }
+  return error ? { error: error.message } : {};
+}
+
+export async function removeCustomVimeoId(vimeoId: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const { error } = await supabase.from("custom_vimeo_ids").delete().eq("vimeo_id", String(vimeoId).trim());
+  if (!error) {
+    revalidatePath("/es/work");
+    revalidatePath("/en/work");
+    revalidatePath("/admin/vimeo-hidden");
+  }
+  return error ? { error: error.message } : {};
+}
