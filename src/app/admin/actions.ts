@@ -455,6 +455,16 @@ export async function uploadPortfolioPhotos(
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "Supabase no configurado" };
 
+  const { data: gallery, error: galleryErr } = await supabase
+    .from("portfolio_galleries")
+    .select("id, slug")
+    .eq("id", galleryId)
+    .maybeSingle();
+  if (galleryErr || !gallery?.slug) {
+    return { error: "Galería no encontrada o sin slug" };
+  }
+  const slug = gallery.slug;
+
   const files = Array.from(formData.entries())
     .filter(([, v]) => v instanceof File && (v as File).size > 0)
     .map(([, v]) => v as File);
@@ -474,9 +484,12 @@ export async function uploadPortfolioPhotos(
 
   for (const file of images) {
     const safeName = uniqueStorageName(file.name);
-    const path = `portfolio/${safeName}`;
+    const path = `${slug}/${safeName}`;
     const { error: uploadErr } = await supabase.storage.from(PROJECTS_BUCKET).upload(path, file, { upsert: true });
-    if (uploadErr) return { error: uploadErr.message, uploaded };
+    if (uploadErr) {
+      const msg = `Subida fallida: ${uploadErr.message}${uploadErr.statusCode ? ` (${uploadErr.statusCode})` : ""}`;
+      return { error: msg, uploaded };
+    }
     const publicUrl = getProjectsImageUrl(path);
     const { error: insertErr } = await supabase.from("portfolio_photos").insert({
       storage_path: path,

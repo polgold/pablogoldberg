@@ -193,11 +193,14 @@ export function PortfolioPhotosClient({
         }
         showToast(`${uploaded ?? 0} foto(s) subida(s)`);
         await loadPhotosForGallery(selectedGalleryId);
-      } catch {
+      } catch (err) {
         clearInterval(progressInterval);
         setUploading(false);
         setUploadProgress(null);
-        if (!uploadCancelledRef.current) showToast("Error al subir");
+        if (!uploadCancelledRef.current) {
+          const msg = err instanceof Error ? err.message : "Error al subir";
+          showToast(msg);
+        }
       }
     },
     [selectedGalleryId, showToast, loadPhotosForGallery]

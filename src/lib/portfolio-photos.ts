@@ -2,8 +2,10 @@ import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 
+/** Bucket único para fotos de portfolio: projects. Path = slug/filename (ej. retratos/IMG_x.png). */
+export const PHOTOS_BUCKET = PROJECTS_BUCKET;
+
 const IMAGE_EXT = /\.(jpe?g|png|webp|gif)$/i;
-const PORTFOLIO_FOLDER = "portfolio";
 
 export type PortfolioGallery = {
   id: string;
@@ -11,6 +13,7 @@ export type PortfolioGallery = {
   slug: string;
   order: number;
   created_at: string;
+  is_visible?: boolean;
 };
 
 export type PortfolioPhoto = {
@@ -36,40 +39,45 @@ function getFilesFromList(data: unknown): { name: string }[] {
 }
 
 /**
- * Lists image files in projects/portfolio/ from Storage.
+ * Lista archivos de imagen en Storage en bucket projects, prefijo slug/ (ej. retratos/).
+ * Convención: path = slug/filename.
  */
-async function listStorageFiles(): Promise<{ path: string; url: string }[]> {
+async function listStorageFilesBySlug(slug: string): Promise<{ path: string; url: string }[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
 
   const { data, error } = await supabase.storage
-    .from(PROJECTS_BUCKET)
-    .list(PORTFOLIO_FOLDER, { limit: 500 });
+    .from(PHOTOS_BUCKET)
+    .list(slug, { limit: 1000 });
   if (error) return [];
 
   const files = getFilesFromList(data);
   return files.map((f) => {
-    const path = `${PORTFOLIO_FOLDER}/${f.name}`.replace(/\/+/g, "/");
-    return { path, url: getPublicImageUrl(path, PROJECTS_BUCKET) };
+    const path = `${slug}/${f.name}`.replace(/\/+/g, "/");
+    return { path, url: getPublicImageUrl(path, PHOTOS_BUCKET) };
   });
 }
 
-/** Default gallery ID for legacy photos (slug portfolio). */
+/** Default gallery ID for legacy (slug portfolio). */
 const DEFAULT_GALLERY_ID = "00000000-0000-0000-0000-000000000001";
 
 /**
- * Ensures all Storage files in portfolio/ exist in portfolio_photos. Inserts new ones as visible at end, default gallery.
+ * Sincroniza archivos de Storage en slug/ a portfolio_photos para la galería dada.
+ * Inserta los que no existan como visibles al final.
  */
-async function syncStorageToDb(supabase: ReturnType<typeof createSupabaseServerClient>, defaultGalleryId?: string | null): Promise<void> {
+async function syncStorageToDbForGallery(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  galleryId: string,
+  slug: string
+): Promise<void> {
   if (!supabase) return;
 
-  const storageFiles = await listStorageFiles();
+  const storageFiles = await listStorageFilesBySlug(slug);
   const { data: existing } = await supabase
     .from("portfolio_photos")
-    .select("storage_path");
-
+    .select("storage_path")
+    .eq("gallery_id", galleryId);
   const existingPaths = new Set((existing ?? []).map((r) => r.storage_path));
-  const galleryId = defaultGalleryId ?? DEFAULT_GALLERY_ID;
 
   const { data: maxOrderRow } = await supabase
     .from("portfolio_photos")
@@ -78,7 +86,6 @@ async function syncStorageToDb(supabase: ReturnType<typeof createSupabaseServerC
     .order("order", { ascending: false })
     .limit(1)
     .maybeSingle();
-
   let nextOrder = ((maxOrderRow?.order ?? -1) as number) + 1;
 
   for (const { path, url } of storageFiles) {
@@ -94,28 +101,25 @@ async function syncStorageToDb(supabase: ReturnType<typeof createSupabaseServerC
 }
 
 /**
- * Lists all portfolio galleries, ordered.
+ * Lists all portfolio galleries, ordered (admin: todas; público usa getPublicGalleriesWithPhotos).
  */
 export async function listPortfolioGalleries(): Promise<PortfolioGallery[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("portfolio_galleries")
-    .select("*")
+    .select("id, name, slug, order, created_at, is_visible")
     .order("order", { ascending: true });
   if (error) return [];
   return (data ?? []) as PortfolioGallery[];
 }
 
 /**
- * Public: returns only is_visible=true, ordered by order (all galleries merged, or pass galleryId).
- * Auto-inserts new Storage files into DB for default gallery.
+ * Public: returns only is_visible=true photos, ordered. Optional filter by galleryId.
  */
 export async function getPublicPortfolioPhotos(galleryId?: string | null): Promise<PortfolioPhoto[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
-
-  await syncStorageToDb(supabase, DEFAULT_GALLERY_ID);
 
   let q = supabase
     .from("portfolio_photos")
@@ -129,14 +133,64 @@ export async function getPublicPortfolioPhotos(galleryId?: string | null): Promi
 }
 
 /**
- * Admin: returns all photos (visible + hidden), optionally filtered by gallery. Ordered.
- * Auto-inserts new Storage files into DB for default gallery.
+ * Public: galerías visibles con sus fotos, para /gallery. Orden por sort_order, título = name (no slug).
+ */
+export type GalleryWithPhotos = {
+  id: string;
+  title: string;
+  slug: string;
+  sort_order: number;
+  photos: PortfolioPhoto[];
+};
+
+export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[]> {
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return [];
+
+  const { data: galleries, error: ge } = await supabase
+    .from("portfolio_galleries")
+    .select("id, name, slug, order")
+    .eq("is_visible", true)
+    .order("order", { ascending: true });
+  if (ge || !galleries?.length) return [];
+
+  const out: GalleryWithPhotos[] = [];
+  for (const g of galleries) {
+    const { data: photos, error: pe } = await supabase
+      .from("portfolio_photos")
+      .select("*")
+      .eq("gallery_id", g.id)
+      .eq("is_visible", true)
+      .order("order", { ascending: true });
+    out.push({
+      id: g.id,
+      title: g.name,
+      slug: g.slug,
+      sort_order: g.order ?? 0,
+      photos: (photos ?? []) as PortfolioPhoto[],
+    });
+  }
+  return out;
+}
+
+/**
+ * Admin: returns all photos for the given gallery (visible + hidden), ordered.
+ * Lista desde Storage con slug de la galería y sincroniza a DB; luego devuelve filas de DB.
  */
 export async function getAdminPortfolioPhotos(galleryId?: string | null): Promise<PortfolioPhoto[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
 
-  await syncStorageToDb(supabase, DEFAULT_GALLERY_ID);
+  if (galleryId) {
+    const { data: gallery } = await supabase
+      .from("portfolio_galleries")
+      .select("id, slug")
+      .eq("id", galleryId)
+      .maybeSingle();
+    if (gallery?.slug) {
+      await syncStorageToDbForGallery(supabase, galleryId, gallery.slug);
+    }
+  }
 
   let q = supabase.from("portfolio_photos").select("*").order("order", { ascending: true });
   if (galleryId != null) q = q.eq("gallery_id", galleryId);
