@@ -12,22 +12,16 @@ import { Projects } from "./collections/Projects";
 
 const srcDir = path.resolve(process.cwd(), "src");
 
-/** Asegura sslmode=require para conexiones Postgres en entornos que lo exigen (ej. Netlify + DB managed). */
+/** DATABASE_URL sin modificar (params existentes intactos). SSL se controla solo por opción ssl del pool. */
 function getDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL || "";
-  if (!url) return url;
-  if (url.includes("sslmode=")) return url;
-  const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}sslmode=require`;
+  return process.env.DATABASE_URL || "";
 }
 
-/** Opciones SSL para el pool de pg. Managed DBs (Neon, Supabase, etc.) usan certs que Node rechaza → SELF_SIGNED_CERT_IN_CHAIN. */
+/** SSL a nivel conexión pg: evita SELF_SIGNED_CERT_IN_CHAIN en managed DBs (Neon, Supabase, etc.). */
 function getPoolSsl(): { rejectUnauthorized: boolean } | undefined {
   const url = process.env.DATABASE_URL || "";
   if (!url) return undefined;
-  // En producción (Netlify) siempre aceptar cert; en dev solo si pide SSL (sslmode en URL).
-  if (process.env.NODE_ENV === "production") return { rejectUnauthorized: false };
-  return url.includes("sslmode=") ? { rejectUnauthorized: false } : undefined;
+  return { rejectUnauthorized: false };
 }
 
 const useS3 =
