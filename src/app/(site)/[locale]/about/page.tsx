@@ -16,21 +16,23 @@ export default async function AboutPage({
   const content = page?.content?.trim() || "";
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-semibold tracking-tight text-white">
-        {title}
-      </h1>
-      {content ? (
-        <div className="prose-safe mt-8 text-white/90">
-          <SafeHtml html={content} />
-        </div>
-      ) : (
-        <p className="mt-8 text-white/70">
-          {loc === "es"
-            ? "Director, director de fotografía y productor. Con base en Buenos Aires."
-            : "Director, director of photography and producer. Based in Buenos Aires."}
-        </p>
-      )}
+    <div className="min-h-screen border-t border-white/5 bg-black pt-14">
+      <div className="mx-auto max-w-[720px] px-5 pb-24 pt-16 md:px-8">
+        <h1 className="font-display text-2xl tracking-[0.12em] text-white md:text-3xl">
+          {title}
+        </h1>
+        {content ? (
+          <div className="prose-safe mt-10 font-body text-lg leading-relaxed text-white/85">
+            <SafeHtml html={content} />
+          </div>
+        ) : (
+          <p className="mt-10 font-body text-lg leading-relaxed text-white/70">
+            {loc === "es"
+              ? "Director, director de fotografía y productor. Con base en Buenos Aires."
+              : "Director, director of photography and producer. Based in Buenos Aires."}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -46,8 +48,8 @@ export async function generateMetadata({
   const title = page?.title || COPY[loc].about.defaultTitle;
   const description =
     loc === "es"
-      ? "Pablo Goldberg — Director, director de fotografía y productor. Filmmaker con base en Buenos Aires."
-      : "Pablo Goldberg — Director, director of photography and producer. Filmmaker based in Buenos Aires.";
+      ? "Pablo Goldberg — Director, director de fotografía y productor. Buenos Aires."
+      : "Pablo Goldberg — Director, director of photography and producer. Buenos Aires.";
   return {
     title,
     description,

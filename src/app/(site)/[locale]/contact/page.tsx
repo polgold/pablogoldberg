@@ -16,23 +16,27 @@ export default async function ContactPage({
   const content = page?.content?.trim() || "";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-semibold tracking-tight text-white">
-        {title}
-      </h1>
-      {content ? (
-        <div className="prose-safe mt-8 text-white/90">
-          <SafeHtml html={content} />
+    <div className="min-h-screen border-t border-white/5 bg-black pt-14">
+      <div className="mx-auto max-w-[720px] px-5 pb-24 pt-16 md:px-8">
+        <h1 className="font-display text-2xl tracking-[0.12em] text-white md:text-3xl">
+          {title}
+        </h1>
+        {content ? (
+          <div className="prose-safe mt-10 font-body text-lg leading-relaxed text-white/85">
+            <SafeHtml html={content} />
+          </div>
+        ) : null}
+        <div className="mt-12">
+          <a
+            href="mailto:hola@pablogoldberg.com"
+            className="font-body text-sm uppercase tracking-[0.2em] text-white/80 underline underline-offset-4 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+          >
+            hola@pablogoldberg.com
+          </a>
+          <p className="mt-4 font-body text-xs uppercase tracking-widest text-white/40">
+            {t.emailNote}
+          </p>
         </div>
-      ) : null}
-      <div className="mt-10">
-        <a
-          href="mailto:hola@pablogoldberg.com"
-          className="inline-block rounded bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-surface"
-        >
-          {t.ctaButton}
-        </a>
-        <p className="mt-4 text-sm text-white/60">{t.emailNote}</p>
       </div>
     </div>
   );
@@ -49,8 +53,8 @@ export async function generateMetadata({
   const title = page?.title || COPY[loc].contact.defaultTitle;
   const description =
     loc === "es"
-      ? "Contacto y booking para proyectos de dirección, cinematografía y producción. Pablo Goldberg."
-      : "Contact and booking for direction, cinematography and production projects. Pablo Goldberg.";
+      ? "Contacto y booking. Pablo Goldberg."
+      : "Contact and booking. Pablo Goldberg.";
   return {
     title,
     description,
@@ -58,8 +62,8 @@ export async function generateMetadata({
       title: `${title} | Pablo Goldberg`,
       description:
         loc === "es"
-          ? "Contacto y booking para spots, videoclips y documentales."
-          : "Contact and booking for spots, music videos and documentaries.",
+          ? "Contacto y booking."
+          : "Contact and booking.",
     },
   };
 }

@@ -3,40 +3,43 @@
 @tailwind utilities;
 
 :root {
-  --font-display: "Bebas Neue", "Impact", system-ui, sans-serif;
-  --color-brand: #fb2056;
-  --color-surface: #0a0a0a;
+  --color-surface: #000000;
+  --color-surface-elevated: #0a0a0a;
+  --color-accent: #c9a962;
 }
 
 @layer base {
   html {
-    @apply scroll-smooth antialiased;
+    @apply scroll-smooth;
   }
   body {
-    @apply bg-surface text-white;
+    @apply bg-[#000] text-white;
   }
   a:focus-visible,
   button:focus-visible {
-    @apply outline-2 outline-offset-2 outline-brand;
+    @apply outline-2 outline-offset-2 outline-white/50;
   }
 }
 
 @layer components {
+  .font-display {
+    font-family: var(--font-display), sans-serif;
+  }
   .prose-safe a {
-    @apply text-brand underline decoration-brand/50 underline-offset-2 transition-colors hover:decoration-brand;
+    @apply text-white/90 underline underline-offset-2 transition-colors hover:text-white;
   }
   .prose-safe h2 {
-    @apply mt-8 mb-4 text-xl font-semibold tracking-tight;
+    @apply mt-10 mb-4 font-display text-2xl tracking-wide text-white;
   }
   .prose-safe h3,
   .prose-safe h4 {
-    @apply mt-6 mb-3 text-lg font-semibold;
+    @apply mt-8 mb-3 text-lg font-medium text-white;
   }
   .prose-safe ul,
   .prose-safe ol {
     @apply my-4 pl-6;
   }
   .prose-safe blockquote {
-    @apply border-l-2 border-brand/60 pl-4 italic text-white/90;
+    @apply border-l-2 border-white/30 pl-4 italic text-white/80;
   }
 }

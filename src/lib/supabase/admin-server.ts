@@ -1,15 +1,27 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const url = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim();
+const anon = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "").trim();
+
+/** Para mensajes de error cuando auth no está configurado */
+export function getAuthConfigError(): string | null {
+  if (!url && !anon) return "Faltan NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY";
+  if (!url) return "Falta NEXT_PUBLIC_SUPABASE_URL";
+  if (!anon) return "Falta NEXT_PUBLIC_SUPABASE_ANON_KEY";
+  return null;
+}
 
 /**
  * Cliente Supabase para server (admin): lee sesión desde cookies.
  * Usar en layout/páginas del admin para verificar usuario.
  */
 export async function createAdminServerClient() {
-  if (!url || !anon) return null;
+  const err = getAuthConfigError();
+  if (err) {
+    if (process.env.NODE_ENV === "development") console.warn("[admin-server]", err, "Reinicia el servidor (npm run dev) tras cambiar .env");
+    return null;
+  }
   const cookieStore = await cookies();
   return createServerClient(url, anon, {
     cookies: {

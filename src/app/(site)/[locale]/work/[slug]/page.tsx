@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps) {
   if (!project) return { title: loc === "es" ? "Proyecto" : "Project" };
   const desc =
     (project.summary || project.excerpt)?.slice(0, 160) ||
-    `${project.title}${project.year ? ` (${project.year})` : ""}. Director, DP, Producer.`;
+    `${project.title}${project.year ? ` (${project.year})` : ""}. Director.`;
   return {
     title: project.title,
     description: desc,
@@ -51,130 +51,137 @@ export default async function ProjectPage({ params }: PageProps) {
   const t = COPY[loc].workDetail;
 
   return (
-    <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-      <header className="mb-10">
-        <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-          {project.title}
-        </h1>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/70">
-          {project.client ? <span>{project.client}</span> : null}
-          {project.pieceType ? <span>{project.pieceType}</span> : null}
-          {project.duration ? <span>{project.duration}</span> : null}
-          {project.roles?.length ? (
-            <span>{project.roles.join(" · ")}</span>
-          ) : null}
-          {project.year ? <span>{project.year}</span> : null}
-        </div>
-      </header>
+    <article className="min-h-screen border-t border-white/5 bg-black pt-14">
+      {/* Hero media first */}
+      <div className="relative w-full">
+        {primaryVideo ? (
+          <div className="aspect-video w-full bg-black">
+            <VideoEmbed
+              type={primaryVideo.type}
+              id={primaryVideo.id}
+              title={project.title}
+              className="h-full w-full"
+            />
+          </div>
+        ) : project.featuredImage ? (
+          <div className="relative aspect-video w-full bg-black">
+            <Image
+              src={project.featuredImage}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="100vw"
+              priority
+            />
+          </div>
+        ) : null}
+      </div>
 
-      {(project.summary || project.excerpt) ? (
-        <div className="prose-safe mb-10 text-white/90">
-          <SafeHtml html={(project.summary || project.excerpt) ?? ""} />
-        </div>
-      ) : null}
+      <div className="mx-auto max-w-[900px] px-5 pt-12 pb-16 md:px-8">
+        {/* Title, year, short description only */}
+        <header className="mb-12">
+          <h1 className="font-display text-3xl tracking-[0.08em] text-white md:text-4xl">
+            {project.title}
+          </h1>
+          {project.year && (
+            <p className="mt-2 font-body text-sm uppercase tracking-[0.25em] text-white/60">
+              {project.year}
+            </p>
+          )}
+          {(project.summary || project.excerpt) && (
+            <div className="prose-safe mt-6 max-w-[65ch] font-body text-base leading-relaxed text-white/85">
+              <SafeHtml html={(project.summary || project.excerpt) ?? ""} />
+            </div>
+          )}
+        </header>
 
-      {primaryVideo ? (
-        <div className="mb-12">
-          <VideoEmbed
-            type={primaryVideo.type}
-            id={primaryVideo.id}
-            title={project.title}
-            className="rounded-lg"
-          />
-        </div>
-      ) : null}
+        {project.content?.trim() ? (
+          <div className="prose-safe mb-14 font-body text-white/80">
+            <SafeHtml html={project.content} />
+          </div>
+        ) : null}
 
-      {project.content?.trim() ? (
-        <div className="prose-safe mb-12 text-white/80">
-          <SafeHtml html={project.content} />
-        </div>
-      ) : null}
-
-      {gallery.length > 0 ? (
-        <section className="mb-12">
-          <h2 className="mb-6 text-sm font-medium uppercase tracking-widest text-white/60">
-            {t.gallery}
-          </h2>
-          <ul className="grid gap-4 sm:grid-cols-2">
+        {/* Gallery — clean, cinematic spacing */}
+        {gallery.length > 0 ? (
+          <section className="space-y-8 md:space-y-12">
             {gallery.map((src, i) => (
-              <li
+              <div
                 key={i}
-                className="relative aspect-video overflow-hidden rounded-lg bg-white/5"
+                className="relative aspect-[16/10] w-full overflow-hidden bg-white/5"
               >
                 <Image
                   src={src}
                   alt=""
                   fill
                   className="object-cover"
-                  sizes="(max-width: 640px) 100vw, 50vw"
+                  sizes="(max-width: 900px) 100vw, 900px"
                 />
-              </li>
+              </div>
             ))}
-          </ul>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      {project.credits?.trim() ? (
-        <section className="mb-12 border-t border-white/10 pt-8">
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-widest text-white/60">
-            {t.credits}
-          </h2>
-          <div className="prose-safe text-sm text-white/70">
-            <SafeHtml html={project.credits} />
-          </div>
-        </section>
-      ) : null}
+        {project.credits?.trim() ? (
+          <section className="mt-14 border-t border-white/5 pt-10">
+            <h2 className="font-body text-[10px] uppercase tracking-[0.3em] text-white/40">
+              {t.credits}
+            </h2>
+            <div className="prose-safe mt-4 font-body text-sm text-white/60">
+              <SafeHtml html={project.credits} />
+            </div>
+          </section>
+        ) : null}
 
-      {project.externalLink?.trim() ? (
-        <p className="mb-12">
-          <a
-            href={project.externalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-brand hover:underline focus:outline-none focus:ring-2 focus:ring-brand"
-          >
-            {locale === "es" ? "Ver proyecto" : "View project"} →
-          </a>
-        </p>
-      ) : null}
-
-      <nav
-        className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-8"
-        aria-label={locale === "es" ? "Navegación entre proyectos" : "Project navigation"}
-      >
-        <div className="min-w-0 flex-1">
-          {prev ? (
-            <Link
-              href={`/${locale}/work/${prev.slug}`}
-              className="group inline-flex items-center gap-2 text-brand hover:underline focus:outline-none focus:ring-2 focus:ring-brand"
+        {project.externalLink?.trim() ? (
+          <p className="mt-10">
+            <a
+              href={project.externalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-body text-xs uppercase tracking-[0.2em] text-white/60 hover:text-white"
             >
-              <span aria-hidden>←</span>
-              <span className="truncate">{prev.title}</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-        </div>
-        <Link
-          href={`/${locale}/work`}
-          className="text-white/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand"
+              {locale === "es" ? "Ver proyecto" : "View project"} →
+            </a>
+          </p>
+        ) : null}
+
+        {/* Minimal project nav */}
+        <nav
+          className="mt-16 flex flex-wrap items-center justify-between gap-6 border-t border-white/5 pt-10"
+          aria-label={locale === "es" ? "Navegación entre proyectos" : "Project navigation"}
         >
-          {t.viewAll}
-        </Link>
-        <div className="min-w-0 flex-1 text-right">
-          {next ? (
-            <Link
-              href={`/${locale}/work/${next.slug}`}
-              className="group inline-flex items-center gap-2 text-brand hover:underline focus:outline-none focus:ring-2 focus:ring-brand"
-            >
-              <span className="truncate">{next.title}</span>
-              <span aria-hidden>→</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-        </div>
-      </nav>
+          <div className="min-w-0 flex-1">
+            {prev ? (
+              <Link
+                href={`/${locale}/work/${prev.slug}`}
+                className="font-body text-xs uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+              >
+                ← {prev.title}
+              </Link>
+            ) : (
+              <span />
+            )}
+          </div>
+          <Link
+            href={`/${locale}/work`}
+            className="font-body text-xs uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+          >
+            {t.viewAll}
+          </Link>
+          <div className="min-w-0 flex-1 text-right">
+            {next ? (
+              <Link
+                href={`/${locale}/work/${next.slug}`}
+                className="font-body text-xs uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+              >
+                {next.title} →
+              </Link>
+            ) : (
+              <span />
+            )}
+          </div>
+        </nav>
+      </div>
     </article>
   );
 }

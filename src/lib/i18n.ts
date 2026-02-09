@@ -18,7 +18,7 @@ export const COPY: Record<
     nav: { home: string; work: string; about: string; contact: string };
     work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string };
     workDetail: { gallery: string; credits: string; viewAll: string };
-    home: { tagline: string; more: string; reel: string; featured: string; ctaTitle: string; ctaText: string; ctaButton: string };
+    home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; ctaTitle: string; ctaText: string; ctaButton: string };
     about: { defaultTitle: string };
     contact: { defaultTitle: string; ctaButton: string; emailNote: string };
     metadata: { about: string; contact: string };
@@ -38,6 +38,8 @@ export const COPY: Record<
     home: {
       tagline: "Director · Director de fotografía · Productor",
       more: "Más de 20 años contando historias. Buenos Aires.",
+      role: "Director / Filmmaker",
+      workTitle: "Trabajo",
       reel: "Reel",
       featured: "Trabajo destacado",
       ctaTitle: "¿Proyecto en mente?",
@@ -62,6 +64,8 @@ export const COPY: Record<
     home: {
       tagline: "Director · Director of Photography · Producer",
       more: "Over 20 years telling stories. Buenos Aires.",
+      role: "Director / Filmmaker",
+      workTitle: "Work",
       reel: "Reel",
       featured: "Featured work",
       ctaTitle: "Have a project in mind?",

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getPageBySlug, getFeaturedProjects } from "@/lib/content";
+import { getPageBySlug, getFeaturedProjects, getProjects } from "@/lib/content";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { VideoEmbed } from "@/components/VideoEmbed";
+import { HeroReel } from "@/components/HeroReel";
+import { ScrollIndicator } from "@/components/ScrollIndicator";
 
 const PRIMARY_REEL_VIMEO = "884669410";
 
@@ -20,107 +21,83 @@ export default async function HomePage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
   const homePage = await getPageBySlug("home", loc);
-  const featured = await getFeaturedProjects(6, loc);
+  const featuredRaw = await getFeaturedProjects(8, loc);
+  const featured =
+    featuredRaw.length > 0 ? featuredRaw : (await getProjects(loc)).slice(0, 8);
   const reelId = homePage
     ? extractFirstVimeo(homePage.content) || PRIMARY_REEL_VIMEO
     : PRIMARY_REEL_VIMEO;
+  const heroFallbackImage = process.env.NEXT_PUBLIC_HERO_IMAGE?.trim() || null;
   const t = COPY[loc].home;
 
   return (
     <div>
-      <section className="relative flex min-h-[85vh] flex-col items-center justify-center px-4 py-20 text-center sm:py-30">
-        <div className="absolute inset-0 bg-surface-light" />
-        <div className="relative z-10 max-w-2xl">
-          <h1 className="font-display text-4xl tracking-wide text-white sm:text-5xl md:text-6xl">
+      {/* Fullscreen cinematic hero */}
+      <section className="relative min-h-[100vh] w-full">
+        <HeroReel
+          vimeoId={reelId}
+          title="Reel"
+          fallbackImageSrc={heroFallbackImage}
+        />
+        <div className="relative z-10 flex min-h-[100vh] flex-col items-center justify-center px-5">
+          <p className="font-display text-[clamp(2rem,6vw,4rem)] tracking-[0.2em] text-white">
             PABLO GOLDBERG
-          </h1>
-          <p className="mt-4 text-lg text-white/80 sm:text-xl">{t.tagline}</p>
-          <p className="mt-2 text-sm text-white/60">{t.more}</p>
+          </p>
+          <p className="mt-3 font-body text-sm uppercase tracking-[0.35em] text-white/80">
+            {t.role}
+          </p>
         </div>
+        <ScrollIndicator />
       </section>
 
-      <section className="border-t border-white/10 bg-surface px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="mb-2 text-center text-sm font-medium uppercase tracking-widest text-brand">
-            {t.reel}
-          </h2>
-          <div className="mx-auto max-w-4xl">
-            <VideoEmbed
-              type="vimeo"
-              id={reelId}
-              title="Director showreel"
-              className="rounded-lg"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-white/10 px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-10 flex flex-col items-center justify-between gap-4 sm:flex-row sm:items-end">
-            <h2 className="text-2xl font-semibold tracking-tight text-white">
-              {t.featured}
+      {/* Work grid — no dead space */}
+      <section className="border-t border-white/5 bg-black">
+        <div className="mx-auto max-w-[1600px] px-0 md:px-5">
+          <div className="flex items-end justify-between border-b border-white/5 px-5 py-6 md:px-8">
+            <h2 className="font-display text-xs uppercase tracking-[0.3em] text-white/60">
+              {t.workTitle}
             </h2>
             <Link
               href={`/${locale}/work`}
-              className="text-sm font-medium text-brand hover:underline focus:outline-none focus:ring-2 focus:ring-brand"
+              className="font-body text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
             >
-              {locale === "es" ? "Ver todo →" : "View all →"}
+              {locale === "es" ? "Ver todo" : "View all"}
             </Link>
           </div>
-          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {featured.map((project) => (
-              <li key={project.slug}>
+              <li key={project.slug} className="group border-b border-r border-white/5">
                 <Link
                   href={`/${locale}/work/${project.slug}`}
-                  className="group block overflow-hidden rounded-lg border border-white/10 bg-surface-card transition-colors hover:border-white/20"
+                  className="relative block aspect-[4/3] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset"
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden bg-white/5">
-                    {project.featuredImage ? (
-                      <Image
-                        src={project.featuredImage}
-                        alt=""
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-white/30">
-                        {locale === "es" ? "Sin imagen" : "No image"}
-                      </div>
-                    )}
-                    <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 to-transparent p-4 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="text-sm text-white/90">
-                        {project.year && `${project.year} · `}
-                        {project.title}
-                      </span>
+                  {project.featuredImage ? (
+                    <Image
+                      src={project.featuredImage}
+                      alt=""
+                      fill
+                      className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-white/5 font-body text-xs uppercase tracking-widest text-white/30">
+                      {locale === "es" ? "Sin imagen" : "No image"}
                     </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-medium text-white">{project.title}</h3>
+                  )}
+                  <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/80 via-transparent to-transparent p-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <span className="font-body text-sm uppercase tracking-widest text-white">
+                      {project.title}
+                    </span>
                     {project.year && (
-                      <p className="mt-1 text-sm text-white/60">{project.year}</p>
+                      <span className="font-body text-xs uppercase tracking-widest text-white/70">
+                        {project.year}
+                      </span>
                     )}
                   </div>
                 </Link>
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      <section className="border-t border-white/10 bg-surface-light px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl font-semibold tracking-tight text-white">
-            {t.ctaTitle}
-          </h2>
-          <p className="mt-3 text-white/80">{t.ctaText}</p>
-          <Link
-            href={`/${locale}/contact`}
-            className="mt-6 inline-block rounded bg-brand px-6 py-3 font-medium text-white transition-colors hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-surface"
-          >
-            {t.ctaButton}
-          </Link>
         </div>
       </section>
     </div>

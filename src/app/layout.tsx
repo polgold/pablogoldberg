@@ -1,25 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bebas_Neue, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const bebasNeue = Bebas_Neue({
+  weight: "400",
   subsets: ["latin"],
+  variable: "--font-display",
 });
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const cormorant = Cormorant_Garamond({
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
+  variable: "--font-body",
 });
 
 export const metadata: Metadata = {
-  title: { default: "Pablo Goldberg | Director · DP · Producer", template: "%s | Pablo Goldberg" },
+  title: { default: "Pablo Goldberg | Director", template: "%s | Pablo Goldberg" },
   description:
-    "Director, cinematographer and producer. Filmmaker based in Buenos Aires. Commercials, music videos, documentaries.",
+    "Director and filmmaker. Buenos Aires. Commercials, music videos, documentaries.",
   openGraph: {
-    title: "Pablo Goldberg | Director · DP · Producer",
-    description: "Director, cinematographer and producer. Filmmaker based in Buenos Aires.",
+    title: "Pablo Goldberg | Director",
+    description: "Director and filmmaker. Buenos Aires.",
     type: "website",
     images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Pablo Goldberg" }],
   },
@@ -32,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-screen flex flex-col font-sans">{children}</body>
+    <html lang="es" className={`${bebasNeue.variable} ${cormorant.variable}`}>
+      <body className="min-h-screen flex flex-col font-body antialiased">{children}</body>
     </html>
   );
 }

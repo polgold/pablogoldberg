@@ -1,0 +1,21 @@
+Imagen del hero (homepage)
+==========================
+
+Elegí una opción:
+
+--- Opción A: Supabase (bucket projects, carpeta uploads) ---
+
+1. En el panel de Supabase: Storage → bucket "projects" → carpeta "uploads".
+2. Subí tu imagen (ej. hero.jpg) ahí.
+3. En .env tené esta línea (reemplazá "hero.jpg" si usás otro nombre):
+
+   NEXT_PUBLIC_HERO_IMAGE=https://yetitiksusqgikujfzoh.supabase.co/storage/v1/object/public/projects/uploads/hero.jpg
+
+--- Opción B: Carpeta local public/ ---
+
+1. Poné tu imagen en esta carpeta (public), por ejemplo:  public/hero.jpg
+2. En .env:
+
+   NEXT_PUBLIC_HERO_IMAGE=/hero.jpg
+
+Reiniciá el servidor (npm run dev) si ya estaba corriendo.
