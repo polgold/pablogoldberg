@@ -52,30 +52,31 @@ export default async function ProjectPage({ params }: PageProps) {
 
   return (
     <article className="min-h-screen border-t border-white/5 bg-black pt-14">
-      {/* Hero media first */}
-      <div className="relative w-full">
-        {primaryVideo ? (
-          <div className="aspect-video w-full bg-black">
-            <VideoEmbed
-              type={primaryVideo.type}
-              id={primaryVideo.id}
-              title={project.title}
-              className="h-full w-full"
-            />
-          </div>
-        ) : project.featuredImage ? (
-          <div className="relative aspect-video w-full bg-black">
-            <Image
-              src={project.featuredImage}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="100vw"
-              priority
-            />
-          </div>
-        ) : null}
-      </div>
+      {(primaryVideo || project.featuredImage) && (
+        <div className="relative w-full">
+          {primaryVideo ? (
+            <div className="aspect-video w-full bg-black">
+              <VideoEmbed
+                type={primaryVideo.type}
+                id={primaryVideo.id}
+                title={project.title}
+                className="h-full w-full"
+              />
+            </div>
+          ) : project.featuredImage ? (
+            <div className="relative aspect-video w-full bg-black">
+              <Image
+                src={project.featuredImage}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority
+              />
+            </div>
+          ) : null}
+        </div>
+      )}
 
       <div className="mx-auto max-w-[900px] px-5 pt-12 pb-16 md:px-8">
         {/* Title, year, short description only */}

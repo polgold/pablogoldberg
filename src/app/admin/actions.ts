@@ -318,3 +318,30 @@ export async function listProjectStorageFiles(slug: string): Promise<{ path: str
       return { path, url: getProjectsImageUrl(path) };
     });
 }
+
+// ——— Hidden Vimeo IDs (no se muestran en portfolio público) ———
+export async function listHiddenVimeoIds(): Promise<string[]> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return [];
+  const { data } = await supabase.from("hidden_vimeo_ids").select("vimeo_id").order("created_at", { ascending: false });
+  return (data ?? []).map((r) => String(r.vimeo_id ?? "")).filter(Boolean);
+}
+
+export async function addHiddenVimeoId(vimeoId: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const id = String(vimeoId).trim().replace(/\D/g, "");
+  if (!id) return { error: "ID inválido" };
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const { error } = await supabase.from("hidden_vimeo_ids").upsert({ vimeo_id: id }, { onConflict: "vimeo_id" });
+  return error ? { error: error.message } : {};
+}
+
+export async function removeHiddenVimeoId(vimeoId: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const { error } = await supabase.from("hidden_vimeo_ids").delete().eq("vimeo_id", String(vimeoId).trim());
+  return error ? { error: error.message } : {};
+}

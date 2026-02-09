@@ -1,7 +1,6 @@
-import { getPageBySlug } from "@/lib/content";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { SafeHtml } from "@/components/SafeHtml";
+import { ContactForm } from "./ContactForm";
 
 export default async function ContactPage({
   params,
@@ -10,32 +9,21 @@ export default async function ContactPage({
 }) {
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
-  const page = await getPageBySlug("contact", loc);
   const t = COPY[loc].contact;
-  const title = page?.title || t.defaultTitle;
-  const content = page?.content?.trim() || "";
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
-      <div className="mx-auto max-w-[720px] px-5 pb-24 pt-16 md:px-8">
+      <div className="mx-auto max-w-[480px] px-4 pb-24 pt-10 sm:px-6 md:px-8">
         <h1 className="text-2xl font-semibold text-white md:text-3xl">
-          {title}
+          {t.defaultTitle}
         </h1>
-        {content ? (
-          <div className="prose-safe mt-10 text-lg leading-relaxed text-white/85">
-            <SafeHtml html={content} />
-          </div>
-        ) : null}
-        <div className="mt-12">
-          <a
-            href="mailto:hola@pablogoldberg.com"
-            className="text-sm text-white/80 underline underline-offset-4 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
-          >
-            hola@pablogoldberg.com
-          </a>
-          <p className="mt-4 text-xs text-white/40">
-            {t.emailNote}
-          </p>
+        <p className="mt-2 text-sm text-white/60">
+          {loc === "es"
+            ? "Formulario de contacto y booking."
+            : "Contact and booking form."}
+        </p>
+        <div className="mt-10">
+          <ContactForm />
         </div>
       </div>
     </div>
@@ -49,8 +37,7 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
-  const page = await getPageBySlug("contact", loc);
-  const title = page?.title || COPY[loc].contact.defaultTitle;
+  const title = COPY[loc].contact.defaultTitle;
   const description =
     loc === "es"
       ? "Contacto y booking. Pablo Goldberg."
@@ -60,10 +47,7 @@ export async function generateMetadata({
     description,
     openGraph: {
       title: `${title} | Pablo Goldberg`,
-      description:
-        loc === "es"
-          ? "Contacto y booking."
-          : "Contact and booking.",
+      description,
     },
   };
 }

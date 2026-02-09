@@ -11,9 +11,11 @@
 @layer base {
   html {
     @apply scroll-smooth;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-[#000] text-white;
+    -webkit-text-size-adjust: 100%;
   }
   a:focus-visible,
   button:focus-visible {

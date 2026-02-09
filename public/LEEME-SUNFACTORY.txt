@@ -1,0 +1,8 @@
+Logo de Sun Factory
+==================
+
+En el footer del sitio se muestra el logo que apunta a https://www.sunfactory.com.ar (se abre en nueva pestaña).
+
+Archivo actual: public/images/sunfactory-logo.svg
+- Es un placeholder con el texto "SUN FACTORY". Podés reemplazarlo por el logo oficial de sunfactory.com.ar.
+- Si tenés el logo en PNG o JPG, guardalo como sunfactory-logo.png (o .jpg) en esta carpeta y en Footer.tsx cambiá SUNFACTORY_LOGO a "/images/sunfactory-logo.png".

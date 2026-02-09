@@ -8,7 +8,12 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-white">Proyectos</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-white">Proyectos</h1>
+        <Link href="/admin/vimeo-hidden" className="text-sm text-zinc-400 hover:text-white">
+          Videos Vimeo ocultos
+        </Link>
+      </div>
       <div className="overflow-x-auto rounded border border-zinc-800">
         <table className="w-full min-w-[400px] text-left text-sm">
           <thead>
