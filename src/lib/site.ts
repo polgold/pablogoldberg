@@ -25,12 +25,12 @@ export const SUN_FACTORY_URL = "https://www.sunfactory.com.ar";
 
 /** Enlaces sameAs para schema Person (debe coincidir con Footer). */
 export const PERSON_SAME_AS = [
-  "https://www.imdb.com/name/nm1328948",
+  "https://www.imdb.com/name/nm12692535/",
   "https://vimeo.com/sunfactory",
   "https://www.youtube.com/@pablogoldberg",
   "https://www.instagram.com/polgold",
   "https://wa.me/5491136511204",
   "https://open.spotify.com/user/pablogoldberg",
-  "https://x.com/pablogoldberg",
+  "https://x.com/polgold",
   "https://www.facebook.com/pablogoldberg",
 ] as const;

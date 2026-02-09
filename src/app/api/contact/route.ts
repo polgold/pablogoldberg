@@ -43,7 +43,16 @@ export async function POST(request: Request) {
     });
     if (error) {
       console.error("[api/contact] Supabase insert error:", error.message);
+      return NextResponse.json(
+        { error: "No se pudo guardar. Intenta más tarde." },
+        { status: 500 }
+      );
     }
+  } else {
+    return NextResponse.json(
+      { error: "Error de conexión. Intenta más tarde." },
+      { status: 500 }
+    );
   }
 
   const host = process.env.SMTP_HOST?.trim();
@@ -52,42 +61,35 @@ export async function POST(request: Request) {
   const pass = process.env.SMTP_PASS?.trim();
   const from = process.env.SMTP_FROM?.trim() || user;
 
-  if (!host || !user || !pass) {
-    console.error("[api/contact] SMTP not configured (SMTP_HOST, SMTP_USER, SMTP_PASS)");
-    return NextResponse.json(
-      { error: "Email is not configured. Try again later." },
-      { status: 500 }
-    );
-  }
-
-  const transporter = nodemailer.createTransport({
-    host,
-    port: Number.isNaN(port) ? 587 : port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
-
-  const timestamp = new Date().toISOString();
-  const html = [
-    "<p><strong>Name:</strong> " + escapeHtml(name) + "</p>",
-    "<p><strong>Contact:</strong> " + escapeHtml(contact) + "</p>",
-    "<p><strong>Message:</strong></p><p>" + escapeHtml(message).replace(/\n/g, "<br>") + "</p>",
-    "<p style='color:#888;font-size:12px;'>" + escapeHtml(timestamp) + "</p>",
-  ].join("");
-
-  try {
-    await transporter.sendMail({
-      from: from || user,
-      to: TO_EMAIL,
-      subject: "New contact from pablogoldberg.com",
-      html,
+  if (host && user && pass) {
+    const transporter = nodemailer.createTransport({
+      host,
+      port: Number.isNaN(port) ? 587 : port,
+      secure: port === 465,
+      auth: { user, pass },
     });
-  } catch (err) {
-    console.error("[api/contact] SMTP error:", err);
-    return NextResponse.json(
-      { error: "Could not send message. Try again later." },
-      { status: 500 }
-    );
+
+    const timestamp = new Date().toISOString();
+    const html = [
+      "<p><strong>Name:</strong> " + escapeHtml(name) + "</p>",
+      "<p><strong>Contact:</strong> " + escapeHtml(contact) + "</p>",
+      "<p><strong>Message:</strong></p><p>" + escapeHtml(message).replace(/\n/g, "<br>") + "</p>",
+      "<p style='color:#888;font-size:12px;'>" + escapeHtml(timestamp) + "</p>",
+    ].join("");
+
+    try {
+      await transporter.sendMail({
+        from: from || user,
+        to: TO_EMAIL,
+        subject: "New contact from pablogoldberg.com",
+        html,
+      });
+    } catch (err) {
+      console.error("[api/contact] SMTP error:", err);
+      // Message already saved to DB; still return success
+    }
+  } else {
+    console.warn("[api/contact] SMTP not configured (SMTP_HOST, SMTP_USER, SMTP_PASS). Message saved to DB only.");
   }
 
   return NextResponse.json({ ok: true });

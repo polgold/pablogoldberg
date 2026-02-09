@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
@@ -335,6 +336,10 @@ export async function addHiddenVimeoId(vimeoId: string): Promise<{ error?: strin
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "DB no disponible" };
   const { error } = await supabase.from("hidden_vimeo_ids").upsert({ vimeo_id: id }, { onConflict: "vimeo_id" });
+  if (!error) {
+    revalidatePath("/es/work");
+    revalidatePath("/en/work");
+  }
   return error ? { error: error.message } : {};
 }
 
@@ -343,5 +348,9 @@ export async function removeHiddenVimeoId(vimeoId: string): Promise<{ error?: st
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "DB no disponible" };
   const { error } = await supabase.from("hidden_vimeo_ids").delete().eq("vimeo_id", String(vimeoId).trim());
+  if (!error) {
+    revalidatePath("/es/work");
+    revalidatePath("/en/work");
+  }
   return error ? { error: error.message } : {};
 }

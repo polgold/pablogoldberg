@@ -69,16 +69,10 @@ function userIdFromUri(uri: string): string {
   return m ? m[1] : "";
 }
 
-/**
- * Lista los últimos 40 videos de vimeo.com/sunfactory.
- * Excluye los IDs marcados como ocultos en admin (hidden_vimeo_ids).
- */
-export async function getVimeoPortfolioVideos(): Promise<VimeoVideo[]> {
+/** Fetches raw list from API (same source as public work). Does not filter by hidden. */
+async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
   const token = getToken();
   if (!token) return [];
-
-  const { getHiddenVimeoIds } = await import("./hidden-vimeo");
-  const hiddenIds = await getHiddenVimeoIds();
 
   const headers = { Authorization: `Bearer ${token}` };
   const opts = { headers, next: { revalidate: 300 } as const };
@@ -103,8 +97,28 @@ export async function getVimeoPortfolioVideos(): Promise<VimeoVideo[]> {
       const videosJson = (await videosRes.json()) as VideosResponse;
       list = parseVideos(videosJson.data ?? []);
     }
-    return list.filter((v) => !hiddenIds.has(v.id));
+    return list;
   } catch {
     return [];
   }
+}
+
+/**
+ * Lista los últimos 40 videos de vimeo.com/sunfactory.
+ * Excluye los IDs marcados como ocultos en admin (hidden_vimeo_ids).
+ */
+export async function getVimeoPortfolioVideos(): Promise<VimeoVideo[]> {
+  const [list, hiddenIds] = await Promise.all([
+    fetchVimeoPortfolioVideosRaw(),
+    import("./hidden-vimeo").then((m) => m.getHiddenVimeoIds()),
+  ]);
+  return list.filter((v) => !hiddenIds.has(v.id));
+}
+
+/**
+ * Lista TODOS los videos del portfolio Vimeo (sin filtrar ocultos).
+ * Para uso en /admin/vimeo-hidden.
+ */
+export async function getVimeoPortfolioVideosAll(): Promise<VimeoVideo[]> {
+  return fetchVimeoPortfolioVideosRaw();
 }
