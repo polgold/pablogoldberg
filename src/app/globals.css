@@ -22,14 +22,11 @@
 }
 
 @layer components {
-  .font-display {
-    font-family: var(--font-display), sans-serif;
-  }
   .prose-safe a {
     @apply text-white/90 underline underline-offset-2 transition-colors hover:text-white;
   }
   .prose-safe h2 {
-    @apply mt-10 mb-4 font-display text-2xl tracking-wide text-white;
+    @apply mt-10 mb-4 text-xl font-semibold text-white;
   }
   .prose-safe h3,
   .prose-safe h4 {

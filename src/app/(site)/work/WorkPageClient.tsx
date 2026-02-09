@@ -12,7 +12,7 @@ interface WorkPageClientProps {
 export function WorkPageClient({ projects, locale }: WorkPageClientProps) {
   if (projects.length === 0) {
     return (
-      <p className="font-body text-sm uppercase tracking-widest text-white/40">
+      <p className="text-sm text-sm uppercase tracking-widest text-white/40">
         {locale === "es" ? "No hay proyectos." : "No projects."}
       </p>
     );
@@ -35,16 +35,16 @@ export function WorkPageClient({ projects, locale }: WorkPageClientProps) {
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               />
             ) : (
-              <div className="flex h-full items-center justify-center bg-white/5 font-body text-xs uppercase tracking-widest text-white/30">
+              <div className="flex h-full items-center justify-center bg-white/5 text-sm text-xs uppercase tracking-widest text-white/30">
                 {locale === "es" ? "Sin imagen" : "No image"}
               </div>
             )}
             <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/80 via-transparent to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <span className="font-body text-sm uppercase tracking-widest text-white">
+              <span className="text-sm text-sm uppercase tracking-widest text-white">
                 {project.title}
               </span>
               {project.year && (
-                <span className="font-body text-xs uppercase tracking-widest text-white/70">
+                <span className="text-sm text-xs uppercase tracking-widest text-white/70">
                   {project.year}
                 </span>
               )}

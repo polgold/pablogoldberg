@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Cormorant_Garamond } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
-const bebasNeue = Bebas_Neue({
-  weight: "400",
+const dmSans = DM_Sans({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
-  variable: "--font-display",
-});
-const cormorant = Cormorant_Garamond({
-  weight: ["400", "500", "600"],
-  subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
@@ -34,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${bebasNeue.variable} ${cormorant.variable}`}>
-      <body className="min-h-screen flex flex-col font-body antialiased">{children}</body>
+    <html lang="es" className={dmSans.variable}>
+      <body className="min-h-screen flex flex-col font-sans antialiased">{children}</body>
     </html>
   );
 }

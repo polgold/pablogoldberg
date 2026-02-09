@@ -15,7 +15,7 @@ export function getLocaleFromParam(param: string | undefined): Locale {
 export const COPY: Record<
   Locale,
   {
-    nav: { home: string; work: string; about: string; contact: string };
+    nav: { home: string; work: string; portfolio: string; gallery: string; about: string; contact: string };
     work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string };
     workDetail: { gallery: string; credits: string; viewAll: string };
     home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; ctaTitle: string; ctaText: string; ctaButton: string };
@@ -25,7 +25,7 @@ export const COPY: Record<
   }
 > = {
   es: {
-    nav: { home: "Inicio", work: "Trabajo", about: "Sobre mí", contact: "Contacto / Booking" },
+    nav: { home: "Inicio", work: "Trabajo", portfolio: "Portfolio", gallery: "Galería", about: "Sobre mí", contact: "Contacto / Booking" },
     work: {
       title: "Trabajo",
       subtitle: "Selección de proyectos como director, DP y productor.",
@@ -51,7 +51,7 @@ export const COPY: Record<
     metadata: { about: "Sobre mí | Pablo Goldberg", contact: "Contacto | Pablo Goldberg" },
   },
   en: {
-    nav: { home: "Home", work: "Work", about: "About", contact: "Contact / Booking" },
+    nav: { home: "Home", work: "Work", portfolio: "Portfolio", gallery: "Gallery", about: "About", contact: "Contact / Booking" },
     work: {
       title: "Work",
       subtitle: "Selection of projects as director, DP and producer.",

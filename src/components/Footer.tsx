@@ -22,7 +22,7 @@ export function Footer() {
   return (
     <footer className="border-t border-white/5 bg-black">
       <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-between gap-6 px-5 py-8 md:flex-row md:px-8">
-        <p className="font-body text-xs uppercase tracking-widest text-white/40">
+        <p className="text-xs text-xs uppercase tracking-widest text-white/40">
           © {new Date().getFullYear()} Pablo Goldberg
         </p>
         <nav className="flex flex-wrap items-center justify-center gap-8" aria-label="Redes sociales">
@@ -32,7 +32,7 @@ export function Footer() {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-body text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+              className="text-xs text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
             >
               {label}
             </a>
@@ -40,7 +40,7 @@ export function Footer() {
         </nav>
         <Link
           href={`/${locale}/contact`}
-          className="font-body text-[11px] uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+          className="text-xs text-[11px] uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
         >
           {locale === "es" ? "Contacto" : "Contact"}
         </Link>

@@ -39,11 +39,11 @@ export default async function HomePage({
           title="Reel"
           fallbackImageSrc={heroFallbackImage}
         />
-        <div className="relative z-10 flex min-h-[100vh] flex-col items-center justify-center px-5">
-          <p className="font-display text-[clamp(2rem,6vw,4rem)] tracking-[0.2em] text-white">
-            PABLO GOLDBERG
-          </p>
-          <p className="mt-3 font-body text-sm uppercase tracking-[0.35em] text-white/80">
+        <div className="relative z-10 flex min-h-[100vh] flex-col items-center justify-center px-6 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl">
+            Pablo Goldberg
+          </h1>
+          <p className="mt-2 text-sm text-white/80 sm:text-base">
             {t.role}
           </p>
         </div>
@@ -54,12 +54,12 @@ export default async function HomePage({
       <section className="border-t border-white/5 bg-black">
         <div className="mx-auto max-w-[1600px] px-0 md:px-5">
           <div className="flex items-end justify-between border-b border-white/5 px-5 py-6 md:px-8">
-            <h2 className="font-display text-xs uppercase tracking-[0.3em] text-white/60">
+            <h2 className="text-xs font-medium uppercase tracking-wider text-white/60">
               {t.workTitle}
             </h2>
             <Link
               href={`/${locale}/work`}
-              className="font-body text-[11px] uppercase tracking-[0.2em] text-white/50 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+              className="text-xs text-white/50 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
             >
               {locale === "es" ? "Ver todo" : "View all"}
             </Link>
@@ -80,16 +80,16 @@ export default async function HomePage({
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center bg-white/5 font-body text-xs uppercase tracking-widest text-white/30">
+                    <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">
                       {locale === "es" ? "Sin imagen" : "No image"}
                     </div>
                   )}
                   <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/80 via-transparent to-transparent p-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    <span className="font-body text-sm uppercase tracking-widest text-white">
+                    <span className="text-sm font-medium text-white">
                       {project.title}
                     </span>
                     {project.year && (
-                      <span className="font-body text-xs uppercase tracking-widest text-white/70">
+                      <span className="text-xs text-white/70">
                         {project.year}
                       </span>
                     )}

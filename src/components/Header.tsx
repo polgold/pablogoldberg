@@ -31,6 +31,8 @@ export function Header() {
 
   const nav = [
     { href: `/${locale}/work`, label: t.work },
+    { href: `/${locale}/portfolio`, label: t.portfolio },
+    { href: `/${locale}/gallery`, label: t.gallery },
     { href: `/${locale}/about`, label: t.about },
     { href: `/${locale}/contact`, label: t.contact },
   ];
@@ -42,7 +44,7 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between px-5 md:px-8">
         <Link
           href={`/${locale}`}
-          className="font-display text-lg tracking-[0.15em] text-white transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+          className="text-lg font-medium text-white transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
         >
           PABLO GOLDBERG
         </Link>
@@ -52,7 +54,7 @@ export function Header() {
             <Link
               key={href}
               href={href}
-              className={`font-body text-[13px] uppercase tracking-[0.2em] transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black ${
+              className={`text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black ${
                 isActive(href) ? "text-white" : "text-white/70 hover:text-white"
               }`}
             >
@@ -62,7 +64,7 @@ export function Header() {
           <span className="text-white/30">|</span>
           <Link
             href={switchHref}
-            className="font-body text-[11px] uppercase tracking-[0.2em] text-white/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+            className="text-xs text-white/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
             aria-label={locale === "es" ? "Switch to English" : "Cambiar a español"}
           >
             {locale === "es" ? "EN" : "ES"}
@@ -90,14 +92,14 @@ export function Header() {
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className={`px-5 py-3 font-body text-sm uppercase tracking-widest ${
+                className={`px-5 py-3 text-sm ${
                   isActive(href) ? "text-white" : "text-white/80"
                 }`}
               >
                 {label}
               </Link>
             ))}
-            <Link href={switchHref} onClick={() => setOpen(false)} className="px-5 py-3 font-body text-sm text-white/60">
+            <Link href={switchHref} onClick={() => setOpen(false)} className="px-5 py-3 text-sm text-white/60">
               {locale === "es" ? "EN" : "ES"}
             </Link>
           </nav>

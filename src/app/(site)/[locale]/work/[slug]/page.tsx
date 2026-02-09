@@ -80,23 +80,23 @@ export default async function ProjectPage({ params }: PageProps) {
       <div className="mx-auto max-w-[900px] px-5 pt-12 pb-16 md:px-8">
         {/* Title, year, short description only */}
         <header className="mb-12">
-          <h1 className="font-display text-3xl tracking-[0.08em] text-white md:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
             {project.title}
           </h1>
           {project.year && (
-            <p className="mt-2 font-body text-sm uppercase tracking-[0.25em] text-white/60">
+            <p className="mt-2 text-sm text-white/60">
               {project.year}
             </p>
           )}
           {(project.summary || project.excerpt) && (
-            <div className="prose-safe mt-6 max-w-[65ch] font-body text-base leading-relaxed text-white/85">
+            <div className="prose-safe mt-6 max-w-[65ch] text-base leading-relaxed text-white/85">
               <SafeHtml html={(project.summary || project.excerpt) ?? ""} />
             </div>
           )}
         </header>
 
         {project.content?.trim() ? (
-          <div className="prose-safe mb-14 font-body text-white/80">
+          <div className="prose-safe mb-14 text-sm text-white/80">
             <SafeHtml html={project.content} />
           </div>
         ) : null}
@@ -123,10 +123,10 @@ export default async function ProjectPage({ params }: PageProps) {
 
         {project.credits?.trim() ? (
           <section className="mt-14 border-t border-white/5 pt-10">
-            <h2 className="font-body text-[10px] uppercase tracking-[0.3em] text-white/40">
+            <h2 className="text-[10px] uppercase tracking-wider text-white/40">
               {t.credits}
             </h2>
-            <div className="prose-safe mt-4 font-body text-sm text-white/60">
+            <div className="prose-safe mt-4 text-sm text-white/60">
               <SafeHtml html={project.credits} />
             </div>
           </section>
@@ -138,7 +138,7 @@ export default async function ProjectPage({ params }: PageProps) {
               href={project.externalLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-body text-xs uppercase tracking-[0.2em] text-white/60 hover:text-white"
+              className="text-xs text-white/60 hover:text-white"
             >
               {locale === "es" ? "Ver proyecto" : "View project"} →
             </a>
@@ -154,7 +154,7 @@ export default async function ProjectPage({ params }: PageProps) {
             {prev ? (
               <Link
                 href={`/${locale}/work/${prev.slug}`}
-                className="font-body text-xs uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+                className="text-xs text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
               >
                 ← {prev.title}
               </Link>
@@ -164,7 +164,7 @@ export default async function ProjectPage({ params }: PageProps) {
           </div>
           <Link
             href={`/${locale}/work`}
-            className="font-body text-xs uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+            className="text-xs text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
           >
             {t.viewAll}
           </Link>
@@ -172,7 +172,7 @@ export default async function ProjectPage({ params }: PageProps) {
             {next ? (
               <Link
                 href={`/${locale}/work/${next.slug}`}
-                className="font-body text-xs uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+                className="text-xs text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
               >
                 {next.title} →
               </Link>

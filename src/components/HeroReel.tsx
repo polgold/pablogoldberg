@@ -44,7 +44,7 @@ export function HeroReel({
         <div className="absolute inset-0">
           <iframe
             title={title}
-            src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&muted=1&background=1`}
+            src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&muted=1&background=1&quality=1080p`}
             className="absolute left-1/2 top-1/2 h-[56.25vw] min-h-[100vh] w-[177.78vh] min-w-[100vw] -translate-x-1/2 -translate-y-1/2 object-cover"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen

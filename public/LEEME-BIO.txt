@@ -1,0 +1,8 @@
+Cargar la BIO en Supabase (una sola vez)
+=========================================
+
+1. Abrí: https://supabase.com/dashboard/project/yetitiksusqgikujfzoh/sql/new
+
+2. Abrí el archivo supabase/run-bio.sql de este proyecto, copiá TODO su contenido y pegalo en el SQL Editor.
+
+3. Clic en Run. Listo: la página /es/about mostrará la bio.
