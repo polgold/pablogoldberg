@@ -6,4 +6,6 @@ export interface WorkItem {
   featuredImage?: string | null;
   href: string;
   external?: boolean;
+  /** When set, card opens Vimeo in-page lightbox instead of external link. */
+  vimeoId?: string;
 }

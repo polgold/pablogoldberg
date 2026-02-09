@@ -5,7 +5,12 @@ import { revalidatePath } from "next/cache";
 import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
-import { getAdminPortfolioPhotos, type PortfolioPhoto } from "@/lib/portfolio-photos";
+import {
+  getAdminPortfolioPhotos,
+  listPortfolioGalleries,
+  type PortfolioPhoto,
+  type PortfolioGallery,
+} from "@/lib/portfolio-photos";
 
 export type GalleryItem = { path: string; url: string; order: number };
 
@@ -400,11 +405,93 @@ export async function removeCustomVimeoId(vimeoId: string): Promise<{ error?: st
 
 // ——— Portfolio Photos (visibility + order) ———
 
-export type { PortfolioPhoto };
+export type { PortfolioPhoto, PortfolioGallery };
 
-export async function listAdminPortfolioPhotos(): Promise<PortfolioPhoto[]> {
+export async function listAdminPortfolioGalleries(): Promise<PortfolioGallery[]> {
   await ensureAdmin();
-  return getAdminPortfolioPhotos();
+  return listPortfolioGalleries();
+}
+
+export async function listAdminPortfolioPhotos(galleryId?: string | null): Promise<PortfolioPhoto[]> {
+  await ensureAdmin();
+  return getAdminPortfolioPhotos(galleryId);
+}
+
+export async function createPortfolioGallery(name: string): Promise<{ gallery?: PortfolioGallery; error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "gallery";
+  const { data: existing } = await supabase.from("portfolio_galleries").select("id").eq("slug", slug).maybeSingle();
+  if (existing) return { error: "Ya existe una galería con ese nombre/slug" };
+  const { data: maxOrder } = await supabase
+    .from("portfolio_galleries")
+    .select("order")
+    .order("order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const order = ((maxOrder?.order ?? -1) as number) + 1;
+  const { data: gallery, error } = await supabase
+    .from("portfolio_galleries")
+    .insert({ name: name.trim(), slug, order })
+    .select()
+    .single();
+  if (error) return { error: error.message };
+  revalidatePath("/admin/portfolio-photos");
+  return { gallery: gallery as PortfolioGallery };
+}
+
+export async function uploadPortfolioPhotos(
+  formData: FormData,
+  galleryId: string
+): Promise<{ uploaded?: number; error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "Supabase no configurado" };
+
+  const files = Array.from(formData.entries())
+    .filter(([, v]) => v instanceof File && (v as File).size > 0)
+    .map(([, v]) => v as File);
+  const imageExt = /\.(jpe?g|png|webp|gif|avif)$/i;
+  const images = files.filter((f) => imageExt.test(f.name));
+  if (images.length === 0) return { error: "No hay imágenes válidas (jpg, png, webp, gif, avif)" };
+
+  const { data: maxOrderRow } = await supabase
+    .from("portfolio_photos")
+    .select("order")
+    .eq("gallery_id", galleryId)
+    .order("order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  let nextOrder = ((maxOrderRow?.order ?? -1) as number) + 1;
+  let uploaded = 0;
+
+  for (const file of images) {
+    const safeName = uniqueStorageName(file.name);
+    const path = `portfolio/${safeName}`;
+    const { error: uploadErr } = await supabase.storage.from(PROJECTS_BUCKET).upload(path, file, { upsert: true });
+    if (uploadErr) return { error: uploadErr.message, uploaded };
+    const publicUrl = getProjectsImageUrl(path);
+    const { error: insertErr } = await supabase.from("portfolio_photos").insert({
+      storage_path: path,
+      public_url: publicUrl,
+      is_visible: true,
+      order: nextOrder++,
+      gallery_id: galleryId,
+    });
+    if (!insertErr) uploaded++;
+  }
+
+  revalidatePath("/es/gallery");
+  revalidatePath("/en/gallery");
+  revalidatePath("/admin/portfolio-photos");
+  return { uploaded };
 }
 
 export async function togglePortfolioPhotoVisibility(id: string): Promise<{ error?: string }> {

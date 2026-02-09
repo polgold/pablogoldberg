@@ -9,11 +9,13 @@ export interface WorkGridProps {
   locale: string;
   /** If true, cards are links (public work). If false, cards are divs (admin). */
   linkCards?: boolean;
+  /** When set, Vimeo items open in this lightbox instead of external link. */
+  onVimeoClick?: (vimeoId: string) => void;
   /** Optional extra per card (badge + actions) for admin. */
   renderCardExtra?: (item: WorkItem) => { badge?: React.ReactNode; actions?: React.ReactNode };
 }
 
-export function WorkGrid({ items, locale, linkCards = true, renderCardExtra }: WorkGridProps) {
+export function WorkGrid({ items, locale, linkCards = true, onVimeoClick, renderCardExtra }: WorkGridProps) {
   const [yearFilter, setYearFilter] = useState("");
   const years = useMemo(() => {
     const set = new Set(items.map((i) => i.year).filter(Boolean));
@@ -62,6 +64,7 @@ export function WorkGrid({ items, locale, linkCards = true, renderCardExtra }: W
                 item={item}
                 href={linkCards ? item.href : undefined}
                 external={linkCards ? item.external : undefined}
+                onVimeoClick={linkCards ? onVimeoClick : undefined}
                 badge={extra?.badge}
                 actions={extra?.actions}
               />

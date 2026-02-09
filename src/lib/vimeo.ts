@@ -61,6 +61,7 @@ type VideosResponse = {
     release_time?: string;
     pictures?: { sizes?: Array<{ width: number; link: string }> };
   }>;
+  paging?: { next?: string | null };
 };
 
 /** Extrae ID numérico de /users/12345 */
@@ -101,6 +102,40 @@ export async function fetchVimeoVideoById(videoId: string): Promise<VimeoVideo |
   }
 }
 
+const PER_PAGE = 60;
+const TARGET_VISIBLE = 40;
+
+/** Fetches one page of videos. Returns videos + whether there are more pages. */
+async function fetchVimeoPortfolioPage(
+  basePath: string,
+  page: number,
+  opts: RequestInit
+): Promise<{ videos: VimeoVideo[]; hasMore: boolean }> {
+  const url = `${API}${basePath}?per_page=${PER_PAGE}&sort=date&page=${page}`;
+  const res = await fetch(url, opts);
+  if (!res.ok) return { videos: [], hasMore: false };
+  const json = (await res.json()) as VideosResponse;
+  const data = json.data ?? [];
+  const videos = data.length > 0 ? parseVideos(data) : [];
+  const hasMore = Boolean(json.paging?.next);
+  return { videos, hasMore };
+}
+
+/** Resolves the base path for portfolio videos: /me/videos or /users/{id}/videos. */
+async function resolveVimeoBasePath(opts: RequestInit): Promise<string> {
+  const meRes = await fetch(`${API}/me/videos?per_page=1&sort=date`, opts);
+  if (meRes.ok) {
+    const json = (await meRes.json()) as VideosResponse;
+    if ((json.data ?? []).length > 0) return "/me/videos";
+  }
+  const searchRes = await fetch(`${API}/users?query=sunfactory&per_page=1`, opts);
+  if (!searchRes.ok) return "/me/videos";
+  const searchJson = (await searchRes.json()) as { data?: Array<{ uri: string }> };
+  const user = searchJson.data?.[0];
+  const userId = user ? userIdFromUri(user.uri) : "";
+  return userId ? `/users/${userId}/videos` : "/me/videos";
+}
+
 /** Fetches raw list from API (same source as public work). Does not filter by hidden. */
 async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
   const token = getToken();
@@ -110,49 +145,76 @@ async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
   const opts = { headers, next: { revalidate: 300 } as const };
 
   try {
-    let list: VimeoVideo[] = [];
-    const meRes = await fetch(`${API}/me/videos?per_page=60&sort=date`, opts);
-    if (meRes.ok) {
-      const json = (await meRes.json()) as VideosResponse;
-      const data = json.data ?? [];
-      if (data.length > 0) list = parseVideos(data);
+    const basePath = await resolveVimeoBasePath(opts);
+    const all: VimeoVideo[] = [];
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const { videos, hasMore: more } = await fetchVimeoPortfolioPage(basePath, page, opts);
+      all.push(...videos);
+      hasMore = more && videos.length > 0;
+      page++;
     }
-    if (list.length === 0) {
-      const searchRes = await fetch(`${API}/users?query=sunfactory&per_page=1`, opts);
-      if (!searchRes.ok) return [];
-      const searchJson = (await searchRes.json()) as { data?: Array<{ uri: string }> };
-      const user = searchJson.data?.[0];
-      const userId = user ? userIdFromUri(user.uri) : "";
-      if (!userId) return [];
-      const videosRes = await fetch(`${API}/users/${userId}/videos?per_page=60&sort=date`, opts);
-      if (!videosRes.ok) return [];
-      const videosJson = (await videosRes.json()) as VideosResponse;
-      list = parseVideos(videosJson.data ?? []);
-    }
-    return list;
+    return all;
   } catch {
     return [];
   }
 }
 
+/** Fetches enough pages until we have at least targetVisible videos after filtering hidden. */
+async function fetchVimeoPortfolioVideosUntilEnough(
+  hiddenIds: Set<string>,
+  targetVisible: number,
+  opts: RequestInit
+): Promise<VimeoVideo[]> {
+  const basePath = await resolveVimeoBasePath(opts);
+  const all: VimeoVideo[] = [];
+  let page = 1;
+  let hasMore = true;
+  while (hasMore) {
+    const { videos, hasMore: more } = await fetchVimeoPortfolioPage(basePath, page, opts);
+    all.push(...videos);
+    const visible = all.filter((v) => !hiddenIds.has(v.id));
+    if (visible.length >= targetVisible || !more || videos.length === 0) {
+      return all;
+    }
+    hasMore = more;
+    page++;
+  }
+  return all;
+}
+
 /**
- * Lista hasta 40 videos visibles: custom por ID + 60 del portfolio, sin ocultos, primeros 40.
+ * Lista hasta 40 videos visibles: custom por ID + portfolio, sin ocultos.
+ * Sigue paginando en Vimeo hasta tener 40 visibles (para compensar ocultos).
  */
 export async function getVimeoPortfolioVideos(): Promise<VimeoVideo[]> {
-  const [rawList, hiddenIds, customIds] = await Promise.all([
-    fetchVimeoPortfolioVideosRaw(),
+  const token = getToken();
+  if (!token) return [];
+
+  const [hiddenIds, customIds] = await Promise.all([
     import("./hidden-vimeo").then((m) => m.getHiddenVimeoIds()),
     import("./hidden-vimeo").then((m) => m.getCustomVimeoIds()),
   ]);
-  const rawIds = new Set(rawList.map((v) => v.id));
+
+  const opts = { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 300 } as const };
+
   const customVideos: VimeoVideo[] = [];
   for (const id of customIds) {
-    if (rawIds.has(id)) continue;
     const v = await fetchVimeoVideoById(id);
     if (v) customVideos.push(v);
   }
-  const merged = [...customVideos, ...rawList];
-  return merged.filter((v) => !hiddenIds.has(v.id)).slice(0, 40);
+  const customVisible = customVideos.filter((v) => !hiddenIds.has(v.id));
+  const targetFromRaw = Math.max(0, TARGET_VISIBLE - customVisible.length);
+
+  const rawList =
+    targetFromRaw > 0
+      ? await fetchVimeoPortfolioVideosUntilEnough(hiddenIds, targetFromRaw, opts)
+      : [];
+
+  const rawFiltered = rawList.filter((r) => !customIds.has(r.id));
+  const merged = [...customVideos, ...rawFiltered];
+  return merged.filter((v) => !hiddenIds.has(v.id)).slice(0, TARGET_VISIBLE);
 }
 
 /**

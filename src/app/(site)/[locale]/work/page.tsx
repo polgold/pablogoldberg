@@ -43,8 +43,9 @@ export default async function WorkPage({
           title: v.name,
           year: "",
           featuredImage: v.thumbnail || undefined,
-          href: v.link,
-          external: true,
+          href: "#",
+          external: false,
+          vimeoId: v.id,
         }))
       : dbProjects.length > 0
         ? dbProjects.map((p) => ({

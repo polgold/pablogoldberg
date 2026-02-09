@@ -8,13 +8,15 @@ export interface WorkCardProps {
   /** If provided, card is a link (public work). Otherwise a div (admin). */
   href?: string;
   external?: boolean;
+  /** When item has vimeoId, opens video in lightbox instead of navigating. */
+  onVimeoClick?: (vimeoId: string) => void;
   /** Rendered above the gradient overlay (e.g. Hidden badge). */
   badge?: React.ReactNode;
   /** Rendered in the overlay area (e.g. Hide/Unhide button). */
   actions?: React.ReactNode;
 }
 
-export function WorkCard({ item, href, external, badge, actions }: WorkCardProps) {
+export function WorkCard({ item, href, external, onVimeoClick, badge, actions }: WorkCardProps) {
   const content = (
     <>
       {item.featuredImage ? (
@@ -43,6 +45,18 @@ export function WorkCard({ item, href, external, badge, actions }: WorkCardProps
 
   const className =
     "relative block aspect-[4/3] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset";
+
+  if (item.vimeoId && onVimeoClick) {
+    return (
+      <button
+        type="button"
+        onClick={() => onVimeoClick(item.vimeoId!)}
+        className={`group w-full ${className}`}
+      >
+        {content}
+      </button>
+    );
+  }
 
   if (href) {
     const linkProps = external ? { target: "_blank" as const, rel: "noopener noreferrer" as const } : {};

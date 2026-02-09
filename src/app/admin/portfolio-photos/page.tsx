@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { listAdminPortfolioPhotos } from "../actions";
+import { listAdminPortfolioGalleries, listAdminPortfolioPhotos } from "../actions";
 import { PortfolioPhotosClient } from "./PortfolioPhotosClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortfolioPhotosAdminPage() {
-  const photos = await listAdminPortfolioPhotos();
+  const galleries = await listAdminPortfolioGalleries();
+  const defaultGalleryId = galleries[0]?.id ?? null;
+  const photos = await listAdminPortfolioPhotos(defaultGalleryId);
 
   return (
     <div>
@@ -16,9 +18,12 @@ export default async function PortfolioPhotosAdminPage() {
         <h1 className="text-2xl font-semibold text-white">Portfolio Photos</h1>
       </div>
       <p className="mb-4 text-sm text-zinc-400">
-        Fotos en bucket <strong>projects/portfolio/</strong>. Mostrar/ocultar afecta la página pública /gallery. Arrastrá para reordenar.
+        Subí fotos, creá galerías y mostrá/ocultá en la página pública <strong>/gallery</strong>. Arrastrá para reordenar.
       </p>
-      <PortfolioPhotosClient initialPhotos={photos} />
+      <PortfolioPhotosClient
+        initialGalleries={galleries}
+        initialPhotos={photos}
+      />
     </div>
   );
 }
