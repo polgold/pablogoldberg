@@ -13,7 +13,7 @@ const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? "public";
  */
 export function getPublicImageUrl(path: string): string {
   if (!path) return "";
-  const url = process.env.SUPABASE_URL;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   if (!url) return path;
   const base = url.replace(/\/$/, "");
   const bucket = BUCKET.replace(/\/$/, "");

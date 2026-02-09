@@ -7,9 +7,7 @@ En **Site settings → Environment variables** (o en `netlify.toml` con `[build.
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase | `https://xxx.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (público, cliente) | `eyJ...` |
-| `SUPABASE_URL` | Misma URL (server) | `https://xxx.supabase.co` |
-| `SUPABASE_ANON_KEY` | Misma anon key (server) | `eyJ...` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key (auth en cliente y server) | `eyJ...` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (solo server, nunca en cliente) | `eyJ...` |
 | `SUPABASE_STORAGE_BUCKET` | Nombre del bucket de Storage | `public` |
 | `ADMIN_EMAILS` | Emails permitidos para /admin (whitelist) | `tu@email.com,otro@email.com` |

@@ -13,13 +13,11 @@ Panel de gestión de proyectos con auth Supabase, CRUD, cover uploader y bulk up
 
 | Variable | Descripción |
 |----------|-------------|
-| `SUPABASE_URL` | URL del proyecto Supabase |
-| `SUPABASE_ANON_KEY` | Clave anónima |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase (cliente + server) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima (cliente + server para auth) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio (**solo server**, nunca exponer) |
 | `SUPABASE_STORAGE_BUCKET` | Nombre del bucket de Storage (ej. `public`) |
-| `ADMIN_EMAILS` | Emails permitidos separados por coma (ej. `admin@ejemplo.com,otro@ejemplo.com`) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Mismo valor que `SUPABASE_URL` (para login en cliente) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Mismo valor que `SUPABASE_ANON_KEY` (para login en cliente) |
+| `ADMIN_EMAILS` | Emails permitidos separados por coma |
 
 ## Uso
 

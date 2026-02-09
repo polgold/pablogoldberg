@@ -4,12 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAdminBrowserClient } from "@/lib/supabase/admin-browser";
 
+const CONFIG_ERROR =
+  "Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY. Configúralas en las variables de entorno del deploy (Netlify, Vercel, etc.) y vuelve a desplegar.";
+
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const configured = Boolean(createAdminBrowserClient());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,7 +21,7 @@ export default function AdminLoginPage() {
     setLoading(true);
     const supabase = createAdminBrowserClient();
     if (!supabase) {
-      setError("Auth no configurado.");
+      setError(CONFIG_ERROR);
       setLoading(false);
       return;
     }
@@ -34,6 +38,12 @@ export default function AdminLoginPage() {
   return (
     <div className="mx-auto max-w-sm">
       <h1 className="mb-6 text-xl font-semibold text-white">Admin – Login</h1>
+      {!configured ? (
+        <div className="rounded border border-amber-600/50 bg-amber-950/30 p-4 text-amber-200">
+          <p className="text-sm font-medium">Configuración incompleta</p>
+          <p className="mt-2 text-sm">{CONFIG_ERROR}</p>
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="mb-1 block text-sm text-zinc-400">
@@ -70,6 +80,7 @@ export default function AdminLoginPage() {
           {loading ? "Entrando…" : "Entrar"}
         </button>
       </form>
+      )}
       <p className="mt-4 text-xs text-zinc-500">
         Solo emails en la whitelist (ADMIN_EMAILS) pueden acceder.
       </p>

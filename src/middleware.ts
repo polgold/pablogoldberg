@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? "";
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 function getAdminWhitelist(): string[] {
   const raw = process.env.ADMIN_EMAILS ?? "";
