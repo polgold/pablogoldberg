@@ -31,6 +31,7 @@ export function Header() {
 
   const nav = [
     { href: `/${locale}/work`, label: t.work },
+    { href: `/${locale}/gallery`, label: t.gallery },
     { href: `/${locale}/about`, label: t.about },
     { href: `/${locale}/contact`, label: t.contact },
   ];

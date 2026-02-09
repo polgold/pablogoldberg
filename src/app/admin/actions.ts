@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
+import { getAdminPortfolioPhotos, type PortfolioPhoto } from "@/lib/portfolio-photos";
 
 export type GalleryItem = { path: string; url: string; order: number };
 
@@ -395,4 +396,45 @@ export async function removeCustomVimeoId(vimeoId: string): Promise<{ error?: st
     revalidatePath("/admin/vimeo-hidden");
   }
   return error ? { error: error.message } : {};
+}
+
+// ——— Portfolio Photos (visibility + order) ———
+
+export type { PortfolioPhoto };
+
+export async function listAdminPortfolioPhotos(): Promise<PortfolioPhoto[]> {
+  await ensureAdmin();
+  return getAdminPortfolioPhotos();
+}
+
+export async function togglePortfolioPhotoVisibility(id: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const { data } = await supabase.from("portfolio_photos").select("is_visible").eq("id", id).maybeSingle();
+  if (!data) return { error: "Foto no encontrada" };
+  const { error } = await supabase
+    .from("portfolio_photos")
+    .update({ is_visible: !data.is_visible })
+    .eq("id", id);
+  if (!error) {
+    revalidatePath("/es/gallery");
+    revalidatePath("/en/gallery");
+    revalidatePath("/admin/portfolio-photos");
+  }
+  return error ? { error: error.message } : {};
+}
+
+export async function reorderPortfolioPhotos(updates: { id: string; order: number }[]): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  for (const { id, order } of updates) {
+    const { error } = await supabase.from("portfolio_photos").update({ order }).eq("id", id);
+    if (error) return { error: error.message };
+  }
+  revalidatePath("/es/gallery");
+  revalidatePath("/en/gallery");
+  revalidatePath("/admin/portfolio-photos");
+  return {};
 }

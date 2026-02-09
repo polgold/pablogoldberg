@@ -1,14 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface PhotosGridWithLightboxProps {
   urls: string[];
 }
 
+const SWIPE_THRESHOLD = 50;
+
 export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
   const [index, setIndex] = useState<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
 
   const go = useCallback(
     (delta: number) => {
@@ -36,6 +39,24 @@ export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [index, close, go]);
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const start = touchStartX.current;
+      touchStartX.current = null;
+      if (start == null || index == null || urls.length === 0) return;
+      const end = e.changedTouches[0]?.clientX ?? start;
+      const delta = start - end;
+      if (Math.abs(delta) >= SWIPE_THRESHOLD) {
+        go(delta > 0 ? 1 : -1);
+      }
+    },
+    [index, urls.length, go]
+  );
+
   if (urls.length === 0) return null;
 
   return (
@@ -52,6 +73,7 @@ export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
                 src={url}
                 alt=""
                 fill
+                loading="lazy"
                 className="object-cover transition-transform duration-200 hover:scale-[1.02]"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               />
@@ -66,6 +88,8 @@ export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
           role="dialog"
           aria-modal="true"
           aria-label="Lightbox"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <button
             type="button"
