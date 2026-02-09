@@ -175,7 +175,7 @@ export function PortfolioPhotosClient({
       }, 400);
 
       try {
-        const { uploaded, error } = await uploadPortfolioPhotos(formData, galleryId);
+        const result = await uploadPortfolioPhotos(formData, galleryId);
         clearInterval(progressInterval);
         if (uploadCancelledRef.current) {
           setUploading(false);
@@ -187,12 +187,17 @@ export function PortfolioPhotosClient({
         await new Promise((r) => setTimeout(r, 300));
         setUploading(false);
         setUploadProgress(null);
-        if (error) {
-          showToast(error);
-          return;
+        if (result && typeof result === "object") {
+          const { uploaded, error } = result;
+          if (error) {
+            showToast(error);
+            return;
+          }
+          showToast(`${uploaded ?? 0} foto(s) subida(s)`);
+          await loadPhotosForGallery(selectedGalleryId);
+        } else {
+          showToast("Respuesta inesperada del servidor. Probá de nuevo.");
         }
-        showToast(`${uploaded ?? 0} foto(s) subida(s)`);
-        await loadPhotosForGallery(selectedGalleryId);
       } catch (err) {
         clearInterval(progressInterval);
         setUploading(false);

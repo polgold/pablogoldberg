@@ -451,60 +451,72 @@ export async function uploadPortfolioPhotos(
   formData: FormData,
   galleryId: string
 ): Promise<{ uploaded?: number; error?: string }> {
-  await ensureAdmin();
+  try {
+    await ensureAdmin();
+  } catch (e) {
+    const err = e as { digest?: string };
+    if (err?.digest?.startsWith?.("NEXT_REDIRECT")) throw e;
+    return { error: "Sesión expirada. Volvé a iniciar sesión en /admin/login." };
+  }
+
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "Supabase no configurado" };
 
-  const { data: gallery, error: galleryErr } = await supabase
-    .from("portfolio_galleries")
-    .select("id, slug")
-    .eq("id", galleryId)
-    .maybeSingle();
-  if (galleryErr || !gallery?.slug) {
-    return { error: "Galería no encontrada o sin slug" };
-  }
-  const slug = gallery.slug;
-
-  const files = Array.from(formData.entries())
-    .filter(([, v]) => v instanceof File && (v as File).size > 0)
-    .map(([, v]) => v as File);
-  const imageExt = /\.(jpe?g|png|webp|gif|avif)$/i;
-  const images = files.filter((f) => imageExt.test(f.name));
-  if (images.length === 0) return { error: "No hay imágenes válidas (jpg, png, webp, gif, avif)" };
-
-  const { data: maxOrderRow } = await supabase
-    .from("portfolio_photos")
-    .select("order")
-    .eq("gallery_id", galleryId)
-    .order("order", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  let nextOrder = ((maxOrderRow?.order ?? -1) as number) + 1;
-  let uploaded = 0;
-
-  for (const file of images) {
-    const safeName = uniqueStorageName(file.name);
-    const path = `${slug}/${safeName}`;
-    const { error: uploadErr } = await supabase.storage.from(PROJECTS_BUCKET).upload(path, file, { upsert: true });
-    if (uploadErr) {
-      const msg = `Subida fallida: ${uploadErr.message}${uploadErr.statusCode ? ` (${uploadErr.statusCode})` : ""}`;
-      return { error: msg, uploaded };
+  try {
+    const { data: gallery, error: galleryErr } = await supabase
+      .from("portfolio_galleries")
+      .select("id, slug")
+      .eq("id", galleryId)
+      .maybeSingle();
+    if (galleryErr || !gallery?.slug) {
+      return { error: "Galería no encontrada o sin slug" };
     }
-    const publicUrl = getProjectsImageUrl(path);
-    const { error: insertErr } = await supabase.from("portfolio_photos").insert({
-      storage_path: path,
-      public_url: publicUrl,
-      is_visible: true,
-      order: nextOrder++,
-      gallery_id: galleryId,
-    });
-    if (!insertErr) uploaded++;
-  }
+    const slug = gallery.slug;
 
-  revalidatePath("/es/gallery");
-  revalidatePath("/en/gallery");
-  revalidatePath("/admin/portfolio-photos");
-  return { uploaded };
+    const files = Array.from(formData.entries())
+      .filter(([, v]) => v instanceof File && (v as File).size > 0)
+      .map(([, v]) => v as File);
+    const imageExt = /\.(jpe?g|png|webp|gif|avif)$/i;
+    const images = files.filter((f) => imageExt.test(f.name));
+    if (images.length === 0) return { error: "No hay imágenes válidas (jpg, png, webp, gif, avif)" };
+
+    const { data: maxOrderRow } = await supabase
+      .from("portfolio_photos")
+      .select("order")
+      .eq("gallery_id", galleryId)
+      .order("order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    let nextOrder = ((maxOrderRow?.order ?? -1) as number) + 1;
+    let uploaded = 0;
+
+    for (const file of images) {
+      const safeName = uniqueStorageName(file.name);
+      const path = `${slug}/${safeName}`;
+      const { error: uploadErr } = await supabase.storage.from(PROJECTS_BUCKET).upload(path, file, { upsert: true });
+      if (uploadErr) {
+        const msg = `Subida fallida: ${uploadErr.message}${(uploadErr as { statusCode?: number }).statusCode ? ` (${(uploadErr as { statusCode?: number }).statusCode})` : ""}`;
+        return { error: msg, uploaded };
+      }
+      const publicUrl = getProjectsImageUrl(path);
+      const { error: insertErr } = await supabase.from("portfolio_photos").insert({
+        storage_path: path,
+        public_url: publicUrl,
+        is_visible: true,
+        order: nextOrder++,
+        gallery_id: galleryId,
+      });
+      if (!insertErr) uploaded++;
+    }
+
+    revalidatePath("/es/gallery");
+    revalidatePath("/en/gallery");
+    revalidatePath("/admin/portfolio-photos");
+    return { uploaded };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error inesperado al subir";
+    return { error: message };
+  }
 }
 
 export async function togglePortfolioPhotoVisibility(id: string): Promise<{ error?: string }> {
