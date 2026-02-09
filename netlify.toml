@@ -1,10 +1,12 @@
 # Build sin DB: datos vía Supabase (HTTP). Configurar en Netlify: Site settings → Environment variables.
 # SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET
 [build]
+  base = "."
   command = "npm run build"
 
 [build.environment]
   NODE_VERSION = "20.18.0"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

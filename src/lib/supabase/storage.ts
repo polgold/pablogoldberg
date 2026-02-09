@@ -9,6 +9,7 @@ const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? "public";
 /**
  * Devuelve la URL pública de un objeto en el bucket.
  * Usar cuando el bucket está configurado como público.
+ * Rutas de proyectos: covers/{slug}.ext, gallery/{slug}/file, videos/{slug}/file
  */
 export function getPublicImageUrl(path: string): string {
   if (!path) return "";
@@ -22,7 +23,13 @@ export function getPublicImageUrl(path: string): string {
 
 /** Tipo mínimo para crear signed URL desde server. */
 type SupabaseStorageClient = {
-  storage: { from: (b: string) => { createSignedUrl: (path: string, expiresIn: number) => Promise<{ data: { signedUrl: string } }> } };
+  storage: {
+    from: (b: string) => {
+      createSignedUrl: (path: string, expiresIn: number) => Promise<{ data: { signedUrl: string } }>;
+      upload: (path: string, body: Blob | ArrayBuffer | ArrayBufferView | File, options?: { upsert?: boolean }) => Promise<{ data: { path: string } | null; error: unknown }>;
+      remove: (paths: string[]) => Promise<{ data: unknown; error: unknown }>;
+    };
+  };
 };
 
 /**

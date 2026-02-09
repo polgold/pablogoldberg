@@ -134,6 +134,7 @@ export async function getProjects(locale: Locale = DEFAULT_LOCALE): Promise<Proj
       .from("projects")
       .select("*")
       .eq("locale", locale)
+      .eq("published", true)
       .order("order", { ascending: false, nullsFirst: false })
       .order("year", { ascending: false, nullsFirst: false });
 
@@ -160,6 +161,7 @@ export async function getProjectBySlug(
       .select("*")
       .eq("slug", slug)
       .eq("locale", locale)
+      .eq("published", true)
       .maybeSingle();
 
     if (error) {
@@ -185,6 +187,7 @@ export async function getFeaturedProjects(
       .from("projects")
       .select("*")
       .eq("locale", locale)
+      .eq("published", true)
       .eq("is_featured", true)
       .order("order", { ascending: false, nullsFirst: false })
       .order("year", { ascending: false, nullsFirst: false })
@@ -205,7 +208,7 @@ export async function getProjectSlugs(): Promise<string[]> {
   try {
     const supabase = createSupabaseServerClient();
     if (!supabase) return [];
-    const { data, error } = await supabase.from("projects").select("slug").eq("locale", "es");
+    const { data, error } = await supabase.from("projects").select("slug").eq("locale", "es").eq("published", true);
 
     if (error) {
       console.error("[content] getProjectSlugs error:", error.message);

@@ -2,7 +2,9 @@
   "name": "pablogoldberg",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,6 +12,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.49.1",
     "next": "^15.5.12",
     "react": "^19.0.0",
