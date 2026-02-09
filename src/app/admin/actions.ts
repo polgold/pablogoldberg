@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createAdminServerClient, getAuthConfigError, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
+import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
 
@@ -19,10 +19,7 @@ type ProjectRow = {
 
 async function ensureAdmin() {
   const supabase = await createAdminServerClient();
-  if (!supabase) {
-    const msg = getAuthConfigError();
-    throw new Error(msg ?? "Auth no configurado");
-  }
+  if (!supabase) throw new Error("Auth no configurado");
   const {
     data: { user },
   } = await supabase.auth.getUser();
