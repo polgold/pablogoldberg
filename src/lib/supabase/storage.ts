@@ -6,19 +6,35 @@
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? "public";
 
+/** Bucket específico para proyectos (cover + gallery). */
+export const PROJECTS_BUCKET = "projects";
+
 /**
  * Devuelve la URL pública de un objeto en el bucket.
  * Usar cuando el bucket está configurado como público.
- * Rutas de proyectos: covers/{slug}.ext, gallery/{slug}/file, videos/{slug}/file
  */
-export function getPublicImageUrl(path: string): string {
+export function getPublicImageUrl(path: string, bucket?: string): string {
   if (!path) return "";
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   if (!url) return path;
   const base = url.replace(/\/$/, "");
-  const bucket = BUCKET.replace(/\/$/, "");
+  const b = (bucket ?? BUCKET).replace(/\/$/, "");
   const cleanPath = path.replace(/^\//, "");
-  return `${base}/storage/v1/object/public/${bucket}/${cleanPath}`;
+  return `${base}/storage/v1/object/public/${b}/${cleanPath}`;
+}
+
+/** URL pública para assets en bucket projects: <slug>/cover.*, <slug>/gallery/* */
+export function getProjectsImageUrl(path: string): string {
+  return getPublicImageUrl(path, PROJECTS_BUCKET);
+}
+
+/** URL para cover/gallery: usa projects bucket si path es <slug>/... sino public bucket (legacy). */
+export function getProjectAssetUrl(path: string): string {
+  if (!path) return "";
+  if (path.startsWith("covers/") || path.startsWith("gallery/") || path.startsWith("videos/")) {
+    return getPublicImageUrl(path, BUCKET);
+  }
+  return getProjectsImageUrl(path);
 }
 
 /** Tipo mínimo para crear signed URL desde server. */

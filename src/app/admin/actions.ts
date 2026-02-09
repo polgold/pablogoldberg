@@ -1,37 +1,28 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
+import { createAdminServerClient, getAuthConfigError, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { SUPABASE_STORAGE_BUCKET } from "@/lib/supabase/storage";
+import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
+
+export type GalleryItem = { path: string; url: string; order: number };
 
 type ProjectRow = {
   id: string;
   slug: string;
-  locale: string;
   title: string;
-  summary: string | null;
   description: string | null;
-  credits: string | null;
-  year: number | null;
-  order: number | null;
-  client: string | null;
-  piece_type: string | null;
-  duration: string | null;
   video_url: string | null;
-  external_link: string | null;
-  cover_image_path: string | null;
-  gallery_image_paths: string[] | null;
-  gallery_video_paths: string[] | null;
-  tags: string[] | null;
-  is_featured: boolean;
-  published: boolean;
-  created_at: string;
+  cover_image: string | null;
+  gallery: GalleryItem[];
 };
 
 async function ensureAdmin() {
   const supabase = await createAdminServerClient();
-  if (!supabase) throw new Error("Auth no configurado");
+  if (!supabase) {
+    const msg = getAuthConfigError();
+    throw new Error(msg ?? "Auth no configurado");
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -59,7 +50,7 @@ export async function listProjects(): Promise<ProjectRow[]> {
     console.error("[admin] listProjects:", error.message);
     return [];
   }
-  return (data ?? []) as ProjectRow[];
+  return (data ?? []).map(normalizeProjectRow) as ProjectRow[];
 }
 
 export async function getProject(id: string): Promise<ProjectRow | null> {
@@ -68,22 +59,51 @@ export async function getProject(id: string): Promise<ProjectRow | null> {
   await ensureAdmin();
   const { data, error } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;
-  return data as ProjectRow;
+  return normalizeProjectRow(data) as ProjectRow;
 }
 
-const IMAGE_EXTS = new Set(["jpg", "jpeg", "png", "gif", "webp", "avif"]);
-const VIDEO_EXTS = new Set(["mp4", "webm", "mov", "avi", "mkv"]);
+function normalizeProjectRow(row: Record<string, unknown>): Record<string, unknown> {
+  const coverImage = (row.cover_image ?? row.cover_image_path ?? null) as string | null;
+  let gallery: GalleryItem[] = [];
+  const g = row.gallery;
+  if (Array.isArray(g) && g.length > 0) {
+    gallery = g.map((it: { path?: string; url?: string; order?: number }, i: number) => ({
+      path: it.path ?? "",
+      url: it.url ?? getProjectAssetUrl(it.path ?? ""),
+      order: it.order ?? i,
+    }));
+  } else {
+    const paths = (row.gallery_image_paths ?? []) as string[];
+    gallery = paths
+      .filter((p): p is string => Boolean(p))
+      .map((path, order) => ({ path, url: getProjectAssetUrl(path), order }));
+  }
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    description: row.description ?? null,
+    video_url: row.video_url ?? null,
+    cover_image: coverImage,
+    gallery,
+  };
+}
 
 function getExt(filename: string): string {
   const i = filename.lastIndexOf(".");
   return i >= 0 ? filename.slice(i + 1).toLowerCase() : "";
 }
 
-function isVideo(filename: string): boolean {
-  return VIDEO_EXTS.has(getExt(filename));
+function slugFromTitle(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-/** Genera nombre único para evitar colisiones en Storage. */
 function uniqueStorageName(filename: string): string {
   const ext = getExt(filename) || "";
   const base = filename.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9.-]/g, "_") || "file";
@@ -96,49 +116,68 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "Supabase no configurado" };
 
-  const slug = String(formData.get("slug") ?? "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const locale = String(formData.get("locale") ?? "es").trim() || "es";
   const title = String(formData.get("title") ?? "").trim();
-  if (!title || !slug) return { error: "Título y slug requeridos" };
+  if (!title) return { error: "Título requerido" };
 
-  const { data, error } = await supabase
+  let slug = String(formData.get("slug") ?? "").trim();
+  if (!slug) slug = slugFromTitle(title);
+  slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-|-$/g, "") || "proyecto";
+
+  const description = String(formData.get("description") ?? "").trim() || null;
+  const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
+
+  const { data: inserted, error: insertErr } = await supabase
     .from("projects")
     .insert({
       slug,
-      locale,
+      locale: "es",
       title,
-      summary: String(formData.get("summary") ?? "").trim() || null,
-      description: String(formData.get("description") ?? "").trim() || null,
-      credits: String(formData.get("credits") ?? "").trim() || null,
-      year: formData.get("year") ? parseInt(String(formData.get("year")), 10) : null,
-      order: formData.get("order") ? parseInt(String(formData.get("order")), 10) : null,
-      client: String(formData.get("client") ?? "").trim() || null,
-      piece_type: String(formData.get("piece_type") ?? "").trim() || null,
-      duration: String(formData.get("duration") ?? "").trim() || null,
-      video_url: String(formData.get("video_url") ?? "").trim() || null,
-      external_link: String(formData.get("external_link") ?? "").trim() || null,
-      tags: parseTags(formData.get("tags")),
-      is_featured: formData.get("is_featured") === "on",
-      published: false,
-      cover_image_path: null,
-      gallery_image_paths: [],
-      gallery_video_paths: [],
+      description,
+      video_url: videoUrl,
+      cover_image: null,
+      gallery: [],
     })
     .select("id")
     .single();
 
-  if (error) {
-    console.error("[admin] createProject:", error.message);
-    return { error: error.message };
+  if (insertErr) {
+    console.error("[admin] createProject:", insertErr.message);
+    return { error: insertErr.message };
   }
-  return { id: data?.id };
-}
+  const projectId = inserted?.id;
+  if (!projectId) return { error: "No se obtuvo ID del proyecto" };
 
-function parseTags(v: FormDataEntryValue | null): string[] {
-  if (v == null) return [];
-  const s = String(v).trim();
-  if (!s) return [];
-  return s.split(/[\s,]+/).map((t) => t.trim()).filter(Boolean);
+  const coverFile = formData.get("cover_file") as File | null;
+  if (coverFile?.size) {
+    const ext = getExt(coverFile.name) || "jpg";
+    const path = `${slug}/cover.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from(PROJECTS_BUCKET)
+      .upload(path, coverFile, { upsert: true });
+    if (!uploadErr) {
+      await supabase.from("projects").update({ cover_image: path }).eq("id", projectId);
+    }
+  }
+
+  const galleryFiles = formData.getAll("gallery_files") as File[];
+  const gallery: GalleryItem[] = [];
+  let order = 0;
+  for (const file of galleryFiles) {
+    if (!file?.size) continue;
+    const safeName = uniqueStorageName(file.name);
+    const path = `${slug}/gallery/${safeName}`;
+    const { error: uploadErr } = await supabase.storage
+      .from(PROJECTS_BUCKET)
+      .upload(path, file, { upsert: true });
+    if (!uploadErr) {
+      gallery.push({ path, url: getProjectsImageUrl(path), order: order++ });
+    }
+  }
+  if (gallery.length > 0) {
+    await supabase.from("projects").update({ gallery }).eq("id", projectId);
+  }
+
+  return { id: projectId };
 }
 
 export async function updateProject(
@@ -149,30 +188,33 @@ export async function updateProject(
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "Supabase no configurado" };
 
-  const slug = String(formData.get("slug") ?? "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const locale = String(formData.get("locale") ?? "es").trim() || "es";
   const title = String(formData.get("title") ?? "").trim();
-  if (!title || !slug) return { error: "Título y slug requeridos" };
+  if (!title) return { error: "Título requerido" };
+
+  let slug = String(formData.get("slug") ?? "").trim();
+  if (!slug) slug = slugFromTitle(title);
+  slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-|-$/g, "") || "proyecto";
+
+  const description = String(formData.get("description") ?? "").trim() || null;
+  const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
+  const coverImage = String(formData.get("cover_image") ?? "").trim() || null;
+  const galleryJson = formData.get("gallery_json");
+  let gallery: GalleryItem[] = [];
+  if (galleryJson && typeof galleryJson === "string") {
+    try {
+      gallery = JSON.parse(galleryJson) as GalleryItem[];
+    } catch {}
+  }
 
   const { error } = await supabase
     .from("projects")
     .update({
       slug,
-      locale,
       title,
-      summary: String(formData.get("summary") ?? "").trim() || null,
-      description: String(formData.get("description") ?? "").trim() || null,
-      credits: String(formData.get("credits") ?? "").trim() || null,
-      year: formData.get("year") ? parseInt(String(formData.get("year")), 10) : null,
-      order: formData.get("order") ? parseInt(String(formData.get("order")), 10) : null,
-      client: String(formData.get("client") ?? "").trim() || null,
-      piece_type: String(formData.get("piece_type") ?? "").trim() || null,
-      duration: String(formData.get("duration") ?? "").trim() || null,
-      video_url: String(formData.get("video_url") ?? "").trim() || null,
-      external_link: String(formData.get("external_link") ?? "").trim() || null,
-      tags: parseTags(formData.get("tags")),
-      is_featured: formData.get("is_featured") === "on",
-      published: formData.get("published") === "on",
+      description,
+      video_url: videoUrl,
+      cover_image: coverImage || null,
+      gallery,
     })
     .eq("id", id);
 
@@ -183,16 +225,11 @@ export async function updateProject(
   return {};
 }
 
-export async function publishProject(id: string): Promise<{ error?: string }> {
-  await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
-  const { error } = await supabase.from("projects").update({ published: true }).eq("id", id);
-  if (error) return { error: error.message };
-  return {};
-}
-
-export async function uploadCover(projectId: string, slug: string, formData: FormData): Promise<{ path?: string; error?: string }> {
+export async function uploadProjectCover(
+  projectId: string,
+  slug: string,
+  formData: FormData
+): Promise<{ path?: string; error?: string }> {
   await ensureAdmin();
   const file = formData.get("file") as File | null;
   if (!file?.size) return { error: "No se envió archivo" };
@@ -201,73 +238,86 @@ export async function uploadCover(projectId: string, slug: string, formData: For
   if (!supabase) return { error: "Supabase no configurado" };
 
   const ext = getExt(file.name) || "jpg";
-  const path = `covers/${slug}/cover.${ext}`;
-  const { error } = await supabase.storage.from(SUPABASE_STORAGE_BUCKET).upload(path, file, { upsert: true });
+  const path = `${slug}/cover.${ext}`;
+  const { error } = await supabase.storage
+    .from(PROJECTS_BUCKET)
+    .upload(path, file, { upsert: true });
   if (error) return { error: error.message };
 
-  const { error: updateErr } = await supabase.from("projects").update({ cover_image_path: path }).eq("id", projectId);
-  if (updateErr) return { error: updateErr.message };
+  await supabase.from("projects").update({ cover_image: path }).eq("id", projectId);
   return { path };
 }
 
-/** Sube un solo archivo a la galería; usado para progreso incremental desde el cliente. */
-export async function uploadGalleryFile(
+export async function uploadProjectGalleryFile(
   projectId: string,
   slug: string,
   file: File
-): Promise<{ imagePaths?: string[]; videoPaths?: string[]; error?: string }> {
-  const formData = new FormData();
-  formData.append("files", file);
-  return uploadGallery(projectId, slug, formData);
-}
-
-export async function uploadGallery(
-  projectId: string,
-  slug: string,
-  formData: FormData
-): Promise<{ imagePaths?: string[]; videoPaths?: string[]; error?: string }> {
+): Promise<{ gallery?: GalleryItem[]; error?: string }> {
   await ensureAdmin();
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "Supabase no configurado" };
 
-  const files = formData.getAll("files") as File[];
-  const imagePaths: string[] = [];
-  const videoPaths: string[] = [];
-
-  for (const file of files) {
-    if (!file?.size) continue;
-    const safeName = uniqueStorageName(file.name);
-    const path = isVideo(file.name)
-      ? `videos/${slug}/${safeName}`
-      : `gallery/${slug}/${safeName}`;
-    const { error } = await supabase.storage.from(SUPABASE_STORAGE_BUCKET).upload(path, file, { upsert: true });
-    if (error) return { error: error.message };
-    if (isVideo(file.name)) videoPaths.push(path);
-    else imagePaths.push(path);
-  }
-
   const project = await getProject(projectId);
-  const prevImages = project?.gallery_image_paths ?? [];
-  const prevVideos = project?.gallery_video_paths ?? [];
-  const newImages = [...prevImages, ...imagePaths].sort();
-  const newVideos = [...prevVideos, ...videoPaths].sort();
+  const prevGallery = (project?.gallery ?? []) as GalleryItem[];
+  const order = prevGallery.length;
+  const safeName = uniqueStorageName(file.name);
+  const path = `${slug}/gallery/${safeName}`;
+
+  const { error } = await supabase.storage
+    .from(PROJECTS_BUCKET)
+    .upload(path, file, { upsert: true });
+  if (error) return { error: error.message };
+
+  const item: GalleryItem = { path, url: getProjectsImageUrl(path), order };
+  const gallery = [...prevGallery, item];
 
   const { error: updateErr } = await supabase
     .from("projects")
-    .update({ gallery_image_paths: newImages, gallery_video_paths: newVideos })
+    .update({ gallery })
     .eq("id", projectId);
   if (updateErr) return { error: updateErr.message };
-  return { imagePaths: newImages, videoPaths: newVideos };
+  return { gallery };
 }
 
-/**
- * Bulk: múltiples archivos a gallery/{slug}/ y videos/{slug}/.
- * No toca cover (usar CoverUpload). Actualiza gallery_image_paths y gallery_video_paths.
- */
-export async function bulkUpload(
+export async function updateProjectGallery(
   projectId: string,
-  slug: string,
-  formData: FormData
-): Promise<{ imagePaths?: string[]; videoPaths?: string[]; error?: string }> {
-  return uploadGallery(projectId, slug, formData);
+  gallery: GalleryItem[]
+): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "Supabase no configurado" };
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ gallery })
+    .eq("id", projectId);
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function setProjectCover(projectId: string, path: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "Supabase no configurado" };
+  const { error } = await supabase.from("projects").update({ cover_image: path }).eq("id", projectId);
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function listProjectStorageFiles(slug: string): Promise<{ path: string; url: string }[]> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return [];
+
+  const { data: files, error } = await supabase.storage
+    .from(PROJECTS_BUCKET)
+    .list(`${slug}/gallery`, { limit: 200 });
+  if (error || !files?.length) return [];
+
+  return files
+    .filter((f) => f.name && !f.name.startsWith(".") && f.id != null)
+    .map((f) => {
+      const path = `${slug}/gallery/${f.name}`;
+      return { path, url: getProjectsImageUrl(path) };
+    });
 }

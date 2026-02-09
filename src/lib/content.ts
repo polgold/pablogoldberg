@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "./supabase/server";
-import { getPublicImageUrl } from "./supabase/storage";
+import { getProjectAssetUrl } from "./supabase/storage";
 import type { PageItem, ProjectItem } from "@/types/content";
 
 export type Locale = "es" | "en";
@@ -32,30 +32,44 @@ function rowToPageItem(row: {
   };
 }
 
-function rowToProjectItem(row: {
+type ProjectRow = {
   slug: string;
   title: string;
-  description: string | null;
-  summary: string | null;
-  credits: string | null;
-  year: number | null;
-  order: number | null;
-  client: string | null;
-  piece_type: string | null;
-  duration: string | null;
-  video_url: string | null;
-  external_link: string | null;
-  cover_image_path: string | null;
-  gallery_image_paths: string[] | null;
-}): ProjectItem {
-  const content = String(row.description ?? "");
-  const summaryRaw = String(row.summary ?? "");
-  const excerpt = summaryRaw.trim() ? summaryRaw : content.slice(0, 300);
-  const galleryPaths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
-  const galleryImages = galleryPaths
-    .filter((p): p is string => Boolean(p))
-    .map((p) => getPublicImageUrl(p));
-  const coverUrl = row.cover_image_path ? getPublicImageUrl(row.cover_image_path) : undefined;
+  description?: string | null;
+  summary?: string | null;
+  credits?: string | null;
+  year?: number | null;
+  order?: number | null;
+  client?: string | null;
+  piece_type?: string | null;
+  duration?: string | null;
+  video_url?: string | null;
+  external_link?: string | null;
+  cover_image?: string | null;
+  cover_image_path?: string | null;
+  gallery?: Array<{ path: string; url?: string; order?: number }>;
+  gallery_image_paths?: string[] | null;
+};
+
+function rowToProjectItem(row: ProjectRow): ProjectItem {
+  const content = String(row.description ?? "").trim();
+  const summaryRaw = String(row.summary ?? "").trim();
+  const excerpt = summaryRaw || content.slice(0, 300);
+
+  let galleryImages: string[] = [];
+  const g = row.gallery;
+  if (Array.isArray(g) && g.length > 0) {
+    galleryImages = g
+      .filter((it) => it.path)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((it) => it.url ?? getProjectAssetUrl(it.path));
+  } else {
+    const paths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
+    galleryImages = paths.filter((p): p is string => Boolean(p)).map((p) => getProjectAssetUrl(p));
+  }
+
+  const coverPath = row.cover_image ?? row.cover_image_path ?? null;
+  const coverUrl = coverPath ? getProjectAssetUrl(coverPath) : undefined;
 
   return {
     slug: String(row.slug),
@@ -69,7 +83,7 @@ function rowToProjectItem(row: {
     client: row.client != null ? row.client : undefined,
     pieceType: row.piece_type ?? undefined,
     duration: row.duration ?? undefined,
-    summary: summaryRaw.trim() || undefined,
+    summary: summaryRaw || undefined,
     credits: row.credits?.trim() ? String(row.credits) : undefined,
     externalLink: row.external_link ?? undefined,
     order: row.order ?? undefined,
