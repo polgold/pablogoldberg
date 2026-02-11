@@ -7,6 +7,7 @@ import { COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { HeroReel } from "@/components/HeroReel";
 import { ScrollIndicator } from "@/components/ScrollIndicator";
+import { ScrollReveal } from "@/components/ScrollReveal";
 
 const HOME_PROJECTS_MIN = 8;
 const HOME_PROJECTS_MAX = 16;
@@ -68,17 +69,19 @@ export default async function HomePage({
             fallbackImageSrc={heroPoster}
           />
           <div className="relative z-10 flex h-full flex-col items-center justify-center px-6">
-            <div className="max-w-4xl space-y-5 text-center">
-              <h1 className="text-5xl font-extralight tracking-[0.2em] text-white md:text-7xl lg:text-8xl">
-                PABLO GOLDBERG
-              </h1>
-              <p className="text-base font-light tracking-[0.12em] text-white/90 md:text-xl">
-                {t.role}
-              </p>
-              <p className="mx-auto max-w-2xl text-sm font-light leading-relaxed text-white/80 md:text-lg">
-                {t.tagline} {t.more}
-              </p>
-            </div>
+            <ScrollReveal delayMs={80}>
+              <div className="max-w-4xl space-y-5 text-center">
+                <h1 className="text-5xl font-extralight tracking-[0.2em] text-white md:text-7xl lg:text-8xl">
+                  PABLO GOLDBERG
+                </h1>
+                <p className="text-base font-light tracking-[0.12em] text-white/90 md:text-xl">
+                  {t.role}
+                </p>
+                <p className="mx-auto max-w-2xl text-sm font-light leading-relaxed text-white/80 md:text-lg">
+                  {t.tagline} {t.more}
+                </p>
+              </div>
+            </ScrollReveal>
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
               <ScrollIndicator />
             </div>
@@ -86,38 +89,40 @@ export default async function HomePage({
         </section>
       )}
 
-      <section className="mx-auto max-w-[1600px] px-0 sm:px-4 md:px-6">
-        <ul className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
-          {projects.map((project) => (
-            <li key={project.slug} className="group bg-black">
-              <Link
-                href={`/${locale}/work/${project.slug}`}
-                className="relative block aspect-[4/3] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset"
-              >
-                {project.featuredImage ? (
-                  <Image
-                    src={project.featuredImage}
-                    alt=""
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">
-                    {project.title}
-                  </div>
-                )}
-                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/85 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  <span className="text-sm font-medium text-white">{project.title}</span>
-                  {project.year && (
-                    <span className="ml-2 text-xs text-white/80">{project.year}</span>
+      <ScrollReveal className="mx-auto max-w-[1600px] px-0 sm:px-4 md:px-6" delayMs={100}>
+        <section>
+          <ul className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
+            {projects.map((project) => (
+              <li key={project.slug} className="group bg-black">
+                <Link
+                  href={`/${locale}/work/${project.slug}`}
+                  className="relative block aspect-[4/3] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset"
+                >
+                  {project.featuredImage ? (
+                    <Image
+                      src={project.featuredImage}
+                      alt=""
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">
+                      {project.title}
+                    </div>
                   )}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+                  <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/85 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    <span className="text-sm font-medium text-white">{project.title}</span>
+                    {project.year && (
+                      <span className="ml-2 text-xs text-white/80">{project.year}</span>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </ScrollReveal>
     </div>
   );
 }

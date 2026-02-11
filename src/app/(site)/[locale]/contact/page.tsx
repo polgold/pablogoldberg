@@ -1,6 +1,7 @@
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
+import { ScrollReveal } from "@/components/ScrollReveal";
 import { ContactForm } from "./ContactForm";
 
 export default async function ContactPage({
@@ -15,17 +16,19 @@ export default async function ContactPage({
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[480px] px-4 pb-24 pt-10 sm:px-6 md:px-8">
-        <h1 className="text-2xl font-semibold text-white md:text-3xl">
-          {t.defaultTitle}
-        </h1>
-        <p className="mt-2 text-sm text-white/60">
-          {loc === "es"
-            ? "Formulario de contacto y booking."
-            : "Contact and booking form."}
-        </p>
-        <div className="mt-10">
+        <ScrollReveal>
+          <h1 className="text-2xl font-semibold text-white md:text-3xl">
+            {t.defaultTitle}
+          </h1>
+          <p className="mt-2 text-sm text-white/60">
+            {loc === "es"
+              ? "Formulario de contacto y booking."
+              : "Contact and booking form."}
+          </p>
+        </ScrollReveal>
+        <ScrollReveal className="mt-10" delayMs={100}>
           <ContactForm />
-        </div>
+        </ScrollReveal>
       </div>
     </div>
   );
