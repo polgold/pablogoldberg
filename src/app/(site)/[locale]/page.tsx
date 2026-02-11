@@ -70,17 +70,6 @@ export default async function HomePage({
       )}
 
       <section className="mx-auto max-w-[1600px] px-0 sm:px-4 md:px-6">
-        <div className="flex items-end justify-between border-b border-white/5 px-4 py-4 sm:px-6">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-white/60">
-            {t.workTitle}
-          </h2>
-          <Link
-            href={`/${locale}/work`}
-            className="text-xs text-white/50 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
-          >
-            {locale === "es" ? "Ver todo" : "View all"}
-          </Link>
-        </div>
         <ul className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
           {projects.map((project) => (
             <li key={project.slug} className="group bg-black">
