@@ -24,7 +24,7 @@ export function WorkCard({ item, href, external, onVimeoClick, badge, actions }:
           src={item.featuredImage}
           alt=""
           fill
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+          className="object-cover transition-all duration-700 group-hover:scale-110"
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
       ) : (
@@ -33,25 +33,26 @@ export function WorkCard({ item, href, external, onVimeoClick, badge, actions }:
         </div>
       )}
       {badge}
-      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/20 to-transparent p-5 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
         {actions && <div className="mb-2 flex w-full justify-end">{actions}</div>}
-        <div className="flex w-full items-end justify-between gap-2">
-          <span className="text-sm font-medium text-white truncate">{item.title}</span>
-          {item.year && <span className="text-xs text-white/80 shrink-0">{item.year}</span>}
+        <div className="flex w-full items-end justify-between gap-3">
+          <span className="truncate text-lg font-light tracking-wide text-white md:text-xl">{item.title}</span>
+          {item.year && <span className="shrink-0 text-xs font-light tracking-wide text-white/80">{item.year}</span>}
         </div>
       </div>
+      <div className="absolute inset-0 border-2 border-white/0 transition-colors duration-500 group-hover:border-white/10" />
     </>
   );
 
   const className =
-    "relative block aspect-[4/3] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset";
+    "relative block aspect-[4/3] overflow-hidden rounded-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset";
 
   if (item.vimeoId && onVimeoClick) {
     return (
       <button
         type="button"
         onClick={() => onVimeoClick(item.vimeoId!)}
-        className={`group w-full ${className}`}
+        className={`group w-full text-left ${className}`}
       >
         {content}
       </button>
