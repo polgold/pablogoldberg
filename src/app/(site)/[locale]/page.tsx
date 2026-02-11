@@ -6,6 +6,7 @@ import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { HeroReel } from "@/components/HeroReel";
+import { ScrollIndicator } from "@/components/ScrollIndicator";
 
 const HOME_PROJECTS_MIN = 8;
 const HOME_PROJECTS_MAX = 16;
@@ -66,6 +67,22 @@ export default async function HomePage({
             title={t.reel}
             fallbackImageSrc={heroPoster}
           />
+          <div className="relative z-10 flex h-full flex-col items-center justify-center px-6">
+            <div className="max-w-4xl space-y-5 text-center">
+              <h1 className="text-5xl font-extralight tracking-[0.2em] text-white md:text-7xl lg:text-8xl">
+                PABLO GOLDBERG
+              </h1>
+              <p className="text-base font-light tracking-[0.12em] text-white/90 md:text-xl">
+                {t.role}
+              </p>
+              <p className="mx-auto max-w-2xl text-sm font-light leading-relaxed text-white/80 md:text-lg">
+                {t.tagline} {t.more}
+              </p>
+            </div>
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
+              <ScrollIndicator />
+            </div>
+          </div>
         </section>
       )}
 

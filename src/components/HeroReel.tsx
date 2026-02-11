@@ -53,8 +53,8 @@ export function HeroReel({
         </div>
       )}
 
-      {/* Layer 3: dark overlay */}
-      <div className="absolute inset-0 bg-black/40" aria-hidden />
+      {/* Layer 3: cinematic gradient overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/65" aria-hidden />
 
       {/* Layer 4: subtle film grain */}
       <FilmGrain />

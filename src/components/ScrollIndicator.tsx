@@ -1,13 +1,22 @@
 "use client";
 
 export function ScrollIndicator() {
+  const handleScroll = () => {
+    window.scrollTo({
+      top: window.innerHeight,
+      behavior: "smooth",
+    });
+  };
+
   return (
-    <div
-      className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/50"
-      aria-hidden
+    <button
+      type="button"
+      onClick={handleScroll}
+      className="flex cursor-pointer flex-col items-center gap-2 text-white/80 transition-colors hover:text-white"
+      aria-label="Scroll to content"
     >
-      <span className="text-[10px] uppercase tracking-wider">Scroll</span>
-      <span className="block h-8 w-px bg-gradient-to-b from-white/50 to-transparent" />
-    </div>
+      <span className="text-[11px] uppercase tracking-[0.18em]">Scroll</span>
+      <span className="inline-flex h-6 w-6 items-center justify-center animate-bounce text-xl leading-none">↓</span>
+    </button>
   );
 }
