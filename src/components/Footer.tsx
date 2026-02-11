@@ -93,17 +93,17 @@ export function Footer() {
   const locale = useMemo(() => getLocaleFromPathname(pathname), [pathname]);
 
   return (
-    <footer className="border-t border-white/5 bg-black">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-10 px-5 py-12 md:flex-row md:items-end md:justify-between md:px-8">
-        <div className="flex flex-col gap-4">
-          <p className="text-[11px] uppercase tracking-[0.25em] text-white/40">
+    <footer className="border-t border-white/10 bg-black">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-7 px-5 py-10 md:px-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3">
+          <p className="text-[11px] font-light uppercase tracking-[0.22em] text-white/45">
             © {new Date().getFullYear()} Pablo Goldberg
           </p>
           <a
             href={SUNFACTORY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center text-white/50 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+            className="inline-flex items-center text-white/55 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
             aria-label="Sun Factory — productora (nueva pestaña)"
           >
             <Image
@@ -111,27 +111,29 @@ export function Footer() {
               alt="Sun Factory"
               width={140}
               height={28}
-              className="h-6 w-auto object-contain"
+              className="h-5 w-auto object-contain opacity-85 transition-opacity hover:opacity-100"
             />
           </a>
         </div>
-        <nav className="flex flex-wrap items-center gap-6" aria-label="Redes sociales">
+
+        <nav className="flex flex-wrap items-center gap-4 sm:gap-5" aria-label="Redes sociales">
           {SOCIAL_LINKS.map(({ href, label, Icon }) => (
             <a
               key={label}
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center text-white/50 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black rounded p-1"
+              className="flex items-center justify-center rounded p-1 text-white/55 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
               aria-label={label}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-[18px] w-[18px]" />
             </a>
           ))}
         </nav>
+
         <Link
           href={`/${locale}/contact`}
-          className="text-[11px] uppercase tracking-[0.2em] text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+          className="text-[11px] font-light uppercase tracking-[0.2em] text-white/55 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
         >
           {locale === "es" ? "Contacto" : "Contact"}
         </Link>
