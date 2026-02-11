@@ -39,13 +39,13 @@ export function HeroReel({
         </div>
       )}
 
-      {/* Layer 2: Vimeo reel (covers still when playing) */}
+      {/* Layer 2: Vimeo reel — fit inside viewport, no top/bottom cropping (contain) */}
       {hasVideo && (
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 flex items-center justify-center">
           <iframe
             title={title}
             src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1&loop=1&muted=1&background=1&quality=1080p`}
-            className="absolute left-1/2 top-1/2 h-[56.25vw] min-h-[100vh] w-[177.78vh] min-w-[100vw] -translate-x-1/2 -translate-y-1/2 object-cover"
+            className="h-[min(100vh,56.25vw)] w-[min(100vw,177.78vh)] max-h-full max-w-full object-contain"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
             loading="lazy"

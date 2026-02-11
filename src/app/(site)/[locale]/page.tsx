@@ -60,7 +60,7 @@ export default async function HomePage({
   return (
     <div className="min-h-screen bg-black">
       {hasHero && (
-        <section className="relative h-[70vh] min-h-[400px] w-full border-b border-white/5">
+        <section className="relative h-screen w-full border-b border-white/5">
           <HeroReel
             vimeoId={heroVimeoId}
             title={t.reel}
@@ -68,15 +68,6 @@ export default async function HomePage({
           />
         </section>
       )}
-
-      <section className="border-b border-white/5 px-4 py-8 sm:px-6 md:px-8">
-        <div className="mx-auto max-w-[1600px]">
-          <h1 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
-            Pablo Goldberg
-          </h1>
-          <p className="mt-1 text-sm text-white/70">{t.role}</p>
-        </div>
-      </section>
 
       <section className="mx-auto max-w-[1600px] px-0 sm:px-4 md:px-6">
         <div className="flex items-end justify-between border-b border-white/5 px-4 py-4 sm:px-6">
