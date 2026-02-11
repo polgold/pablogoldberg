@@ -44,6 +44,31 @@ Si ves "No se pudo guardar. Intenta más tarde." al enviar el formulario:
 
 ---
 
+Formulario de contacto — "Los mails no llegan"
+==============================================
+
+Si el mensaje se guarda en la DB pero no recibís el email en hola@pablogoldberg.com:
+
+1. Configurá SMTP de Hostinger en .env y en producción (Netlify/Vercel):
+   - SMTP_HOST=smtp.hostinger.com
+   - SMTP_PORT=465
+   - SMTP_SECURE=true
+   - SMTP_USER=hola@pablogoldberg.com
+   - SMTP_PASS=tu_password_smtp
+   - SMTP_FROM=Contacto Web <hola@pablogoldberg.com>
+   - SMTP_TO=hola@pablogoldberg.com
+
+2. Si usás puerto 587:
+   - SMTP_PORT=587
+   - SMTP_SECURE=false
+
+3. Revisá logs de deploy:
+   - Si hay error, vas a ver "[api/contact] SMTP error: ..."
+   - Si faltan variables, vas a ver:
+     "[api/contact] SMTP not configured or failed..."
+
+---
+
 Videos Vimeo ocultos — tabla o RLS
 ====================================
 

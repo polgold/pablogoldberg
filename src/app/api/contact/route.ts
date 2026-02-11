@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const TO_EMAIL = "hola@pablogoldberg.com";
+const DEFAULT_TO_EMAIL = "hola@pablogoldberg.com";
 
 type Body = {
   name?: string;
@@ -10,6 +10,47 @@ type Body = {
   message?: string;
   website?: string; // honeypot
 };
+
+function buildEmailHtml(name: string, contact: string, message: string, timestamp: string): string {
+  return [
+    "<p><strong>Name:</strong> " + escapeHtml(name) + "</p>",
+    "<p><strong>Contact:</strong> " + escapeHtml(contact) + "</p>",
+    "<p><strong>Message:</strong></p><p>" + escapeHtml(message).replace(/\n/g, "<br>") + "</p>",
+    "<p style='color:#888;font-size:12px;'>" + escapeHtml(timestamp) + "</p>",
+  ].join("");
+}
+
+async function sendViaSmtp(name: string, contact: string, message: string): Promise<boolean> {
+  const host = process.env.SMTP_HOST?.trim();
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+  const from = process.env.SMTP_FROM?.trim() || user;
+  const to = process.env.SMTP_TO?.trim() || DEFAULT_TO_EMAIL;
+  const secureEnv = process.env.SMTP_SECURE?.trim().toLowerCase();
+  const secure = secureEnv ? secureEnv === "true" : port === 465;
+  if (!host || !user || !pass) return false;
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number.isNaN(port) ? 587 : port,
+    secure,
+    auth: { user, pass },
+  });
+  const timestamp = new Date().toISOString();
+  const html = buildEmailHtml(name, contact, message, timestamp);
+  try {
+    await transporter.sendMail({
+      from: from || user,
+      to,
+      subject: "New contact from pablogoldberg.com",
+      html,
+    });
+    return true;
+  } catch (err) {
+    console.error("[api/contact] SMTP error:", err);
+    return false;
+  }
+}
 
 export async function POST(request: Request) {
   let body: Body;
@@ -55,41 +96,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const host = process.env.SMTP_HOST?.trim();
-  const port = Number(process.env.SMTP_PORT) || 587;
-  const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASS?.trim();
-  const from = process.env.SMTP_FROM?.trim() || user;
-
-  if (host && user && pass) {
-    const transporter = nodemailer.createTransport({
-      host,
-      port: Number.isNaN(port) ? 587 : port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
-
-    const timestamp = new Date().toISOString();
-    const html = [
-      "<p><strong>Name:</strong> " + escapeHtml(name) + "</p>",
-      "<p><strong>Contact:</strong> " + escapeHtml(contact) + "</p>",
-      "<p><strong>Message:</strong></p><p>" + escapeHtml(message).replace(/\n/g, "<br>") + "</p>",
-      "<p style='color:#888;font-size:12px;'>" + escapeHtml(timestamp) + "</p>",
-    ].join("");
-
-    try {
-      await transporter.sendMail({
-        from: from || user,
-        to: TO_EMAIL,
-        subject: "New contact from pablogoldberg.com",
-        html,
-      });
-    } catch (err) {
-      console.error("[api/contact] SMTP error:", err);
-      // Message already saved to DB; still return success
-    }
-  } else {
-    console.warn("[api/contact] SMTP not configured (SMTP_HOST, SMTP_USER, SMTP_PASS). Message saved to DB only.");
+  const sent = await sendViaSmtp(name, contact, message);
+  if (!sent) {
+    console.warn(
+      "[api/contact] SMTP not configured or failed. Set SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS/SMTP_FROM. Message saved to DB only."
+    );
   }
 
   return NextResponse.json({ ok: true });
