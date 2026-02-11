@@ -90,9 +90,6 @@
   a {
     @apply transition-colors;
   }
-  a:hover {
-    @apply text-foreground/80;
-  }
   a:focus-visible,
   button:focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
@@ -104,21 +101,41 @@
 }
 
 @layer components {
+  .about-rich,
+  .about-rich p,
+  .about-rich li,
+  .about-rich strong,
+  .about-rich em,
+  .about-rich blockquote {
+    color: rgb(255 255 255 / 0.88) !important;
+  }
+  .about-rich h2,
+  .about-rich h3,
+  .about-rich h4 {
+    color: #fff !important;
+  }
+  .about-rich a {
+    color: rgb(255 255 255 / 0.95) !important;
+  }
+  .about-rich a:hover {
+    color: #fff !important;
+  }
+
   .prose-safe a {
-    @apply text-foreground/90 transition-colors hover:text-foreground;
+    @apply text-white/90 transition-colors hover:text-white;
   }
   .prose-safe h2 {
-    @apply mt-10 mb-4 text-xl font-semibold text-foreground;
+    @apply mt-10 mb-4 text-xl font-semibold text-white;
   }
   .prose-safe h3,
   .prose-safe h4 {
-    @apply mt-8 mb-3 text-lg font-medium text-foreground;
+    @apply mt-8 mb-3 text-lg font-medium text-white;
   }
   .prose-safe ul,
   .prose-safe ol {
     @apply my-4 pl-6;
   }
   .prose-safe blockquote {
-    @apply border-l-2 border-foreground/30 pl-4 italic text-foreground/80;
+    @apply border-l-2 border-white/30 pl-4 italic text-white/80;
   }
 }

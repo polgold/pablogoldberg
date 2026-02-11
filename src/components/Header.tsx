@@ -61,40 +61,30 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-[1600px] items-center justify-between px-5 md:px-8">
         <Link
           href={`/${locale}`}
-          className={`text-base tracking-[0.18em] transition-colors md:text-lg ${
-            isTransparent ? "text-white hover:text-white/80" : "text-foreground hover:text-foreground/80"
-          } focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-black`}
+          className="text-base tracking-[0.18em] !text-white transition-colors hover:!text-white/80 focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black md:text-lg"
         >
           PABLO GOLDBERG
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex" aria-label="Principal">
+        <nav className="hidden items-center gap-8 text-white md:flex" aria-label="Principal">
           {nav.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
-              className={`relative pb-1 text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-black ${
-                isActive(href)
-                  ? isTransparent
-                    ? "text-white"
-                    : "text-foreground"
-                  : isTransparent
-                    ? "text-white/75 hover:text-white"
-                    : "text-foreground/75 hover:text-foreground"
+              className={`relative pb-1 text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black ${
+                isActive(href) ? "!text-white" : "!text-white/80 hover:!text-white"
               }`}
             >
               {label}
               {isActive(href) && (
-                <span className={`absolute -bottom-0 left-0 h-px w-full ${isTransparent ? "bg-white" : "bg-foreground"}`} />
+                <span className="absolute -bottom-0 left-0 h-px w-full bg-white" />
               )}
             </Link>
           ))}
-          <span className={isTransparent ? "text-white/35" : "text-foreground/35"}>|</span>
+          <span className="text-white/35">|</span>
           <Link
             href={switchHref}
-            className={`text-xs tracking-[0.18em] ${
-              isTransparent ? "text-white/70 hover:text-white" : "text-foreground/70 hover:text-foreground"
-            } focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-black`}
+            className="text-xs tracking-[0.18em] !text-white/75 hover:!text-white focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black"
             aria-label={locale === "es" ? "Switch to English" : "Cambiar a español"}
           >
             {locale === "es" ? "EN" : "ES"}
@@ -103,9 +93,7 @@ export function Header() {
 
         <button
           type="button"
-          className={`flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded md:hidden ${
-            isTransparent ? "text-white hover:bg-white/10" : "text-foreground hover:bg-foreground/10"
-          }`}
+          className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded text-white hover:bg-white/10 md:hidden"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           aria-label={locale === "es" ? "Abrir menú" : "Open menu"}
@@ -118,14 +106,14 @@ export function Header() {
 
       {open && (
         <div className="border-t border-white/10 bg-black/95 backdrop-blur-lg md:hidden">
-          <nav className="flex flex-col gap-0 py-2" aria-label={locale === "es" ? "Menú móvil" : "Mobile menu"}>
+          <nav className="flex flex-col gap-0 py-2 text-white" aria-label={locale === "es" ? "Menú móvil" : "Mobile menu"}>
             {nav.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
                 className={`px-5 py-3 text-sm tracking-wide ${
-                  isActive(href) ? "text-white" : "text-white/80 hover:text-white"
+                  isActive(href) ? "!text-white" : "!text-white/80 hover:!text-white"
                 }`}
               >
                 {label}

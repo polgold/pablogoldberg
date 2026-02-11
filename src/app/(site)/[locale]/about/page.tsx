@@ -18,24 +18,18 @@ const BIO_EN = `
 
 const PORTRAIT_PATH = "/images/about-portrait.jpg";
 
-const PRODUCTIONS = [
+const ROLES = [
   {
     name: "Sun Factory",
     href: "https://www.sunfactory.com.ar",
-    lineEs: "Productora de cine. Argentina.",
-    lineEn: "Film production company. Argentina.",
-  },
-  {
-    name: "BESTEFAR",
-    href: "https://bestefarmovie.com",
-    lineEs: "Largometraje.",
-    lineEn: "Feature film.",
+    roleEs: "Director en",
+    roleEn: "Director at:",
   },
   {
     name: "Accerts Productions",
     href: "https://www.accerts.com",
-    lineEs: "Producción. Argentina.",
-    lineEn: "Production. Argentina.",
+    roleEs: "Productor y D.F. en",
+    roleEn: "Producer & D.P. at:",
   },
 ];
 
@@ -72,32 +66,32 @@ export default async function AboutPage({
               <h1 className="text-2xl font-semibold text-white md:text-3xl">
                 {title}
               </h1>
-              <div className="prose-safe mt-8 text-base leading-relaxed text-white/88 md:text-lg">
+              <div className="prose-safe about-rich mt-8 text-base leading-relaxed text-white/88 md:text-lg">
                 <SafeHtml html={content} />
               </div>
             </ScrollReveal>
             <ScrollReveal
               className="mt-14 border-t border-white/10 pt-10"
               delayMs={140}
-              aria-label={loc === "es" ? "Producciones / Productor para" : "Productions / Producer for"}
+              aria-label={loc === "es" ? "Roles profesionales" : "Professional roles"}
             >
               <h2 className="text-xs font-medium uppercase tracking-wider text-white/50">
-                {loc === "es" ? "Producciones / Productor para" : "Productions / Producer for"}
+                {loc === "es" ? "Roles profesionales" : "Professional roles"}
               </h2>
-              <ul className="mt-6 space-y-6">
-                {PRODUCTIONS.map((p) => (
+              <ul className="mt-6 space-y-5">
+                {ROLES.map((p) => (
                   <li key={p.name}>
-                    <a
-                      href={p.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group block rounded text-white/80 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
-                    >
-                      <span className="font-medium">{p.name}</span>
-                      <span className="ml-2 text-sm text-white/60 group-hover:text-white/80">
-                        {loc === "es" ? p.lineEs : p.lineEn}
-                      </span>
-                    </a>
+                    <p className="text-sm text-white/70">
+                      <span className="mr-1">{loc === "es" ? `${p.roleEs}:` : p.roleEn}</span>
+                      <a
+                        href={p.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-white transition-colors hover:text-white/80 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black rounded"
+                      >
+                        {p.name}
+                      </a>
+                    </p>
                   </li>
                 ))}
               </ul>

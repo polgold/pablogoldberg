@@ -6,6 +6,8 @@ export interface WorkItem {
   featuredImage?: string | null;
   href: string;
   external?: boolean;
+  /** Source bucket for filters/sorting in Work UI. */
+  source?: "vimeo" | "youtube" | "project";
   /** When set, card opens Vimeo in-page lightbox instead of external link. */
   vimeoId?: string;
 }

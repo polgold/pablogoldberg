@@ -7,6 +7,7 @@ import { COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { HeroReel } from "@/components/HeroReel";
 import { ScrollIndicator } from "@/components/ScrollIndicator";
+import { HomeAbout } from "@/components/HomeAbout";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
 const HOME_PROJECTS_MIN = 8;
@@ -68,26 +69,13 @@ export default async function HomePage({
             title={t.reel}
             fallbackImageSrc={heroPoster}
           />
-          <div className="relative z-10 flex h-full flex-col items-center justify-center px-6">
-            <ScrollReveal delayMs={80}>
-              <div className="max-w-4xl space-y-5 text-center">
-                <h1 className="text-5xl font-extralight tracking-[0.2em] text-white md:text-7xl lg:text-8xl">
-                  PABLO GOLDBERG
-                </h1>
-                <p className="text-base font-light tracking-[0.12em] text-white/90 md:text-xl">
-                  {t.role}
-                </p>
-                <p className="mx-auto max-w-2xl text-sm font-light leading-relaxed text-white/80 md:text-lg">
-                  {t.tagline} {t.more}
-                </p>
-              </div>
-            </ScrollReveal>
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
-              <ScrollIndicator />
-            </div>
+          <div className="absolute inset-x-0 bottom-10 z-10 flex justify-center">
+            <ScrollIndicator />
           </div>
         </section>
       )}
+
+      <HomeAbout locale={loc} />
 
       <ScrollReveal className="mx-auto max-w-[1600px] px-0 sm:px-4 md:px-6" delayMs={100}>
         <section>

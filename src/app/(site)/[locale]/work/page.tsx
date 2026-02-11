@@ -4,8 +4,19 @@ import { getLocaleFromParam } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
 import type { WorkItem } from "@/types/work";
+import type { ProjectItem } from "@/types/content";
 
 export const revalidate = 300;
+
+function getYouTubeUrl(project: ProjectItem): string | null {
+  if (project.primaryVideo?.type === "youtube" && project.primaryVideo.id) {
+    return `https://www.youtube.com/watch?v=${project.primaryVideo.id}`;
+  }
+  const fromExternal = String(project.externalLink ?? "").trim();
+  if (/youtu\.?be|youtube\.com/i.test(fromExternal)) return fromExternal;
+  const contentMatch = project.content.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[^\s"'<]+/i);
+  return contentMatch ? contentMatch[0] : null;
+}
 
 export async function generateMetadata({
   params,
@@ -36,41 +47,59 @@ export default async function WorkPage({
     getProjects(loc),
   ]);
 
+  const vimeoItems: WorkItem[] = vimeoVideos.map((v) => ({
+    slug: `vimeo-${v.id}`,
+    title: v.name,
+    year: "",
+    featuredImage: v.thumbnail || undefined,
+    href: "#",
+    external: false,
+    source: "vimeo",
+    vimeoId: v.id,
+  }));
+
+  const projectItems: WorkItem[] = dbProjects.map((p) => {
+    const youtubeUrl = getYouTubeUrl(p);
+    if (youtubeUrl) {
+      return {
+        slug: `youtube-${p.slug}`,
+        title: p.title,
+        year: p.year || undefined,
+        featuredImage: p.featuredImage ?? undefined,
+        href: youtubeUrl,
+        external: true,
+        source: "youtube",
+      };
+    }
+    return {
+      slug: p.slug,
+      title: p.title,
+      year: p.year || undefined,
+      featuredImage: p.featuredImage ?? undefined,
+      href: `/${locale}/work/${p.slug}`,
+      external: false,
+      source: "project",
+    };
+  });
+
   const items: WorkItem[] =
-    vimeoVideos.length > 0
-      ? vimeoVideos.map((v) => ({
-          slug: `vimeo-${v.id}`,
-          title: v.name,
-          year: "",
-          featuredImage: v.thumbnail || undefined,
-          href: "#",
-          external: false,
-          vimeoId: v.id,
-        }))
-      : dbProjects.length > 0
-        ? dbProjects.map((p) => ({
-            slug: p.slug,
-            title: p.title,
-            year: p.year || undefined,
-            featuredImage: p.featuredImage ?? undefined,
-            href: `/${locale}/work/${p.slug}`,
+    vimeoItems.length > 0 || projectItems.length > 0
+      ? [...vimeoItems, ...projectItems]
+      : [
+          {
+            slug: "coming-soon",
+            title: loc === "es" ? "Próximamente" : "Coming soon",
+            featuredImage: null,
+            href: "#",
             external: false,
-          }))
-        : [
-            {
-              slug: "coming-soon",
-              title: loc === "es" ? "Próximamente" : "Coming soon",
-              featuredImage: null,
-              href: "#",
-              external: false,
-            } as WorkItem,
-          ];
+          } as WorkItem,
+        ];
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 md:px-8">
         <h1 className="text-xl font-semibold text-white">
-          {locale === "es" ? "Trabajo" : "Work"}
+          {locale === "es" ? "Proyectos" : "Projects"}
         </h1>
         <WorkPageClient items={items} locale={locale} />
       </div>

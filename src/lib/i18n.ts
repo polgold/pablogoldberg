@@ -25,9 +25,9 @@ export const COPY: Record<
   }
 > = {
   es: {
-    nav: { home: "Inicio", work: "Trabajo", portfolio: "Portfolio", gallery: "Galería", about: "Sobre mí", contact: "Contacto / Booking" },
+    nav: { home: "Inicio", work: "Proyectos", portfolio: "Portfolio", gallery: "Galería", about: "Sobre mí", contact: "Contacto / Booking" },
     work: {
-      title: "Trabajo",
+      title: "Proyectos",
       subtitle: "Selección de proyectos como director, DP y productor.",
       searchPlaceholder: "Buscar proyectos...",
       all: "Todos",
@@ -39,7 +39,7 @@ export const COPY: Record<
       tagline: "Director · Director de fotografía · Productor",
       more: "Más de 20 años contando historias. Buenos Aires.",
       role: "Director / Filmmaker",
-      workTitle: "Trabajo",
+      workTitle: "Proyectos",
       reel: "Reel",
       featured: "Trabajo destacado",
       ctaTitle: "¿Proyecto en mente?",
@@ -51,9 +51,9 @@ export const COPY: Record<
     metadata: { about: "Sobre mí | Pablo Goldberg", contact: "Contacto | Pablo Goldberg" },
   },
   en: {
-    nav: { home: "Home", work: "Work", portfolio: "Portfolio", gallery: "Gallery", about: "About", contact: "Contact / Booking" },
+    nav: { home: "Home", work: "Projects", portfolio: "Portfolio", gallery: "Gallery", about: "About", contact: "Contact / Booking" },
     work: {
-      title: "Work",
+      title: "Projects",
       subtitle: "Selection of projects as director, DP and producer.",
       searchPlaceholder: "Search projects...",
       all: "All",
@@ -65,7 +65,7 @@ export const COPY: Record<
       tagline: "Director · Director of Photography · Producer",
       more: "Over 20 years telling stories. Buenos Aires.",
       role: "Director / Filmmaker",
-      workTitle: "Work",
+      workTitle: "Projects",
       reel: "Reel",
       featured: "Featured work",
       ctaTitle: "Have a project in mind?",

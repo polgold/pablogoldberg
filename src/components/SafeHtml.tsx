@@ -12,14 +12,19 @@ function sanitize(html: string): string {
       const match = tag.match(/^<\/?([a-zA-Z0-9]+)/);
       const name = match ? match[1].toLowerCase() : "";
       if (!ALLOWED_TAGS.includes(name)) return "";
+      const isClosingTag = /^<\//.test(tag);
       if (name === "a") {
+        if (isClosingTag) return "</a>";
         const hrefMatch = tag.match(/href=["']([^"']*)["']/i);
         const href = hrefMatch ? hrefMatch[1] : "#";
         const safe = href.startsWith("http") || href.startsWith("mailto") || href.startsWith("#") ? href : "#";
         const target = tag.includes('target="_blank"') ? ' target="_blank" rel="noopener noreferrer"' : "";
         return `<a href="${safe}"${target}>`;
       }
-      return tag;
+      if (isClosingTag) return `</${name}>`;
+      if (name === "br") return "<br>";
+      // Strip inline attrs/styles from content tags to avoid color clashes with site theme.
+      return `<${name}>`;
     });
 }
 
