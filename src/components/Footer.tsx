@@ -11,7 +11,7 @@ const SUNFACTORY_LOGO = "/images/sunfactory-logo.svg";
 const SOCIAL_LINKS = [
   { href: "https://www.imdb.com/name/nm12692535/?ref_=fn_t_1", label: "IMDb", Icon: IMDbIcon },
   { href: "https://vimeo.com/sunfactory", label: "Vimeo", Icon: VimeoIcon },
-  { href: "https://www.youtube.com/@pablogoldberg", label: "YouTube", Icon: YouTubeIcon },
+  { href: "https://www.youtube.com/polgold", label: "YouTube", Icon: YouTubeIcon },
   { href: "https://www.instagram.com/polgold", label: "Instagram", Icon: InstagramIcon },
   { href: "https://wa.me/5491136511204", label: "WhatsApp", Icon: WhatsAppIcon },
   { href: "https://open.spotify.com/user/pablogoldberg", label: "Spotify", Icon: SpotifyIcon },

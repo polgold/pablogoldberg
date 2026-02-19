@@ -27,7 +27,7 @@ export const SUN_FACTORY_URL = "https://www.sunfactory.com.ar";
 export const PERSON_SAME_AS = [
   "https://www.imdb.com/name/nm12692535/",
   "https://vimeo.com/sunfactory",
-  "https://www.youtube.com/@pablogoldberg",
+  "https://www.youtube.com/polgold",
   "https://www.instagram.com/polgold",
   "https://wa.me/5491136511204",
   "https://open.spotify.com/user/pablogoldberg",
