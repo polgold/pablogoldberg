@@ -5,6 +5,9 @@ import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
+import { getPublicImageUrl } from "@/lib/supabase/storage";
+import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
+import { toThumbPath } from "@/lib/imageVariantPath";
 import { HeroReel } from "@/components/HeroReel";
 import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { HomeAbout } from "@/components/HomeAbout";
@@ -136,19 +139,24 @@ export default async function HomePage({
                   href={`/${locale}/work/${project.slug}`}
                   className="relative block aspect-[4/3] overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset"
                 >
-                  {project.featuredImage ? (
+                  {(() => {
+                    const cardImageUrl = project.coverImagePath
+                      ? getPublicImageUrl(toThumbPath(project.coverImagePath), PROJECTS_BUCKET)
+                      : project.featuredImage;
+                    return cardImageUrl ? (
                     <Image
-                      src={project.featuredImage}
+                      src={cardImageUrl}
                       alt=""
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     />
-                  ) : (
+                    ) : (
                     <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">
                       {project.title}
                     </div>
-                  )}
+                  );
+                  })()}
                   <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/85 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     <span className="text-sm font-medium text-white">{project.title}</span>
                     {project.year && (

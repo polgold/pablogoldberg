@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
+import { toThumbPath } from "./imageVariantPath";
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|gif)$/i;
 
@@ -41,7 +42,7 @@ export async function getPortfolioGalleryUrls(): Promise<string[]> {
       const files = getFilesFromList(data);
       if (files.length === 0) continue;
       return files.map((f) =>
-        getPublicImageUrl(`${folder}/${f.name}`.replace(/\/+/g, "/"), bucket)
+        getPublicImageUrl(toThumbPath(`${folder}/${f.name}`.replace(/\/+/g, "/")), bucket)
       );
     } catch {
       continue;
@@ -60,7 +61,7 @@ export async function getPortfolioGalleryUrls(): Promise<string[]> {
       const files = getFilesFromList(dirData);
       if (files.length > 0) {
         return files.map((f) =>
-          getPublicImageUrl(`${dirName}/${f.name}`.replace(/\/+/g, "/"), bucket)
+          getPublicImageUrl(toThumbPath(`${dirName}/${f.name}`.replace(/\/+/g, "/")), bucket)
         );
       }
     }

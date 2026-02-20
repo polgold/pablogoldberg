@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
-import { getLargeUrl } from "./storageImages";
+import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
+import { toLargePath } from "./imageVariantPath";
 import type { PageItem, ProjectItem } from "@/types/content";
 
 export type Locale = "es" | "en";
@@ -63,14 +64,14 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     galleryImages = g
       .filter((it) => it.path)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((it) => getLargeUrl(PROJECTS_BUCKET, it.path));
+      .map((it) => getPublicImageUrl(toLargePath(it.path), PROJECTS_BUCKET));
   } else {
     const paths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
-    galleryImages = paths.filter((p): p is string => Boolean(p)).map((p) => getLargeUrl(PROJECTS_BUCKET, p));
+    galleryImages = paths.filter((p): p is string => Boolean(p)).map((p) => getPublicImageUrl(toLargePath(p), PROJECTS_BUCKET));
   }
 
   const coverPath = row.cover_image ?? row.cover_image_path ?? null;
-  const coverUrl = coverPath ? getLargeUrl(PROJECTS_BUCKET, coverPath) : undefined;
+  const coverUrl = coverPath ? getPublicImageUrl(toLargePath(coverPath), PROJECTS_BUCKET) : undefined;
 
   return {
     slug: String(row.slug),
@@ -89,6 +90,7 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     externalLink: row.external_link ?? undefined,
     order: row.order ?? undefined,
     featuredImage: coverUrl,
+    coverImagePath: coverPath ?? undefined,
     videoUrls: { vimeo: undefined, youtube: undefined },
     primaryVideo: parseVideoUrl(row.video_url),
     galleryImages,

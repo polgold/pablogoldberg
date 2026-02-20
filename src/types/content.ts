@@ -24,6 +24,8 @@ export interface ProjectItem {
   externalLink?: string;
   order?: number;
   featuredImage?: string;
+  /** Path del cover en Storage; para construir thumb en cards sin tocar estructura. */
+  coverImagePath?: string;
   videoUrls: { vimeo?: string[]; youtube?: string[] };
   primaryVideo?: { type: "vimeo" | "youtube"; id: string };
   galleryImages: string[];

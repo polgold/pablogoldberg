@@ -2,6 +2,9 @@ import { getProjects } from "@/lib/content";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
+import { getPublicImageUrl } from "@/lib/supabase/storage";
+import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
+import { toThumbPath } from "@/lib/imageVariantPath";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
 import type { WorkItem } from "@/types/work";
 import type { ProjectItem } from "@/types/content";
@@ -59,13 +62,16 @@ export default async function WorkPage({
   }));
 
   const projectItems: WorkItem[] = dbProjects.map((p) => {
+    const cardThumb = p.coverImagePath
+      ? getPublicImageUrl(toThumbPath(p.coverImagePath), PROJECTS_BUCKET)
+      : p.featuredImage ?? undefined;
     const youtubeUrl = getYouTubeUrl(p);
     if (youtubeUrl) {
       return {
         slug: `youtube-${p.slug}`,
         title: p.title,
         year: p.year || undefined,
-        featuredImage: p.featuredImage ?? undefined,
+        featuredImage: cardThumb,
         href: youtubeUrl,
         external: true,
         source: "youtube",
@@ -75,7 +81,7 @@ export default async function WorkPage({
       slug: p.slug,
       title: p.title,
       year: p.year || undefined,
-      featuredImage: p.featuredImage ?? undefined,
+      featuredImage: cardThumb,
       href: `/${locale}/work/${p.slug}`,
       external: false,
       source: "project",
