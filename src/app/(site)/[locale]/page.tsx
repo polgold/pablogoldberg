@@ -10,8 +10,7 @@ import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { HomeAbout } from "@/components/HomeAbout";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
-const HOME_PROJECTS_MIN = 8;
-const HOME_PROJECTS_MAX = 16;
+const FEATURED_WORK_COUNT = 6;
 
 export const revalidate = 300;
 
@@ -40,22 +39,22 @@ export default async function HomePage({
   const heroVimeoEnv = process.env.HERO_VIMEO_ID?.trim();
 
   // Evitar llamada a API de Vimeo si ya tenemos el ID en env (mejora TTFB)
-  const [featured, allProjects, vimeoVideos] = await Promise.all([
-    getFeaturedProjects(HOME_PROJECTS_MAX, loc),
+  const [featuredForSection, allProjects, vimeoVideos] = await Promise.all([
+    getFeaturedProjects(FEATURED_WORK_COUNT, loc),
     getProjects(loc),
     heroVimeoEnv ? Promise.resolve([]) : getVimeoPortfolioVideos(),
   ]);
-  const projects =
-    featured.length >= HOME_PROJECTS_MIN
-      ? featured
-      : [...featured, ...allProjects.filter((p) => !featured.find((f) => f.slug === p.slug))].slice(
-          0,
-          HOME_PROJECTS_MAX
-        );
+  const featuredWork =
+    featuredForSection.length >= FEATURED_WORK_COUNT
+      ? featuredForSection.slice(0, FEATURED_WORK_COUNT)
+      : [
+          ...featuredForSection,
+          ...allProjects.filter((p) => !featuredForSection.find((f) => f.slug === p.slug)),
+        ].slice(0, FEATURED_WORK_COUNT);
 
   const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
   const heroPoster =
-    featured[0]?.featuredImage || allProjects[0]?.featuredImage || undefined;
+    featuredWork[0]?.featuredImage || allProjects[0]?.featuredImage || undefined;
   const hasHero = Boolean(heroVimeoId || heroPoster);
 
   const t = COPY[loc].home;
@@ -77,10 +76,61 @@ export default async function HomePage({
 
       <HomeAbout locale={loc} />
 
-      <ScrollReveal className="mx-auto max-w-[1600px] px-0 sm:px-4 md:px-6" delayMs={100}>
-        <section>
+      <ScrollReveal className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8" delayMs={80}>
+        <section className="py-10 md:py-14" aria-label={t.ctaFeatured}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+            <Link
+              href={`/${locale}/work`}
+              className="group flex flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-6 py-8 text-center transition-colors hover:border-white/20 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+            >
+              <span className="text-lg font-medium text-white group-hover:text-white">
+                {t.ctaVideos}
+              </span>
+              <span className="mt-1 text-sm text-white/60">
+                {locale === "es" ? "Reel y proyectos en video" : "Reel and video projects"}
+              </span>
+            </Link>
+            <Link
+              href={`/${locale}/gallery`}
+              className="group flex flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-6 py-8 text-center transition-colors hover:border-white/20 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+            >
+              <span className="text-lg font-medium text-white group-hover:text-white">
+                {t.ctaGallery}
+              </span>
+              <span className="mt-1 text-sm text-white/60">
+                {locale === "es" ? "Fotografías y galerías" : "Photos and galleries"}
+              </span>
+            </Link>
+            <Link
+              href={`/${locale}/work`}
+              className="group flex flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-6 py-8 text-center transition-colors hover:border-white/20 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+            >
+              <span className="text-lg font-medium text-white group-hover:text-white">
+                {t.ctaFeatured}
+              </span>
+              <span className="mt-1 text-sm text-white/60">
+                {locale === "es" ? "Proyectos destacados" : "Featured projects"}
+              </span>
+            </Link>
+          </div>
+        </section>
+      </ScrollReveal>
+
+      <ScrollReveal className="mx-auto max-w-[1600px] px-4 sm:px-6 md:px-8" delayMs={100}>
+        <section className="pb-14 pt-4 md:pb-20" aria-labelledby="featured-work-heading">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <h2 id="featured-work-heading" className="text-xl font-semibold text-white md:text-2xl">
+              {t.featured}
+            </h2>
+            <Link
+              href={`/${locale}/work`}
+              className="text-sm font-medium text-white/80 underline decoration-white/30 underline-offset-2 transition-colors hover:text-white hover:decoration-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+            >
+              {t.viewAll}
+            </Link>
+          </div>
           <ul className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
-            {projects.map((project) => (
+            {featuredWork.map((project) => (
               <li key={project.slug} className="group bg-black">
                 <Link
                   href={`/${locale}/work/${project.slug}`}

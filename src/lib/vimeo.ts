@@ -174,7 +174,8 @@ async function fetchVimeoPortfolioVideosUntilEnough(
   while (hasMore) {
     const { videos, hasMore: more } = await fetchVimeoPortfolioPage(basePath, page, opts);
     all.push(...videos);
-    const visible = all.filter((v) => !hiddenIds.has(v.id));
+    const norm = (s: string) => String(s ?? "").replace(/\D/g, "");
+  const visible = all.filter((v) => !hiddenIds.has(norm(v.id)));
     if (visible.length >= targetVisible || !more || videos.length === 0) {
       return all;
     }
@@ -204,7 +205,8 @@ export async function getVimeoPortfolioVideos(): Promise<VimeoVideo[]> {
     const v = await fetchVimeoVideoById(id);
     if (v) customVideos.push(v);
   }
-  const customVisible = customVideos.filter((v) => !hiddenIds.has(v.id));
+  const norm = (s: string) => String(s ?? "").replace(/\D/g, "");
+  const customVisible = customVideos.filter((v) => !hiddenIds.has(norm(v.id)));
   const targetFromRaw = Math.max(0, TARGET_VISIBLE - customVisible.length);
 
   const rawList =
@@ -214,7 +216,7 @@ export async function getVimeoPortfolioVideos(): Promise<VimeoVideo[]> {
 
   const rawFiltered = rawList.filter((r) => !customIds.has(r.id));
   const merged = [...customVideos, ...rawFiltered];
-  return merged.filter((v) => !hiddenIds.has(v.id)).slice(0, TARGET_VISIBLE);
+  return merged.filter((v) => !hiddenIds.has(norm(v.id))).slice(0, TARGET_VISIBLE);
 }
 
 /**

@@ -18,14 +18,15 @@ export const COPY: Record<
     nav: { home: string; work: string; portfolio: string; gallery: string; about: string; contact: string };
     work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string };
     workDetail: { gallery: string; credits: string; viewAll: string };
-    home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; ctaTitle: string; ctaText: string; ctaButton: string };
+    gallery: { title: string; subtitle?: string; all: string };
+    home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; viewAll: string; ctaVideos: string; ctaGallery: string; ctaFeatured: string; ctaTitle: string; ctaText: string; ctaButton: string };
     about: { defaultTitle: string };
     contact: { defaultTitle: string; ctaButton: string };
     metadata: { about: string; contact: string };
   }
 > = {
   es: {
-    nav: { home: "Inicio", work: "Proyectos", portfolio: "Portfolio", gallery: "Galería", about: "Sobre mí", contact: "Contacto / Booking" },
+    nav: { home: "Inicio", work: "Videos", portfolio: "Portfolio", gallery: "Galería", about: "Sobre mí", contact: "Contacto / Booking" },
     work: {
       title: "Proyectos",
       subtitle: "Selección de proyectos como director, DP y productor.",
@@ -35,6 +36,7 @@ export const COPY: Record<
       noResults: "No hay proyectos que coincidan.",
     },
     workDetail: { gallery: "Galería", credits: "Créditos", viewAll: "Ver todos" },
+    gallery: { title: "Galería", all: "Todas" },
     home: {
       tagline: "Director · Director de fotografía · Productor",
       more: "Más de 20 años contando historias. Buenos Aires.",
@@ -42,6 +44,10 @@ export const COPY: Record<
       workTitle: "Proyectos",
       reel: "Reel",
       featured: "Trabajo destacado",
+      viewAll: "Ver todos",
+      ctaVideos: "Videos",
+      ctaGallery: "Galería",
+      ctaFeatured: "Proyectos",
       ctaTitle: "¿Proyecto en mente?",
       ctaText: "Hablemos de tu próximo spot, videoclip o documental.",
       ctaButton: "Contacto / Booking",
@@ -61,6 +67,7 @@ export const COPY: Record<
       noResults: "No projects match.",
     },
     workDetail: { gallery: "Gallery", credits: "Credits", viewAll: "View all" },
+    gallery: { title: "Gallery", all: "All" },
     home: {
       tagline: "Director · Director of Photography · Producer",
       more: "Over 20 years telling stories. Buenos Aires.",
@@ -68,6 +75,10 @@ export const COPY: Record<
       workTitle: "Projects",
       reel: "Reel",
       featured: "Featured work",
+      viewAll: "View all",
+      ctaVideos: "Videos",
+      ctaGallery: "Gallery",
+      ctaFeatured: "Projects",
       ctaTitle: "Have a project in mind?",
       ctaText: "Let's talk about your next spot, music video or documentary.",
       ctaButton: "Contact / Booking",
