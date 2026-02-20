@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     const path = `${slug}/${safeName}`;
     const { error: uploadErr } = await supabase.storage
       .from(PROJECTS_BUCKET)
-      .upload(path, file, { upsert: true });
+      .upload(path, file, { upsert: true, cacheControl: "31536000" });
     if (uploadErr) {
       revalidatePath("/admin/portfolio-photos");
       const msg = `${uploadErr.message}${(uploadErr as { statusCode?: number }).statusCode ? ` (${(uploadErr as { statusCode?: number }).statusCode})` : ""}`;

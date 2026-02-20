@@ -157,7 +157,7 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
     const path = `${slug}/cover.${ext}`;
     const { error: uploadErr } = await supabase.storage
       .from(PROJECTS_BUCKET)
-      .upload(path, coverFile, { upsert: true });
+      .upload(path, coverFile, { upsert: true, cacheControl: "31536000" });
     if (!uploadErr) {
       await supabase.from("projects").update({ cover_image: path }).eq("id", projectId);
     }
@@ -172,7 +172,7 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
     const path = `${slug}/gallery/${safeName}`;
     const { error: uploadErr } = await supabase.storage
       .from(PROJECTS_BUCKET)
-      .upload(path, file, { upsert: true });
+      .upload(path, file, { upsert: true, cacheControl: "31536000" });
     if (!uploadErr) {
       gallery.push({ path, url: getProjectsImageUrl(path), order: order++ });
     }
@@ -245,7 +245,7 @@ export async function uploadProjectCover(
   const path = `${slug}/cover.${ext}`;
   const { error } = await supabase.storage
     .from(PROJECTS_BUCKET)
-    .upload(path, file, { upsert: true });
+    .upload(path, file, { upsert: true, cacheControl: "31536000" });
   if (error) return { error: error.message };
 
   await supabase.from("projects").update({ cover_image: path }).eq("id", projectId);
@@ -269,7 +269,7 @@ export async function uploadProjectGalleryFile(
 
   const { error } = await supabase.storage
     .from(PROJECTS_BUCKET)
-    .upload(path, file, { upsert: true });
+    .upload(path, file, { upsert: true, cacheControl: "31536000" });
   if (error) return { error: error.message };
 
   const item: GalleryItem = { path, url: getProjectsImageUrl(path), order };
@@ -495,7 +495,7 @@ export async function uploadPortfolioPhotos(
     for (const file of images) {
       const safeName = uniqueStorageName(file.name);
       const path = `${slug}/${safeName}`;
-      const { error: uploadErr } = await supabase.storage.from(PROJECTS_BUCKET).upload(path, file, { upsert: true });
+      const { error: uploadErr } = await supabase.storage.from(PROJECTS_BUCKET).upload(path, file, { upsert: true, cacheControl: "31536000" });
       if (uploadErr) {
         const msg = `Subida fallida: ${uploadErr.message}${(uploadErr as { statusCode?: number }).statusCode ? ` (${(uploadErr as { statusCode?: number }).statusCode})` : ""}`;
         return { error: msg, uploaded };

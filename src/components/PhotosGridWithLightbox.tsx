@@ -3,27 +3,32 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+export interface GalleryImageItem {
+  thumbUrl: string;
+  largeUrl: string;
+}
+
 interface PhotosGridWithLightboxProps {
-  urls: string[];
+  items: GalleryImageItem[];
 }
 
 const SWIPE_THRESHOLD = 50;
 
-export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
+export function PhotosGridWithLightbox({ items }: PhotosGridWithLightboxProps) {
   const [index, setIndex] = useState<number | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   const go = useCallback(
     (delta: number) => {
-      if (index == null || urls.length === 0) return;
+      if (index == null || items.length === 0) return;
       setIndex((idx) => {
         const next = (idx ?? 0) + delta;
-        if (next < 0) return urls.length - 1;
-        if (next >= urls.length) return 0;
+        if (next < 0) return items.length - 1;
+        if (next >= items.length) return 0;
         return next;
       });
     },
-    [index, urls.length]
+    [index, items.length]
   );
 
   const close = useCallback(() => setIndex(null), []);
@@ -47,22 +52,22 @@ export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
     (e: React.TouchEvent) => {
       const start = touchStartX.current;
       touchStartX.current = null;
-      if (start == null || index == null || urls.length === 0) return;
+      if (start == null || index == null || items.length === 0) return;
       const end = e.changedTouches[0]?.clientX ?? start;
       const delta = start - end;
       if (Math.abs(delta) >= SWIPE_THRESHOLD) {
         go(delta > 0 ? 1 : -1);
       }
     },
-    [index, urls.length, go]
+    [index, items.length, go]
   );
 
-  if (urls.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {urls.map((url, i) => (
+        {items.map((item, i) => (
           <li key={i} className="relative aspect-square overflow-hidden bg-white/5">
             <button
               type="button"
@@ -70,10 +75,11 @@ export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
               className="relative h-full w-full focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset"
             >
               <Image
-                src={url}
+                src={item.thumbUrl}
                 alt=""
                 fill
                 loading="lazy"
+                decoding="async"
                 className="object-cover transition-transform duration-200 hover:scale-[1.02]"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               />
@@ -113,12 +119,11 @@ export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
           </button>
           <div className="relative h-[85vh] w-full max-w-5xl">
             <Image
-              src={urls[index]}
+              src={items[index].largeUrl}
               alt=""
               fill
               className="object-contain"
               sizes="90vw"
-              unoptimized={urls[index].includes("supabase")}
             />
           </div>
           <button
@@ -132,7 +137,7 @@ export function PhotosGridWithLightbox({ urls }: PhotosGridWithLightboxProps) {
             </svg>
           </button>
           <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-white/50">
-            {index + 1} / {urls.length}
+            {index + 1} / {items.length}
           </span>
         </div>
       )}
