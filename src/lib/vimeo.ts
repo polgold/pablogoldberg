@@ -104,6 +104,8 @@ export async function fetchVimeoVideoById(videoId: string): Promise<VimeoVideo |
 
 const PER_PAGE = 60;
 const TARGET_VISIBLE = 40;
+/** Cap pages to avoid edge/serverless timeout (Netlify ~10s). 2 pages = 120 videos max. */
+const MAX_PAGES = 2;
 
 /** Fetches one page of videos. Returns videos + whether there are more pages. */
 async function fetchVimeoPortfolioPage(
@@ -136,7 +138,7 @@ async function resolveVimeoBasePath(opts: RequestInit): Promise<string> {
   return userId ? `/users/${userId}/videos` : "/me/videos";
 }
 
-/** Fetches raw list from API (same source as public work). Does not filter by hidden. */
+/** Fetches raw list from API (same source as public work). Does not filter by hidden. Capped at MAX_PAGES to avoid edge timeout. */
 async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
   const token = getToken();
   if (!token) return [];
@@ -147,13 +149,10 @@ async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
   try {
     const basePath = await resolveVimeoBasePath(opts);
     const all: VimeoVideo[] = [];
-    let page = 1;
-    let hasMore = true;
-    while (hasMore) {
+    for (let page = 1; page <= MAX_PAGES; page++) {
       const { videos, hasMore: more } = await fetchVimeoPortfolioPage(basePath, page, opts);
       all.push(...videos);
-      hasMore = more && videos.length > 0;
-      page++;
+      if (!more || videos.length === 0) break;
     }
     return all;
   } catch {
@@ -161,7 +160,7 @@ async function fetchVimeoPortfolioVideosRaw(): Promise<VimeoVideo[]> {
   }
 }
 
-/** Fetches enough pages until we have at least targetVisible videos after filtering hidden. */
+/** Fetches enough pages until we have at least targetVisible videos after filtering hidden. Capped at MAX_PAGES to avoid edge timeout. */
 async function fetchVimeoPortfolioVideosUntilEnough(
   hiddenIds: Set<string>,
   targetVisible: number,
@@ -169,18 +168,12 @@ async function fetchVimeoPortfolioVideosUntilEnough(
 ): Promise<VimeoVideo[]> {
   const basePath = await resolveVimeoBasePath(opts);
   const all: VimeoVideo[] = [];
-  let page = 1;
-  let hasMore = true;
-  while (hasMore) {
+  const norm = (s: string) => String(s ?? "").replace(/\D/g, "");
+  for (let page = 1; page <= MAX_PAGES; page++) {
     const { videos, hasMore: more } = await fetchVimeoPortfolioPage(basePath, page, opts);
     all.push(...videos);
-    const norm = (s: string) => String(s ?? "").replace(/\D/g, "");
-  const visible = all.filter((v) => !hiddenIds.has(norm(v.id)));
-    if (visible.length >= targetVisible || !more || videos.length === 0) {
-      return all;
-    }
-    hasMore = more;
-    page++;
+    const visible = all.filter((v) => !hiddenIds.has(norm(v.id)));
+    if (visible.length >= targetVisible || !more || videos.length === 0) break;
   }
   return all;
 }

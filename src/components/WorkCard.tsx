@@ -33,14 +33,14 @@ export function WorkCard({ item, href, external, onVimeoClick, badge, actions }:
         </div>
       )}
       {badge}
-      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/20 to-transparent p-5 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-        {actions && <div className="mb-2 flex w-full justify-end">{actions}</div>}
-        <div className="flex w-full items-end justify-between gap-3">
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/20 to-transparent p-5 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+        {actions && <div className="pointer-events-auto mb-2 flex w-full justify-end">{actions}</div>}
+        <div className="pointer-events-auto flex w-full items-end justify-between gap-3">
           <span className="truncate text-lg font-light tracking-wide text-white md:text-xl">{item.title}</span>
           {item.year && <span className="shrink-0 text-xs font-light tracking-wide text-white/80">{item.year}</span>}
         </div>
       </div>
-      <div className="absolute inset-0 border-2 border-white/0 transition-colors duration-500 group-hover:border-white/10" />
+      <div className="pointer-events-none absolute inset-0 border-2 border-white/0 transition-colors duration-500 group-hover:border-white/10" aria-hidden />
     </>
   );
 

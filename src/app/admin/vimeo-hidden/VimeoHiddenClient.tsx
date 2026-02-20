@@ -43,17 +43,27 @@ export function VimeoHiddenClient({
     setAddError(null);
     setHiddenIds((prev) => new Set([...prev, id]));
     setToast("Hidden");
-    const { error } = await addHiddenVimeoId(id);
-    setLoadingId(null);
-    if (error) {
+    try {
+      const { error } = await addHiddenVimeoId(id);
+      if (error) {
+        setHiddenIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        setAddError(error);
+      } else {
+        router.refresh();
+      }
+    } catch (err) {
       setHiddenIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
-      setAddError(error);
-    } else {
-      router.refresh();
+      setAddError(err instanceof Error ? err.message : "Error al ocultar");
+    } finally {
+      setLoadingId(null);
     }
   }, [router]);
 
@@ -67,13 +77,19 @@ export function VimeoHiddenClient({
       return next;
     });
     setToast("Unhidden");
-    const { error } = await removeHiddenVimeoId(id);
-    setLoadingId(null);
-    if (error) {
+    try {
+      const { error } = await removeHiddenVimeoId(id);
+      if (error) {
+        setHiddenIds((prev) => new Set([...prev, id]));
+        setAddError(error);
+      } else {
+        router.refresh();
+      }
+    } catch (err) {
       setHiddenIds((prev) => new Set([...prev, id]));
-      setAddError(error);
-    } else {
-      router.refresh();
+      setAddError(err instanceof Error ? err.message : "Error al desocultar");
+    } finally {
+      setLoadingId(null);
     }
   }, [router]);
 
