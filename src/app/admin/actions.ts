@@ -351,9 +351,11 @@ export async function addHiddenVimeoId(vimeoId: string): Promise<{ error?: strin
 
 export async function removeHiddenVimeoId(vimeoId: string): Promise<{ error?: string }> {
   await ensureAdmin();
+  const id = String(vimeoId).trim().replace(/\D/g, "");
+  if (!id) return { error: "ID inválido" };
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "DB no disponible" };
-  const { error } = await supabase.from("hidden_vimeo_ids").delete().eq("vimeo_id", String(vimeoId).trim());
+  const { error } = await supabase.from("hidden_vimeo_ids").delete().eq("vimeo_id", id);
   if (!error) {
     revalidatePath("/es/work");
     revalidatePath("/en/work");

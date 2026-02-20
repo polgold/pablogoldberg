@@ -38,38 +38,44 @@ export function VimeoHiddenClient({
   }, [toast]);
 
   const handleHide = useCallback(async (vimeoId: string) => {
-    setLoadingId(vimeoId);
+    const id = vimeoId.trim().replace(/\D/g, "") || vimeoId;
+    setLoadingId(id);
     setAddError(null);
-    setHiddenIds((prev) => new Set([...prev, vimeoId]));
+    setHiddenIds((prev) => new Set([...prev, id]));
     setToast("Hidden");
-    const { error } = await addHiddenVimeoId(vimeoId);
+    const { error } = await addHiddenVimeoId(id);
     setLoadingId(null);
     if (error) {
       setHiddenIds((prev) => {
         const next = new Set(prev);
-        next.delete(vimeoId);
+        next.delete(id);
         return next;
       });
       setAddError(error);
+    } else {
+      router.refresh();
     }
-  }, []);
+  }, [router]);
 
   const handleUnhide = useCallback(async (vimeoId: string) => {
-    setLoadingId(vimeoId);
+    const id = vimeoId.trim().replace(/\D/g, "") || vimeoId;
+    setLoadingId(id);
     setAddError(null);
     setHiddenIds((prev) => {
       const next = new Set(prev);
-      next.delete(vimeoId);
+      next.delete(id);
       return next;
     });
     setToast("Unhidden");
-    const { error } = await removeHiddenVimeoId(vimeoId);
+    const { error } = await removeHiddenVimeoId(id);
     setLoadingId(null);
     if (error) {
-      setHiddenIds((prev) => new Set([...prev, vimeoId]));
+      setHiddenIds((prev) => new Set([...prev, id]));
       setAddError(error);
+    } else {
+      router.refresh();
     }
-  }, []);
+  }, [router]);
 
   const handleHideById = useCallback(async () => {
     const id = newId.trim().replace(/\D/g, "");
@@ -123,6 +129,17 @@ export function VimeoHiddenClient({
     }
   }, [router]);
 
+  const handleCopyId = useCallback(async (vimeoId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(vimeoId);
+      setToast("ID copiado");
+    } catch {
+      setToast("No se pudo copiar");
+    }
+  }, []);
+
   const renderCardExtra = useCallback(
     (item: WorkItem) => {
       const vimeoId = item.slug.startsWith("vimeo-") ? item.slug.replace("vimeo-", "") : "";
@@ -133,8 +150,23 @@ export function VimeoHiddenClient({
       let badge: React.ReactNode = undefined;
       if (isHidden) {
         badge = (
-          <span className="absolute left-2 top-2 rounded bg-amber-600/90 px-2 py-0.5 text-[10px] font-medium uppercase text-white">
-            Hidden
+          <span
+            className="absolute left-2 top-2 flex items-center gap-1 rounded bg-amber-600/90 px-2 py-0.5 text-[10px] font-medium text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="uppercase">Hidden</span>
+            <span className="select-all font-mono opacity-90">· {vimeoId}</span>
+            <button
+              type="button"
+              onClick={(e) => handleCopyId(vimeoId, e)}
+              className="rounded p-0.5 hover:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/50"
+              aria-label="Copiar ID"
+              title="Copiar ID"
+            >
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
           </span>
         );
       } else if (isCustom) {
@@ -145,8 +177,24 @@ export function VimeoHiddenClient({
         );
       } else if (vimeoId) {
         badge = (
-          <span className="absolute left-2 top-2 rounded bg-black/70 px-2 py-0.5 font-mono text-[10px] text-white/80">
-            ID: {vimeoId}
+          <span
+            className="absolute left-2 top-2 flex items-center gap-1 rounded bg-black/70 px-2 py-0.5 font-mono text-[10px] text-white/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="select-all font-mono" title="Seleccionar para copiar">
+              ID: {vimeoId}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => handleCopyId(vimeoId, e)}
+              className="rounded p-0.5 hover:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/50"
+              aria-label="Copiar ID"
+              title="Copiar ID"
+            >
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </button>
           </span>
         );
       }
@@ -189,7 +237,7 @@ export function VimeoHiddenClient({
 
       return { badge, actions };
     },
-    [hiddenIds, customIds, loadingId, handleHide, handleUnhide, handleRemoveCustom]
+    [hiddenIds, customIds, loadingId, handleHide, handleUnhide, handleRemoveCustom, handleCopyId]
   );
 
   return (
