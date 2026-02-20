@@ -13,10 +13,14 @@ interface PhotosGridWithLightboxProps {
 }
 
 const SWIPE_THRESHOLD = 50;
+const SWIPE_HORIZONTAL_MIN = 20;
 
 export function PhotosGridWithLightbox({ items }: PhotosGridWithLightboxProps) {
   const [index, setIndex] = useState<number | null>(null);
   const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isHorizontalSwipe = useRef(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   const go = useCallback(
     (delta: number) => {
@@ -33,6 +37,16 @@ export function PhotosGridWithLightbox({ items }: PhotosGridWithLightboxProps) {
 
   const close = useCallback(() => setIndex(null), []);
 
+  // Bloquear scroll del body cuando el lightbox está abierto
+  useEffect(() => {
+    if (index == null) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [index]);
+
   useEffect(() => {
     if (index == null) return;
     const onKey = (e: KeyboardEvent) => {
@@ -46,18 +60,56 @@ export function PhotosGridWithLightbox({ items }: PhotosGridWithLightboxProps) {
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0]?.clientX ?? null;
+    touchStartY.current = e.touches[0]?.clientY ?? null;
+    isHorizontalSwipe.current = false;
   }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const startX = touchStartX.current;
+    const startY = touchStartY.current;
+    if (startX == null || startY == null) return;
+    const x = e.touches[0]?.clientX ?? startX;
+    const y = e.touches[0]?.clientY ?? startY;
+    const dx = x - startX;
+    const dy = y - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > SWIPE_HORIZONTAL_MIN) {
+      isHorizontalSwipe.current = true;
+      e.preventDefault();
+    }
+  }, []);
+
+  // Listener touchmove con passive: false para que preventDefault bloquee scroll
+  useEffect(() => {
+    const el = overlayRef.current;
+    if (!el || index == null) return;
+    const onTouchMove = (e: TouchEvent) => {
+      const startX = touchStartX.current;
+      const startY = touchStartY.current;
+      if (startX == null || startY == null) return;
+      const x = e.touches[0]?.clientX ?? startX;
+      const y = e.touches[0]?.clientY ?? startY;
+      const dx = x - startX;
+      const dy = y - startY;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > SWIPE_HORIZONTAL_MIN) {
+        isHorizontalSwipe.current = true;
+        e.preventDefault();
+      }
+    };
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onTouchMove);
+  }, [index]);
 
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
-      const start = touchStartX.current;
+      const startX = touchStartX.current;
       touchStartX.current = null;
-      if (start == null || index == null || items.length === 0) return;
-      const end = e.changedTouches[0]?.clientX ?? start;
-      const delta = start - end;
-      if (Math.abs(delta) >= SWIPE_THRESHOLD) {
-        go(delta > 0 ? 1 : -1);
-      }
+      touchStartY.current = null;
+      if (startX == null || index == null || items.length === 0) return;
+      if (!isHorizontalSwipe.current) return;
+      const endX = e.changedTouches[0]?.clientX ?? startX;
+      const dx = endX - startX;
+      if (dx <= -SWIPE_THRESHOLD) go(1);
+      else if (dx >= SWIPE_THRESHOLD) go(-1);
     },
     [index, items.length, go]
   );
@@ -90,20 +142,33 @@ export function PhotosGridWithLightbox({ items }: PhotosGridWithLightboxProps) {
 
       {index != null && (
         <div
+          ref={overlayRef}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4"
           role="dialog"
           aria-modal="true"
           aria-label="Lightbox"
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) close();
+          }}
         >
+          {/* Botón cerrar (X): capa superior, safe area, tap >= 44px */}
           <button
             type="button"
-            onClick={close}
-            className="absolute right-4 top-4 rounded p-2 text-white/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+            onClick={(e) => {
+              e.stopPropagation();
+              close();
+            }}
+            className="absolute z-[999] flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-black/50 text-white/90 hover:bg-black/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/50"
+            style={{
+              top: "calc(12px + env(safe-area-inset-top))",
+              right: "calc(12px + env(safe-area-inset-right))",
+            }}
             aria-label="Cerrar"
           >
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
             </svg>
           </button>

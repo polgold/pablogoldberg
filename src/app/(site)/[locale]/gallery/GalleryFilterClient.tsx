@@ -3,7 +3,8 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { PhotosGridWithLightbox } from "@/components/PhotosGridWithLightbox";
-import { getThumbUrl, getLargeUrl } from "@/lib/storageImages";
+import { getPublicImageUrl } from "@/lib/supabase/storage";
+import { toThumbPath, toLargePath } from "@/lib/imageVariantPath";
 import { PHOTOS_BUCKET } from "@/lib/portfolio-photos";
 import type { Locale } from "@/lib/content";
 import type { GalleryWithPhotos } from "@/lib/portfolio-photos";
@@ -117,8 +118,8 @@ export function GalleryFilterClient({
           <div className="mt-8">
             <PhotosGridWithLightbox
               items={photosToShow.map((p) => ({
-                thumbUrl: getThumbUrl(PHOTOS_BUCKET, p.storage_path),
-                largeUrl: getLargeUrl(PHOTOS_BUCKET, p.storage_path),
+                thumbUrl: getPublicImageUrl(toThumbPath(p.storage_path), PHOTOS_BUCKET),
+                largeUrl: getPublicImageUrl(toLargePath(p.storage_path), PHOTOS_BUCKET),
               }))}
             />
           </div>
