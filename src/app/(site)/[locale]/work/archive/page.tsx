@@ -1,14 +1,34 @@
 import { getProjects } from "@/lib/content";
+import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toThumbPath } from "@/lib/imageVariantPath";
-import { WorkGrid } from "@/components/WorkGrid";
+import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
 import type { WorkItem } from "@/types/work";
 import type { ProjectItem } from "@/types/content";
+import type { VimeoVideo } from "@/lib/vimeo";
 
 export const revalidate = 300;
+
+function yearFromReleaseTime(releaseTime: string): string {
+  if (!releaseTime || releaseTime.length < 4) return "";
+  return releaseTime.slice(0, 4);
+}
+
+function vimeoToWorkItem(v: VimeoVideo): WorkItem {
+  return {
+    slug: `vimeo-${v.id}`,
+    title: v.name,
+    year: yearFromReleaseTime(v.releaseTime) || undefined,
+    featuredImage: v.thumbnail || undefined,
+    href: v.link,
+    external: true,
+    source: "vimeo",
+    vimeoId: v.id,
+  };
+}
 
 function getYouTubeUrl(project: ProjectItem): string | null {
   if (project.primaryVideo?.type === "youtube" && project.primaryVideo.id) {
@@ -72,8 +92,13 @@ export default async function WorkArchivePage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const archive = await getProjects(loc);
-  const items: WorkItem[] = archive.map((p) => projectToWorkItem(p, locale));
+  const [vimeoVideos, archive] = await Promise.all([
+    getVimeoPortfolioVideos(),
+    getProjects(loc),
+  ]);
+  const vimeoItems: WorkItem[] = vimeoVideos.map(vimeoToWorkItem);
+  const projectItems: WorkItem[] = archive.map((p) => projectToWorkItem(p, locale));
+  const items: WorkItem[] = [...vimeoItems, ...projectItems];
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
@@ -84,7 +109,7 @@ export default async function WorkArchivePage({
         <p className="mt-2 text-sm text-white/60">
           {COPY[loc].work.archiveSubtitle}
         </p>
-        <WorkGrid items={items} locale={locale} linkCards showFilters />
+        <WorkPageClient items={items} locale={locale} />
       </div>
     </div>
   );
