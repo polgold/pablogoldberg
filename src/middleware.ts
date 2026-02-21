@@ -28,6 +28,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/es", request.url));
   }
 
+  // Redirect paths without locale (e.g. /work, /work/archive) to /es/...
+  const sitePaths = ["/work", "/photography", "/about", "/contact"];
+  const hasNoLocale = !pathname.startsWith("/es") && !pathname.startsWith("/en");
+  const isSitePath = sitePaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  if (hasNoLocale && isSitePath) {
+    return NextResponse.redirect(new URL("/es" + pathname, request.url));
+  }
+
   // Admin: refresh session and protect routes
   if (pathname.startsWith("/admin")) {
     if (!url || !anon) {
@@ -74,5 +82,17 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/admin", "/admin/login", "/admin/unauthorized", "/admin/:path*"],
+  matcher: [
+    "/",
+    "/work",
+    "/work/:path*",
+    "/photography",
+    "/photography/:path*",
+    "/about",
+    "/contact",
+    "/admin",
+    "/admin/login",
+    "/admin/unauthorized",
+    "/admin/:path*",
+  ],
 };

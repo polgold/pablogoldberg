@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCuratedWork } from "@/lib/content";
+import { getCuratedWork, getArchiveWork } from "@/lib/content";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
@@ -23,6 +23,7 @@ function projectToWorkItem(project: ProjectItem, locale: string): WorkItem {
   const cardThumb = project.coverImagePath
     ? getPublicImageUrl(toThumbPath(project.coverImagePath), PROJECTS_BUCKET)
     : project.featuredImage ?? undefined;
+  const isVimeo = project.primaryVideo?.type === "vimeo";
   return {
     slug: project.slug,
     title: project.title,
@@ -30,7 +31,8 @@ function projectToWorkItem(project: ProjectItem, locale: string): WorkItem {
     featuredImage: cardThumb,
     href: `/${locale}/work/${project.slug}`,
     external: false,
-    source: "project",
+    source: isVimeo ? "vimeo" : "project",
+    vimeoId: isVimeo ? project.primaryVideo?.id : undefined,
   };
 }
 
@@ -58,15 +60,18 @@ export default async function WorkPage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const curated = await getCuratedWork(6, loc);
-  const items: WorkItem[] = curated
+  let workProjects = await getCuratedWork(6, loc);
+  if (workProjects.length === 0) {
+    workProjects = (await getArchiveWork(loc)).slice(0, 6);
+  }
+  const items: WorkItem[] = workProjects
     .filter(hasVisual)
     .map((p) => projectToWorkItem(p, locale));
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 md:px-8">
-        <h1 className="text-xl font-semibold text-white md:text-2xl">Work</h1>
+        <h1 className="text-xl font-semibold text-white md:text-2xl">{COPY[loc].work.title}</h1>
         <WorkGrid
           items={items}
           locale={locale}
