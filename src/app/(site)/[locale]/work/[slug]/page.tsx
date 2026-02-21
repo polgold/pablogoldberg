@@ -47,6 +47,26 @@ const DEFAULT_OG_IMAGE = "/og-default.png";
 const FALLBACK_DESC_ES = "Proyecto de Pablo Goldberg. Director.";
 const FALLBACK_DESC_EN = "Project by Pablo Goldberg. Director.";
 
+/** Sinopsis por idioma para Bestefar (solo este proyecto tiene copy bilingüe fijo). */
+const BESTEFAR_SYNOPSIS: Record<"es" | "en", string> = {
+  en: `<p>As Christmas approaches, Karen decorates her tree in Argentina when an unexpected message arrives from a woman in Norway. The woman reveals a surprising connection: her grandmother was once romantically involved with Karen's grandfather, nearly a century ago. Intrigued, Karen sifts through old family photographs, hoping to uncover traces of this long-lost relationship. But the deeper she delves, the more questions arise.</p>
+<p>Determined to uncover the truth, Karen embarks on a journey to Norway to reunite with her family and trace her grandfather's past. Her trip unfolds into a rich exploration of childhood memories, her "Bestefar's" immigration story, lost love, and the scars of war—leading her closer to the answers she's been searching for.</p>`,
+  es: `<p>Se acerca la Navidad, y Karen está decorando su árbol en Argentina cuando llega un mensaje inesperado. Una mujer de Noruega le revela una sorprendente conexión, su abuela había estado de novia con el abuelo de Karen, hace casi 100 años. Intrigada, Karen busca en viejos álbumes familiares esperando encontrar algún rastro de esta relación perdida. Cuanto más busca, más preguntas surgen.</p>
+<p>Determinada a descubrir la verdad, Karen se embarca en un viaje a Noruega para reunirse con su familia y rastrear el pasado de su abuelo. Su viaje se vuelve una profunda exploración de sus recuerdos de infancia, la historia de inmigración de su "Bestefar", amores perdidos y las cicatrices de la guerra, acercándola a las respuestas que estaba buscando.</p>`,
+};
+
+function getProjectSummary(project: { slug: string; summary?: string; excerpt?: string }, locale: "es" | "en"): string {
+  if (project.slug === "bestefar") return BESTEFAR_SYNOPSIS[locale];
+  return (project.summary || project.excerpt || "").trim();
+}
+
+/** Versión plana para meta description (primeros 160 caracteres). */
+function getProjectSummaryPlain(project: { slug: string; summary?: string; excerpt?: string }, locale: "es" | "en"): string {
+  const html = getProjectSummary(project, locale);
+  const plain = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return plain.slice(0, 160);
+}
+
 export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params;
   const loc = getLocaleFromParam(locale);
@@ -54,7 +74,7 @@ export async function generateMetadata({ params }: PageProps) {
   const meta = COPY[loc].metadata;
   if (!project) return { title: meta.project };
   const desc =
-    (project.summary || project.excerpt)?.trim()?.slice(0, 160) ||
+    getProjectSummaryPlain(project, loc) ||
     (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
   const ogImage = project.featuredImage
@@ -97,7 +117,7 @@ export default async function ProjectPage({ params }: PageProps) {
   const primaryVideo = project.primaryVideo;
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
   const desc =
-    (project.summary || project.excerpt)?.slice(0, 160) ||
+    getProjectSummaryPlain(project, loc) ||
     `${project.title}${project.year ? ` (${project.year})` : ""}. Director.`;
 
   const projectJsonLd =
@@ -178,9 +198,9 @@ export default async function ProjectPage({ params }: PageProps) {
             {project.roles?.[0] && <span>{project.roles[0]}</span>}
             {project.year && <span>{project.year}</span>}
           </div>
-          {(project.summary || project.excerpt) && (
+          {getProjectSummary(project, loc) && (
             <div className="prose-safe mt-6 max-w-[65ch] text-base leading-relaxed text-white/85">
-              <SafeHtml html={(project.summary || project.excerpt) ?? ""} />
+              <SafeHtml html={getProjectSummary(project, loc)} />
             </div>
           )}
         </header>
@@ -189,6 +209,22 @@ export default async function ProjectPage({ params }: PageProps) {
           <div className="prose-safe mb-14 text-sm text-white/80">
             <SafeHtml html={project.content} />
           </div>
+        ) : null}
+
+        {/* Reels / Trailers — YouTube o Vimeo */}
+        {project.reelVideos && project.reelVideos.length > 0 ? (
+          <section className="mb-14 space-y-6" aria-labelledby="reels-heading">
+            <h2 id="reels-heading" className="text-[10px] uppercase tracking-wider text-white/40">
+              {t.reelsTrailers}
+            </h2>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {project.reelVideos.map((v, i) => (
+                <div key={`${v.type}-${v.id}-${i}`} className="aspect-video w-full overflow-hidden rounded bg-white/5">
+                  <VideoEmbed type={v.type} id={v.id} title={`${project.title} — ${t.reelsTrailers}`} className="h-full w-full" />
+                </div>
+              ))}
+            </div>
+          </section>
         ) : null}
 
         {/* Gallery / Stills — clean, cinematic spacing */}
@@ -225,6 +261,28 @@ export default async function ProjectPage({ params }: PageProps) {
             <div className="prose-safe mt-4 text-sm text-white/60">
               <SafeHtml html={project.credits} />
             </div>
+          </section>
+        ) : null}
+
+        {(project.projectLinks && project.projectLinks.length > 0) ? (
+          <section className="mt-10 space-y-2" aria-labelledby="links-heading">
+            <h2 id="links-heading" className="text-[10px] uppercase tracking-wider text-white/40">
+              {t.links}
+            </h2>
+            <ul className="flex flex-wrap gap-x-6 gap-y-1">
+              {project.projectLinks.map((link, i) => (
+                <li key={i}>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-white/70 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/50"
+                  >
+                    {link.label?.trim() || link.url}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </section>
         ) : null}
 

@@ -17,7 +17,7 @@ export const COPY: Record<
   {
     nav: { home: string; work: string; portfolio: string; gallery: string; about: string; contact: string };
     work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string; viewAllWork: string; archive: string; archiveSubtitle: string };
-    workDetail: { gallery: string; galleryStills: string; credits: string; viewAll: string; viewProject: string; navLabel: string };
+    workDetail: { gallery: string; galleryStills: string; reelsTrailers: string; links: string; credits: string; viewAll: string; viewProject: string; navLabel: string };
     gallery: { title: string; subtitle?: string; all: string };
     home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; viewAll: string; ctaVideos: string; ctaGallery: string; ctaFeatured: string; ctaTitle: string; ctaText: string; ctaButton: string; heroH1: string; heroSub: string; ctaPrimary: string; ctaSecondary: string; aboutText: string; ctaCollaborate: string; photography: string; about: string };
     about: { defaultTitle: string };
@@ -56,7 +56,7 @@ export const COPY: Record<
       archive: "Archivo",
       archiveSubtitle: "Todos los proyectos publicados.",
     },
-    workDetail: { gallery: "Galería", galleryStills: "Galería / Stills", credits: "Créditos", viewAll: "Ver todos", viewProject: "Ver proyecto", navLabel: "Navegación entre proyectos" },
+    workDetail: { gallery: "Galería", galleryStills: "Galería / Stills", reelsTrailers: "Reels y trailers", links: "Enlaces", credits: "Créditos", viewAll: "Ver todos", viewProject: "Ver proyecto", navLabel: "Navegación entre proyectos" },
     gallery: { title: "Fotografía", subtitle: "Fotografías seleccionadas.", all: "Todas" },
     home: {
       tagline: "Director · Director de fotografía · Productor",
@@ -116,7 +116,7 @@ export const COPY: Record<
       archive: "Archive",
       archiveSubtitle: "All published projects.",
     },
-    workDetail: { gallery: "Gallery", galleryStills: "Gallery / Stills", credits: "Credits", viewAll: "View all", viewProject: "View project", navLabel: "Project navigation" },
+    workDetail: { gallery: "Gallery", galleryStills: "Gallery / Stills", reelsTrailers: "Reels & Trailers", links: "Links", credits: "Credits", viewAll: "View all", viewProject: "View project", navLabel: "Project navigation" },
     gallery: { title: "Photography", subtitle: "Selected photographs.", all: "All" },
     home: {
       tagline: "Director · Director of Photography · Producer",

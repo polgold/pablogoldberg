@@ -22,6 +22,8 @@ export interface ProjectItem {
   summary?: string;
   credits?: string;
   externalLink?: string;
+  /** Enlaces externos (web de la película, prensa, etc.) con etiqueta opcional. */
+  projectLinks?: { url: string; label?: string }[];
   order?: number;
   isFeatured?: boolean;
   featuredImage?: string;
@@ -29,6 +31,8 @@ export interface ProjectItem {
   coverImagePath?: string;
   videoUrls: { vimeo?: string[]; youtube?: string[] };
   primaryVideo?: { type: "vimeo" | "youtube"; id: string };
+  /** Reels o trailers (YouTube/Vimeo) para mostrar en la página del proyecto. */
+  reelVideos?: { type: "vimeo" | "youtube"; id: string }[];
   galleryImages: string[];
 }
 

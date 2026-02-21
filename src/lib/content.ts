@@ -47,7 +47,9 @@ type ProjectRow = {
   is_featured?: boolean | null;
   duration?: string | null;
   video_url?: string | null;
+  reel_urls?: string[] | null;
   external_link?: string | null;
+  project_links?: unknown;
   cover_image?: string | null;
   cover_image_path?: string | null;
   created_at?: string | null;
@@ -61,10 +63,20 @@ export function isPhotography(type: string | null | undefined): boolean {
   return ["photo", "photography", "fotografia", "gallery"].includes(type.toLowerCase().trim());
 }
 
+/** Path en Storage del bucket projects: si no tiene "/", se asume dentro de la carpeta del slug. */
+function projectStoragePath(slug: string, path: string | null | undefined): string {
+  if (!path || !slug) return path ?? "";
+  const trimmed = String(path).replace(/^\//, "").trim();
+  if (!trimmed) return "";
+  if (trimmed.includes("/")) return trimmed;
+  return `${slug}/${trimmed}`;
+}
+
 function rowToProjectItem(row: ProjectRow): ProjectItem {
   const content = String(row.description ?? "").trim();
   const summaryRaw = String(row.summary ?? "").trim();
   const excerpt = summaryRaw || content.slice(0, 300);
+  const slug = String(row.slug);
 
   let galleryImages: string[] = [];
   const g = row.gallery;
@@ -72,13 +84,16 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     galleryImages = g
       .filter((it) => it.path)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((it) => getPublicImageUrl(toLargePathOrOriginal(it.path), PROJECTS_BUCKET));
+      .map((it) => getPublicImageUrl(toLargePathOrOriginal(projectStoragePath(slug, it.path)), PROJECTS_BUCKET));
   } else {
     const paths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
-    galleryImages = paths.filter((p): p is string => Boolean(p)).map((p) => getPublicImageUrl(toLargePathOrOriginal(p), PROJECTS_BUCKET));
+    galleryImages = paths
+      .filter((p): p is string => Boolean(p))
+      .map((p) => getPublicImageUrl(toLargePathOrOriginal(projectStoragePath(slug, p)), PROJECTS_BUCKET));
   }
 
-  const coverPath = row.cover_image ?? row.cover_image_path ?? null;
+  const rawCoverPath = row.cover_image ?? row.cover_image_path ?? null;
+  const coverPath = rawCoverPath ? projectStoragePath(slug, rawCoverPath) : null;
   const coverUrl = coverPath ? getPublicImageUrl(toLargePathOrOriginal(coverPath), PROJECTS_BUCKET) : undefined;
 
   return {
@@ -96,14 +111,42 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     summary: summaryRaw || undefined,
     credits: row.credits?.trim() ? String(row.credits) : undefined,
     externalLink: row.external_link ?? undefined,
+    projectLinks: parseProjectLinks(row.project_links),
     order: row.order ?? undefined,
     isFeatured: Boolean(row.is_featured),
     featuredImage: coverUrl,
     coverImagePath: coverPath ?? undefined,
     videoUrls: { vimeo: undefined, youtube: undefined },
     primaryVideo: parseVideoUrl(row.video_url),
+    reelVideos: parseReelUrls(row.reel_urls),
     galleryImages,
   };
+}
+
+function parseProjectLinks(raw: unknown): { url: string; label?: string }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (item && typeof item === "object" && "url" in item && typeof (item as { url: unknown }).url === "string") {
+        const url = (item as { url: string }).url.trim();
+        if (!url) return null;
+        const label =
+          "label" in item && typeof (item as { label: unknown }).label === "string"
+            ? (item as { label: string }).label.trim() || undefined
+            : undefined;
+        return { url, label };
+      }
+      return null;
+    })
+    .filter((v): v is { url: string; label?: string } => v != null);
+}
+
+function parseReelUrls(urls: string[] | null | undefined): { type: "vimeo" | "youtube"; id: string }[] {
+  if (!Array.isArray(urls)) return [];
+  return urls
+    .filter((u): u is string => typeof u === "string" && u.trim().length > 0)
+    .map((u) => parseVideoUrl(u.trim()))
+    .filter((v): v is { type: "vimeo" | "youtube"; id: string } => v != null);
 }
 
 export async function getPages(locale: Locale = DEFAULT_LOCALE): Promise<PageItem[]> {

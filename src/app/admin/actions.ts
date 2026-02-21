@@ -14,12 +14,16 @@ import {
 
 export type GalleryItem = { path: string; url: string; order: number };
 
+type ProjectLinkItem = { url: string; label?: string };
+
 type ProjectRow = {
   id: string;
   slug: string;
   title: string;
   description: string | null;
   video_url: string | null;
+  reel_urls: string[];
+  project_links: ProjectLinkItem[];
   cover_image: string | null;
   gallery: GalleryItem[];
   is_featured: boolean;
@@ -85,12 +89,20 @@ function normalizeProjectRow(row: Record<string, unknown>): Record<string, unkno
       .filter((p): p is string => Boolean(p))
       .map((path, order) => ({ path, url: getProjectAssetUrl(path), order }));
   }
+  const reelUrls = row.reel_urls;
+  const reelUrlsArr = Array.isArray(reelUrls)
+    ? reelUrls.filter((u): u is string => typeof u === "string").map((u) => u.trim()).filter(Boolean)
+    : [];
+  const projectLinks = parseProjectLinksRow(row.project_links);
+
   return {
     id: row.id,
     slug: row.slug,
     title: row.title,
     description: row.description ?? null,
     video_url: row.video_url ?? null,
+    reel_urls: reelUrlsArr,
+    project_links: projectLinks,
     cover_image: coverImage,
     gallery,
     is_featured: Boolean(row.is_featured),
@@ -102,6 +114,49 @@ function normalizeProjectRow(row: Record<string, unknown>): Record<string, unkno
 function getExt(filename: string): string {
   const i = filename.lastIndexOf(".");
   return i >= 0 ? filename.slice(i + 1).toLowerCase() : "";
+}
+
+function parseReelUrlsForm(value: FormDataEntryValue | null): string[] {
+  if (value == null) return [];
+  const s = String(value).trim();
+  if (!s) return [];
+  try {
+    const arr = JSON.parse(s) as unknown;
+    return Array.isArray(arr)
+      ? arr.filter((u): u is string => typeof u === "string").map((u) => u.trim()).filter(Boolean)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseProjectLinksRow(raw: unknown): ProjectLinkItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (item && typeof item === "object" && "url" in item && typeof (item as { url: unknown }).url === "string") {
+        const url = String((item as { url: string }).url).trim();
+        if (!url) return null;
+        const label =
+          "label" in item && typeof (item as { label: unknown }).label === "string"
+            ? String((item as { label: string }).label).trim() || undefined
+            : undefined;
+        return { url, label };
+      }
+      return null;
+    })
+    .filter((v): v is ProjectLinkItem => v != null);
+}
+
+function parseProjectLinksForm(value: FormDataEntryValue | null): ProjectLinkItem[] {
+  if (value == null) return [];
+  const s = String(value).trim();
+  if (!s) return [];
+  try {
+    return parseProjectLinksRow(JSON.parse(s) as unknown);
+  } catch {
+    return [];
+  }
 }
 
 function slugFromTitle(title: string): string {
@@ -135,6 +190,8 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
 
   const description = String(formData.get("description") ?? "").trim() || null;
   const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
+  const reelUrls = parseReelUrlsForm(formData.get("reel_urls"));
+  const projectLinks = parseProjectLinksForm(formData.get("project_links"));
 
   const isFeatured = formData.get("is_featured") === "on" || formData.get("is_featured") === "true";
   const published = formData.get("published") === "on" || formData.get("published") === "true";
@@ -148,6 +205,8 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
       title,
       description,
       video_url: videoUrl,
+      reel_urls: reelUrls,
+      project_links: projectLinks,
       cover_image: null,
       gallery: [],
       is_featured: isFeatured,
@@ -214,6 +273,8 @@ export async function updateProject(
 
   const description = String(formData.get("description") ?? "").trim() || null;
   const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
+  const reelUrls = parseReelUrlsForm(formData.get("reel_urls"));
+  const projectLinks = parseProjectLinksForm(formData.get("project_links"));
   const coverImage = String(formData.get("cover_image") ?? "").trim() || null;
   const isFeatured = formData.get("is_featured") === "on" || formData.get("is_featured") === "true";
   const published = formData.get("published") === "on" || formData.get("published") === "true";
@@ -233,6 +294,8 @@ export async function updateProject(
       title,
       description,
       video_url: videoUrl,
+      reel_urls: reelUrls,
+      project_links: projectLinks,
       cover_image: coverImage || null,
       gallery,
       is_featured: isFeatured,

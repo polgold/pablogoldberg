@@ -52,6 +52,8 @@ type Props = {
     title: string;
     description: string | null;
     video_url: string | null;
+    reel_urls?: string[];
+    project_links?: ProjectLinkItem[];
     cover_image: string | null;
     gallery: GalleryItem[];
     is_featured?: boolean;
@@ -61,12 +63,16 @@ type Props = {
   submitLabel?: string;
 };
 
+type ProjectLinkItem = { url: string; label?: string };
+
 export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState(project?.title ?? "");
   const [slug, setSlug] = useState(project?.slug ?? "");
   const [description, setDescription] = useState(project?.description ?? "");
   const [videoUrl, setVideoUrl] = useState(project?.video_url ?? "");
+  const [reelUrls, setReelUrls] = useState<string[]>(project?.reel_urls ?? []);
+  const [projectLinks, setProjectLinks] = useState<ProjectLinkItem[]>(project?.project_links ?? []);
   const [coverImage, setCoverImage] = useState<string | null>(project?.cover_image ?? null);
   const [gallery, setGallery] = useState<GalleryItem[]>(project?.gallery ?? []);
   const [isFeatured, setIsFeatured] = useState(project?.is_featured ?? false);
@@ -135,6 +141,8 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
         formData.set("slug", slug);
         if (description) formData.set("description", description);
         if (videoUrl) formData.set("video_url", videoUrl);
+        formData.set("reel_urls", JSON.stringify(reelUrls));
+        formData.set("project_links", JSON.stringify(projectLinks));
         if (coverFile) formData.set("cover_file", coverFile);
         formData.set("is_featured", isFeatured ? "on" : "off");
         formData.set("published", published ? "on" : "off");
@@ -150,6 +158,8 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
         formData.set("slug", slug);
         formData.set("description", description || "");
         formData.set("video_url", videoUrl || "");
+        formData.set("reel_urls", JSON.stringify(reelUrls));
+        formData.set("project_links", JSON.stringify(projectLinks));
         formData.set("cover_image", coverImage || "");
         formData.set("gallery_json", JSON.stringify(gallery));
         formData.set("is_featured", isFeatured ? "on" : "off");
@@ -249,6 +259,95 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
               <VideoEmbed type={primaryVideo.type} id={primaryVideo.id} title={title} />
             </div>
           )}
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">
+            Reels / Trailers (YouTube o Vimeo)
+          </label>
+          <p className="mb-2 text-xs text-zinc-500">
+            Links adicionales para reels o trailers estilo Netflix. Se muestran en la página del proyecto.
+          </p>
+          <div className="space-y-2">
+            {reelUrls.map((url, i) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => {
+                    const next = [...reelUrls];
+                    next[i] = e.target.value;
+                    setReelUrls(next);
+                  }}
+                  placeholder="https://vimeo.com/... o https://youtube.com/..."
+                  className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setReelUrls((prev) => prev.filter((_, j) => j !== i))}
+                  className="rounded bg-zinc-700 px-3 py-2 text-sm text-white hover:bg-zinc-600"
+                >
+                  Quitar
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setReelUrls((prev) => [...prev, ""])}
+              className="rounded border border-dashed border-zinc-600 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-400 hover:border-amber-500 hover:text-amber-500"
+            >
+              + Añadir link
+            </button>
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">
+            Enlaces (web de la película, prensa, etc.)
+          </label>
+          <p className="mb-2 text-xs text-zinc-500">
+            URL y opcionalmente una etiqueta (ej. &quot;Web oficial&quot;, &quot;Prensa&quot;). Se muestran en la página del proyecto.
+          </p>
+          <div className="space-y-3">
+            {projectLinks.map((link, i) => (
+              <div key={i} className="flex flex-wrap gap-2 rounded border border-zinc-700 bg-zinc-900/50 p-2">
+                <input
+                  type="url"
+                  value={link.url}
+                  onChange={(e) => {
+                    const next = [...projectLinks];
+                    next[i] = { ...next[i], url: e.target.value };
+                    setProjectLinks(next);
+                  }}
+                  placeholder="https://..."
+                  className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+                <input
+                  type="text"
+                  value={link.label ?? ""}
+                  onChange={(e) => {
+                    const next = [...projectLinks];
+                    next[i] = { ...next[i], label: e.target.value.trim() || undefined };
+                    setProjectLinks(next);
+                  }}
+                  placeholder="Etiqueta (opcional)"
+                  className="w-36 rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setProjectLinks((prev) => prev.filter((_, j) => j !== i))}
+                  className="rounded bg-zinc-700 px-3 py-2 text-sm text-white hover:bg-zinc-600"
+                >
+                  Quitar
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setProjectLinks((prev) => [...prev, { url: "" }])}
+              className="rounded border border-dashed border-zinc-600 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-400 hover:border-amber-500 hover:text-amber-500"
+            >
+              + Añadir enlace
+            </button>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-6">
           <label className="flex items-center gap-2">

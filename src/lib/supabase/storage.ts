@@ -20,7 +20,8 @@ export function getPublicImageUrl(path: string, bucket?: string): string {
   const base = url.replace(/\/$/, "");
   const b = (bucket ?? BUCKET).replace(/\/$/, "");
   const cleanPath = path.replace(/^\//, "");
-  return `${base}/storage/v1/object/public/${b}/${cleanPath}`;
+  const encodedPath = cleanPath.split("/").map((seg) => encodeURIComponent(seg)).join("/");
+  return `${base}/storage/v1/object/public/${b}/${encodedPath}`;
 }
 
 /** URL pública para assets en bucket projects: <slug>/cover.*, <slug>/gallery/* */
