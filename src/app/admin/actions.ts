@@ -395,15 +395,26 @@ export async function listProjectStorageFiles(slug: string): Promise<{ path: str
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
 
-  const { data: files, error } = await supabase.storage
+  let folder = `${slug}/gallery`;
+  let { data: files, error } = await supabase.storage
     .from(PROJECTS_BUCKET)
-    .list(`${slug}/gallery`, { limit: 200 });
+    .list(folder, { limit: 200 });
+  if ((error || !files?.length) && slug.includes("-")) {
+    const slugNoHyphens = slug.replace(/-/g, "");
+    if (slugNoHyphens !== slug) {
+      folder = `${slugNoHyphens}/gallery`;
+      const next = await supabase.storage.from(PROJECTS_BUCKET).list(folder, { limit: 200 });
+      files = next.data ?? [];
+      error = next.error;
+    }
+  }
   if (error || !files?.length) return [];
 
+  const prefix = folder.replace(/\/?$/, "");
   return files
     .filter((f) => f.name && !f.name.startsWith(".") && f.id != null)
     .map((f) => {
-      const path = `${slug}/gallery/${f.name}`;
+      const path = `${prefix}/${f.name}`;
       return { path, url: getProjectsImageUrl(path) };
     });
 }

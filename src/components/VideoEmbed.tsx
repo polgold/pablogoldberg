@@ -8,6 +8,13 @@ interface VideoEmbedProps {
 }
 
 export function VideoEmbed({ type, id, title, className = "" }: VideoEmbedProps) {
+  if (!id?.trim()) {
+    return (
+      <div className={`aspect-video w-full overflow-hidden bg-black ${className}`}>
+        <div className="flex h-full w-full items-center justify-center text-white/40 text-sm">Video no disponible</div>
+      </div>
+    );
+  }
   if (type === "vimeo") {
     return (
       <div className={`aspect-video w-full overflow-hidden bg-black ${className}`}>

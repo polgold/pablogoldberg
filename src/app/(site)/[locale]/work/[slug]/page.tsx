@@ -161,9 +161,9 @@ export default async function ProjectPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(projectJsonLd) }}
       />
-      {(primaryVideo || heroPoster) && (
+      {(primaryVideo?.id || heroPoster) && (
         <div className="relative w-full">
-          {primaryVideo ? (
+          {primaryVideo?.id ? (
             <div className="aspect-video w-full bg-black">
               <VideoEmbed
                 type={primaryVideo.type}

@@ -63,13 +63,20 @@ export function isPhotography(type: string | null | undefined): boolean {
   return ["photo", "photography", "fotografia", "gallery"].includes(type.toLowerCase().trim());
 }
 
-/** Path en Storage del bucket projects: si no tiene "/", se asume dentro de la carpeta del slug. */
+/** Path en Storage del bucket projects: si no tiene "/", se asume dentro de la carpeta del slug.
+ * Si el path empieza con la variante con guiones del slug (ej. home-sick) y el slug es sin guiones (homesick), se usa el slug para no 404. */
 function projectStoragePath(slug: string, path: string | null | undefined): string {
   if (!path || !slug) return path ?? "";
   const trimmed = String(path).replace(/^\//, "").trim();
   if (!trimmed) return "";
-  if (trimmed.includes("/")) return trimmed;
-  return `${slug}/${trimmed}`;
+  if (!trimmed.includes("/")) return `${slug}/${trimmed}`;
+  const [first, ...rest] = trimmed.split("/");
+  const firstNoHyphens = (first ?? "").replace(/-/g, "");
+  const slugNoHyphens = slug.replace(/-/g, "");
+  if (firstNoHyphens === slugNoHyphens && rest.length > 0 && (first ?? "").includes("-") && !slug.includes("-")) {
+    return [slug, ...rest].join("/");
+  }
+  return trimmed;
 }
 
 function rowToProjectItem(row: ProjectRow): ProjectItem {

@@ -482,29 +482,38 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
                     className="group relative aspect-square overflow-hidden rounded bg-zinc-800"
                   >
                     <img src={item.url} alt="" className="h-full w-full object-cover" />
-                    <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveGalleryItem(i, "up")}
+                          disabled={i === 0}
+                          className="rounded bg-zinc-700 px-2 py-1 text-xs text-white hover:bg-zinc-600 disabled:opacity-30"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveGalleryItem(i, "down")}
+                          disabled={i === gallery.length - 1}
+                          className="rounded bg-zinc-700 px-2 py-1 text-xs text-white hover:bg-zinc-600 disabled:opacity-30"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSetCover(item.path)}
+                          className="rounded bg-amber-600 px-2 py-1 text-xs text-white hover:bg-amber-500"
+                        >
+                          Portada
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => moveGalleryItem(i, "up")}
-                        disabled={i === 0}
-                        className="rounded bg-zinc-700 px-2 py-1 text-xs text-white hover:bg-zinc-600 disabled:opacity-30"
+                        onClick={() => setGallery((prev) => prev.filter((_, j) => j !== i))}
+                        className="rounded bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-500"
                       >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveGalleryItem(i, "down")}
-                        disabled={i === gallery.length - 1}
-                        className="rounded bg-zinc-700 px-2 py-1 text-xs text-white hover:bg-zinc-600 disabled:opacity-30"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetCover(item.path)}
-                        className="rounded bg-amber-600 px-2 py-1 text-xs text-white hover:bg-amber-500"
-                      >
-                        Portada
+                        Quitar de galería
                       </button>
                     </div>
                   </div>
