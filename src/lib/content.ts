@@ -478,6 +478,39 @@ function isImagePath(name: string): boolean {
 }
 
 /**
+ * Convierte URLs públicas de Supabase Storage a URLs firmadas (evita 403 por referrer/CORS).
+ * Extrae path desde cada URL (formato .../object/public/BUCKET/PATH) y genera signed URL.
+ */
+export async function getSignedGalleryUrls(publicUrls: string[]): Promise<string[]> {
+  const supabase = createSupabaseServerClient();
+  if (!supabase || publicUrls.length === 0) return publicUrls;
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  const prefix = `${base}/storage/v1/object/public/`;
+  const bucket = PROJECTS_BUCKET;
+  const prefixWithBucket = `${prefix}${bucket}/`;
+  const out: string[] = [];
+  const expiresIn = 60 * 60 * 24;
+  for (const url of publicUrls) {
+    if (!url?.includes(prefixWithBucket)) {
+      out.push(url);
+      continue;
+    }
+    try {
+      const afterBucket = url.slice(prefixWithBucket.length).split("?")[0] ?? "";
+      const path = afterBucket
+        .split("/")
+        .map((seg) => decodeURIComponent(seg))
+        .join("/");
+      const signed = await getSignedImageUrlWithBucket(supabase, path, expiresIn, bucket);
+      out.push(signed || url);
+    } catch {
+      out.push(url);
+    }
+  }
+  return out;
+}
+
+/**
  * Cuando la galería en DB está vacía, lista imágenes en Storage en slug/ y slug/gallery/
  * y devuelve URLs firmadas (funcionan con bucket público o privado).
  */

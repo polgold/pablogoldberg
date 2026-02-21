@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getAdjacentArchiveProjects, getProjectGalleryFromStorage } from "@/lib/content";
+import { getProjectBySlug, getAdjacentArchiveProjects, getProjectGalleryFromStorage, getSignedGalleryUrls } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
@@ -152,7 +152,7 @@ export default async function ProjectPage({ params }: PageProps) {
         : [];
   const gallery =
     galleryFromDb.length > 0
-      ? galleryFromDb
+      ? await getSignedGalleryUrls(galleryFromDb)
       : await getProjectGalleryFromStorage(project.slug);
   const heroPoster =
     project.featuredImage ??
@@ -250,6 +250,7 @@ export default async function ProjectPage({ params }: PageProps) {
                     className="h-full w-full object-cover"
                     loading="lazy"
                     decoding="async"
+                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <Image
