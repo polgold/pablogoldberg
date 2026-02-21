@@ -44,14 +44,22 @@ type ProjectRow = {
   order?: number | null;
   client?: string | null;
   piece_type?: string | null;
+  is_featured?: boolean | null;
   duration?: string | null;
   video_url?: string | null;
   external_link?: string | null;
   cover_image?: string | null;
   cover_image_path?: string | null;
+  created_at?: string | null;
   gallery?: Array<{ path: string; url?: string; order?: number }>;
   gallery_image_paths?: string[] | null;
 };
+
+/** Returns true if piece_type is photography/photo/gallery (excluded from work listing). */
+export function isPhotography(type: string | null | undefined): boolean {
+  if (!type || typeof type !== "string") return false;
+  return ["photo", "photography", "fotografia", "gallery"].includes(type.toLowerCase().trim());
+}
 
 function rowToProjectItem(row: ProjectRow): ProjectItem {
   const content = String(row.description ?? "").trim();
@@ -89,6 +97,7 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     credits: row.credits?.trim() ? String(row.credits) : undefined,
     externalLink: row.external_link ?? undefined,
     order: row.order ?? undefined,
+    isFeatured: Boolean(row.is_featured),
     featuredImage: coverUrl,
     coverImagePath: coverPath ?? undefined,
     videoUrls: { vimeo: undefined, youtube: undefined },
@@ -236,10 +245,26 @@ export async function getVideoProjects(locale: Locale = DEFAULT_LOCALE): Promise
   return all.filter((p) => p.primaryVideo);
 }
 
-function isPhotographyPieceType(pieceType: string | null | undefined): boolean {
-  if (!pieceType || typeof pieceType !== "string") return false;
-  const v = pieceType.toLowerCase().trim();
-  return v === "photography" || v === "photo";
+/** Fetch all published projects (no piece_type filter). Filter photography in code. */
+async function getPublishedProjects(locale: Locale = DEFAULT_LOCALE): Promise<ProjectItem[]> {
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("locale", locale)
+    .eq("published", true)
+    .order("year", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error("[content] getPublishedProjects error:", error.message);
+    return [];
+  }
+  const workItems = (data ?? [])
+    .map((row) => rowToProjectItem(row))
+    .filter((p) => !isPhotography(p.pieceType));
+  return workItems;
 }
 
 /** Curated work: featured, published, not photography. Max 6, newest first. */
@@ -248,25 +273,9 @@ export async function getCuratedWork(
   locale: Locale = DEFAULT_LOCALE
 ): Promise<ProjectItem[]> {
   try {
-    const supabase = createSupabaseServerClient();
-    if (!supabase) return [];
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("locale", locale)
-      .eq("published", true)
-      .eq("is_featured", true)
-      .order("year", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false, nullsFirst: false })
-      .limit(limit * 2);
-
-    if (error) {
-      console.error("[content] getCuratedWork error:", error.message);
-      return [];
-    }
-    return (data ?? [])
-      .map((row) => rowToProjectItem(row))
-      .filter((p) => !isPhotographyPieceType(p.pieceType))
+    const workItems = await getPublishedProjects(locale);
+    return workItems
+      .filter((p) => p.isFeatured === true)
       .slice(0, limit);
   } catch (e) {
     console.error("[content] getCuratedWork:", e);
@@ -277,23 +286,7 @@ export async function getCuratedWork(
 /** Archive work: all published, not photography. Ordered by year desc, created_at desc. */
 export async function getArchiveWork(locale: Locale = DEFAULT_LOCALE): Promise<ProjectItem[]> {
   try {
-    const supabase = createSupabaseServerClient();
-    if (!supabase) return [];
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("locale", locale)
-      .eq("published", true)
-      .order("year", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false, nullsFirst: false });
-
-    if (error) {
-      console.error("[content] getArchiveWork error:", error.message);
-      return [];
-    }
-    return (data ?? [])
-      .map((row) => rowToProjectItem(row))
-      .filter((p) => !isPhotographyPieceType(p.pieceType));
+    return getPublishedProjects(locale);
   } catch (e) {
     console.error("[content] getArchiveWork:", e);
     return [];

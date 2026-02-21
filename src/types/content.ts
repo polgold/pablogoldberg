@@ -23,6 +23,7 @@ export interface ProjectItem {
   credits?: string;
   externalLink?: string;
   order?: number;
+  isFeatured?: boolean;
   featuredImage?: string;
   /** Path del cover en Storage; para construir thumb en cards sin tocar estructura. */
   coverImagePath?: string;

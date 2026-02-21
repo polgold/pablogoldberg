@@ -10,6 +10,14 @@ import type { ProjectItem } from "@/types/content";
 
 export const revalidate = 300;
 
+function hasVisual(project: ProjectItem): boolean {
+  return Boolean(
+    project.coverImagePath ||
+    project.featuredImage ||
+    project.primaryVideo
+  );
+}
+
 function getYouTubeUrl(project: ProjectItem): string | null {
   if (project.primaryVideo?.type === "youtube" && project.primaryVideo.id) {
     return `https://www.youtube.com/watch?v=${project.primaryVideo.id}`;
@@ -73,18 +81,9 @@ export default async function WorkArchivePage({
   const loc = getLocaleFromParam(locale);
 
   const archive = await getArchiveWork(loc);
-  const items: WorkItem[] =
-    archive.length > 0
-      ? archive.map((p) => projectToWorkItem(p, locale))
-      : [
-          {
-            slug: "coming-soon",
-            title: loc === "es" ? "No hay proyectos." : "No projects yet.",
-            featuredImage: null,
-            href: "#",
-            external: false,
-          } as WorkItem,
-        ];
+  const items: WorkItem[] = archive
+    .filter(hasVisual)
+    .map((p) => projectToWorkItem(p, locale));
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
