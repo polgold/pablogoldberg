@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl, getSignedImageUrlWithBucket } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
-import { toLargePathOrOriginal } from "./imageVariantPath";
+import { toLargePath, toLargePathOrOriginal } from "./imageVariantPath";
 import type { PageItem, ProjectItem } from "@/types/content";
 
 export type Locale = "es" | "en";
@@ -63,13 +63,13 @@ export function isPhotography(type: string | null | undefined): boolean {
   return ["photo", "photography", "fotografia", "gallery"].includes(type.toLowerCase().trim());
 }
 
-/** Path en Storage del bucket projects: si no tiene "/", se asume dentro de la carpeta del slug.
- * Si el path empieza con la variante con guiones del slug (ej. home-sick) y el slug es sin guiones (homesick), se usa el slug para no 404. */
+/** Path en Storage del bucket projects: si no tiene "/", se asume en slug/gallery/ (donde se suben).
+ * Si el path ya tiene "/", se normaliza slug con guiones (ej. home-sick → homesick) para no 404. */
 function projectStoragePath(slug: string, path: string | null | undefined): string {
   if (!path || !slug) return path ?? "";
   const trimmed = String(path).replace(/^\//, "").trim();
   if (!trimmed) return "";
-  if (!trimmed.includes("/")) return `${slug}/${trimmed}`;
+  if (!trimmed.includes("/")) return `${slug}/gallery/${trimmed}`;
   const [first, ...rest] = trimmed.split("/");
   const firstNoHyphens = (first ?? "").replace(/-/g, "");
   const slugNoHyphens = slug.replace(/-/g, "");
@@ -91,12 +91,12 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     galleryImages = g
       .filter((it) => it.path)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((it) => getPublicImageUrl(toLargePathOrOriginal(projectStoragePath(slug, it.path)), PROJECTS_BUCKET));
+      .map((it) => getPublicImageUrl(toLargePath(projectStoragePath(slug, it.path)), PROJECTS_BUCKET));
   } else {
     const paths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
     galleryImages = paths
       .filter((p): p is string => Boolean(p))
-      .map((p) => getPublicImageUrl(toLargePathOrOriginal(projectStoragePath(slug, p)), PROJECTS_BUCKET));
+      .map((p) => getPublicImageUrl(toLargePath(projectStoragePath(slug, p)), PROJECTS_BUCKET));
   }
 
   const rawCoverPath = row.cover_image ?? row.cover_image_path ?? null;
@@ -519,7 +519,7 @@ export async function getProjectGalleryFromStorage(slug: string): Promise<string
   if (!slug || !supabase) return [];
   const paths: string[] = [];
   try {
-    const folders = [slug, `${slug}/gallery`];
+    const folders = [slug, `${slug}/gallery`, `${slug}/gallery/large`, `${slug}/gallery/thumb`];
     for (const folder of folders) {
       const { data: files, error } = await supabase.storage
         .from(PROJECTS_BUCKET)
@@ -529,7 +529,7 @@ export async function getProjectGalleryFromStorage(slug: string): Promise<string
         if (!f.name || f.name.startsWith(".")) continue;
         if (f.id != null && isImagePath(f.name)) {
           const path = folder === slug ? `${slug}/${f.name}` : `${folder}/${f.name}`;
-          paths.push(toLargePathOrOriginal(path));
+          paths.push(toLargePath(path));
         }
       }
     }

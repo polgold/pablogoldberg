@@ -388,7 +388,7 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
           {coverImage ? (
             <div className="flex flex-wrap items-start gap-4">
               <img
-                src={getProjectsImageUrl(coverImage)}
+                src={getProjectsImageUrl(coverImage?.includes("/") ? coverImage : `${project?.slug ?? ""}/${coverImage}`)}
                 alt="Cover"
                 className="max-h-40 rounded object-cover"
               />

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
+import { toLargePath } from "@/lib/imageVariantPath";
 import {
   getAdminPortfolioPhotos,
   listPortfolioGalleries,
@@ -73,21 +74,39 @@ export async function getProject(id: string): Promise<ProjectRow | null> {
   return normalizeProjectRow(data) as ProjectRow;
 }
 
+/** Path completo en Storage: si no tiene "/", va en slug/gallery/ (donde se suben las fotos). */
+function projectStoragePath(slug: string, path: string | null | undefined): string {
+  if (!path || !slug) return path ?? "";
+  const trimmed = String(path).replace(/^\//, "").trim();
+  if (!trimmed || trimmed.includes("/")) return trimmed;
+  return `${slug}/gallery/${trimmed}`;
+}
+
 function normalizeProjectRow(row: Record<string, unknown>): Record<string, unknown> {
+  const slug = String(row.slug ?? "").trim();
   const coverImage = (row.cover_image ?? row.cover_image_path ?? null) as string | null;
   let gallery: GalleryItem[] = [];
   const g = row.gallery;
   if (Array.isArray(g) && g.length > 0) {
-    gallery = g.map((it: { path?: string; url?: string; order?: number }, i: number) => ({
-      path: it.path ?? "",
-      url: it.url ?? getProjectAssetUrl(it.path ?? ""),
-      order: it.order ?? i,
-    }));
+    gallery = g.map((it: { path?: string; url?: string; order?: number }, i: number) => {
+      const path = it.path ?? "";
+      const fullPath = projectStoragePath(slug, path) || path;
+      const largePath = toLargePath(fullPath);
+      return {
+        path,
+        url: it.url ?? getProjectAssetUrl(largePath),
+        order: it.order ?? i,
+      };
+    });
   } else {
     const paths = (row.gallery_image_paths ?? []) as string[];
     gallery = paths
       .filter((p): p is string => Boolean(p))
-      .map((path, order) => ({ path, url: getProjectAssetUrl(path), order }));
+      .map((path, order) => {
+        const fullPath = projectStoragePath(slug, path) || path;
+        const largePath = toLargePath(fullPath);
+        return { path, url: getProjectAssetUrl(largePath), order };
+      });
   }
   const reelUrls = row.reel_urls;
   const reelUrlsArr = Array.isArray(reelUrls)
