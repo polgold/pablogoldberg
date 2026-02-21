@@ -81,7 +81,7 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     date: "",
     modified: "",
     year: row.year != null ? String(row.year) : "",
-    roles: [],
+    roles: row.piece_type ? [row.piece_type] : [],
     client: row.client != null ? row.client : undefined,
     pieceType: row.piece_type ?? undefined,
     duration: row.duration ?? undefined,
@@ -221,6 +221,21 @@ export async function getFeaturedProjects(
   }
 }
 
+/** Featured video projects only (type=video inferred by primaryVideo). Max 4. */
+export async function getFeaturedVideoProjects(
+  limit = 4,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ProjectItem[]> {
+  const featured = await getFeaturedProjects(limit * 2, locale);
+  return featured.filter((p) => p.primaryVideo).slice(0, limit);
+}
+
+/** Projects with video only, for /work listing. */
+export async function getVideoProjects(locale: Locale = DEFAULT_LOCALE): Promise<ProjectItem[]> {
+  const all = await getProjects(locale);
+  return all.filter((p) => p.primaryVideo);
+}
+
 export async function getProjectSlugs(): Promise<string[]> {
   try {
     const supabase = createSupabaseServerClient();
@@ -244,6 +259,20 @@ export async function getAdjacentProjects(
   locale: Locale = DEFAULT_LOCALE
 ): Promise<{ prev: ProjectItem | null; next: ProjectItem | null }> {
   const projects = await getProjects(locale);
+  const i = projects.findIndex((p) => p.slug === slug);
+  if (i < 0) return { prev: null, next: null };
+  return {
+    prev: i > 0 ? projects[i - 1] ?? null : null,
+    next: i < projects.length - 1 ? projects[i + 1] ?? null : null,
+  };
+}
+
+/** Adjacent projects within video-only list (for /work/[slug]). */
+export async function getAdjacentVideoProjects(
+  slug: string,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<{ prev: ProjectItem | null; next: ProjectItem | null }> {
+  const projects = await getVideoProjects(locale);
   const i = projects.findIndex((p) => p.slug === slug);
   if (i < 0) return { prev: null, next: null };
   return {

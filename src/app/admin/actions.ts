@@ -39,7 +39,7 @@ async function ensureAdmin() {
 export async function logout() {
   const supabase = await createAdminServerClient();
   if (supabase) await supabase.auth.signOut();
-  redirect("/admin/login");
+  redirect("/");
 }
 
 export async function listProjects(): Promise<ProjectRow[]> {
@@ -511,8 +511,8 @@ export async function uploadPortfolioPhotos(
       if (!insertErr) uploaded++;
     }
 
-    revalidatePath("/es/gallery");
-    revalidatePath("/en/gallery");
+    revalidatePath("/es/photography");
+    revalidatePath("/en/photography");
     revalidatePath("/admin/portfolio-photos");
     return { uploaded };
   } catch (err) {
@@ -532,8 +532,8 @@ export async function togglePortfolioPhotoVisibility(id: string): Promise<{ erro
     .update({ is_visible: !data.is_visible })
     .eq("id", id);
   if (!error) {
-    revalidatePath("/es/gallery");
-    revalidatePath("/en/gallery");
+    revalidatePath("/es/photography");
+    revalidatePath("/en/photography");
     revalidatePath("/admin/portfolio-photos");
   }
   return error ? { error: error.message } : {};
@@ -547,8 +547,8 @@ export async function reorderPortfolioPhotos(updates: { id: string; order: numbe
     const { error } = await supabase.from("portfolio_photos").update({ order }).eq("id", id);
     if (error) return { error: error.message };
   }
-  revalidatePath("/es/gallery");
-  revalidatePath("/en/gallery");
+  revalidatePath("/es/photography");
+  revalidatePath("/en/photography");
   revalidatePath("/admin/portfolio-photos");
   return {};
 }

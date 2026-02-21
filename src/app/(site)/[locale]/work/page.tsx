@@ -1,4 +1,4 @@
-import { getProjects } from "@/lib/content";
+import { getVideoProjects } from "@/lib/content";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
@@ -47,7 +47,7 @@ export default async function WorkPage({
 
   const [vimeoVideos, dbProjects] = await Promise.all([
     getVimeoPortfolioVideos(),
-    getProjects(loc),
+    getVideoProjects(loc),
   ]);
 
   const vimeoItems: WorkItem[] = vimeoVideos.map((v) => ({
@@ -104,9 +104,7 @@ export default async function WorkPage({
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 md:px-8">
-        <h1 className="text-xl font-semibold text-white">
-          {locale === "es" ? "Proyectos" : "Projects"}
-        </h1>
+        <h1 className="text-xl font-semibold text-white">Work</h1>
         <WorkPageClient items={items} locale={locale} />
       </div>
     </div>

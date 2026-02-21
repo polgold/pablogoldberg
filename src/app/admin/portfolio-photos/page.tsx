@@ -18,7 +18,7 @@ export default async function PortfolioPhotosAdminPage() {
         <h1 className="text-2xl font-semibold text-white">Portfolio Photos</h1>
       </div>
       <p className="mb-4 text-sm text-zinc-400">
-        Subí fotos, creá galerías y mostrá/ocultá en la página pública <strong>/gallery</strong>. Arrastrá para reordenar.
+        Subí fotos, creá galerías y mostrá/ocultá en la página pública <strong>/photography</strong>. Arrastrá para reordenar.
       </p>
       <PortfolioPhotosClient
         initialGalleries={galleries}

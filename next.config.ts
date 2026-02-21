@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      { source: "/es/gallery", destination: "/es/photography", permanent: true },
+      { source: "/en/gallery", destination: "/en/photography", permanent: true },
+    ];
+  },
   experimental: {
     reactCompiler: false,
   },

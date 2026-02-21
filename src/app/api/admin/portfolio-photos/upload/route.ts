@@ -93,8 +93,8 @@ export async function POST(request: Request) {
     if (!insertErr) uploaded++;
   }
 
-  revalidatePath("/es/gallery");
-  revalidatePath("/en/gallery");
+  revalidatePath("/es/photography");
+  revalidatePath("/en/photography");
   revalidatePath("/admin/portfolio-photos");
   return NextResponse.json({ uploaded });
 }

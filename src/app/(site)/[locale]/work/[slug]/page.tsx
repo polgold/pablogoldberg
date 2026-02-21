@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getAdjacentProjects } from "@/lib/content";
+import { getProjectBySlug, getAdjacentVideoProjects } from "@/lib/content";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { SITE_URL, getCanonicalUrl, getHreflangUrls } from "@/lib/site";
@@ -91,7 +91,7 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await getProjectBySlug(slug, loc);
   if (!project) notFound();
 
-  const { prev, next } = await getAdjacentProjects(slug, loc);
+  const { prev, next } = await getAdjacentVideoProjects(slug, loc);
   const primaryVideo = project.primaryVideo;
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
   const desc =
@@ -168,11 +168,10 @@ export default async function ProjectPage({ params }: PageProps) {
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
             {project.title}
           </h1>
-          {project.year && (
-            <p className="mt-2 text-sm text-white/60">
-              {project.year}
-            </p>
-          )}
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/60">
+            {project.roles?.[0] && <span>{project.roles[0]}</span>}
+            {project.year && <span>{project.year}</span>}
+          </div>
           {(project.summary || project.excerpt) && (
             <div className="prose-safe mt-6 max-w-[65ch] text-base leading-relaxed text-white/85">
               <SafeHtml html={(project.summary || project.excerpt) ?? ""} />

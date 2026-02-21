@@ -91,7 +91,7 @@ export function GalleryFilterClient({
           <div
             className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 md:flex-wrap md:overflow-visible"
             role="tablist"
-            aria-label={locale === "es" ? "Filtrar por galería" : "Filter by gallery"}
+            aria-label={locale === "es" ? "Filtrar por categoría" : "Filter by category"}
           >
             {tabs.map((tab) => {
               const isActive = (tab.slug === "all" && currentSlug === "all") || tab.slug === currentSlug;
@@ -105,7 +105,7 @@ export function GalleryFilterClient({
                   onClick={() => setFilter(tab.slug)}
                   className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black ${
                     isActive
-                      ? "border-white/40 bg-white/15 text-white"
+                      ? "border-brand bg-brand/20 text-white"
                       : "border-white/15 bg-white/5 text-white/80 hover:border-white/25 hover:bg-white/10 hover:text-white"
                   }`}
                 >

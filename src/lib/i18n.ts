@@ -19,14 +19,14 @@ export const COPY: Record<
     work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string };
     workDetail: { gallery: string; credits: string; viewAll: string };
     gallery: { title: string; subtitle?: string; all: string };
-    home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; viewAll: string; ctaVideos: string; ctaGallery: string; ctaFeatured: string; ctaTitle: string; ctaText: string; ctaButton: string };
+    home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; viewAll: string; ctaVideos: string; ctaGallery: string; ctaFeatured: string; ctaTitle: string; ctaText: string; ctaButton: string; heroH1: string; heroSub: string; ctaPrimary: string; ctaSecondary: string; aboutText: string; ctaCollaborate: string; photography: string; about: string };
     about: { defaultTitle: string };
     contact: { defaultTitle: string; ctaButton: string };
     metadata: { about: string; contact: string };
   }
 > = {
   es: {
-    nav: { home: "Inicio", work: "Videos", portfolio: "Portfolio", gallery: "Galería", about: "Sobre mí", contact: "Contacto / Booking" },
+    nav: { home: "Inicio", work: "Work", portfolio: "Portfolio", gallery: "Photography", about: "About", contact: "Contact" },
     work: {
       title: "Proyectos",
       subtitle: "Selección de proyectos como director, DP y productor.",
@@ -41,13 +41,21 @@ export const COPY: Record<
       tagline: "Director · Director de fotografía · Productor",
       more: "Más de 20 años contando historias. Buenos Aires.",
       role: "Director / Filmmaker",
-      workTitle: "Proyectos",
+      workTitle: "Work",
       reel: "Reel",
-      featured: "Trabajo destacado",
-      viewAll: "Ver todos",
-      ctaVideos: "Videos",
-      ctaGallery: "Galería",
-      ctaFeatured: "Proyectos",
+      featured: "Featured Work",
+      viewAll: "View all",
+      ctaVideos: "Watch Reel",
+      ctaGallery: "Photography",
+      ctaFeatured: "Projects",
+      heroH1: "Director & Executive Producer working across commercial and feature film projects.",
+      heroSub: "Founder of Sun Factory Films. Production partner for Accerts (USA). Collaborating with agencies and international producers from development to execution.",
+      ctaPrimary: "Watch Reel",
+      ctaSecondary: "Start a Project",
+      aboutText: "Director and Executive Producer with over 20 years of experience. Founder of Sun Factory Films, production partner for Accerts (USA). Collaborating with agencies and international producers from development to execution.",
+      ctaCollaborate: "Let's collaborate.",
+      photography: "Photography",
+      about: "About",
       ctaTitle: "¿Proyecto en mente?",
       ctaText: "Hablemos de tu próximo spot, videoclip o documental.",
       ctaButton: "Contacto / Booking",
@@ -57,7 +65,7 @@ export const COPY: Record<
     metadata: { about: "Sobre mí | Pablo Goldberg", contact: "Contacto | Pablo Goldberg" },
   },
   en: {
-    nav: { home: "Home", work: "Projects", portfolio: "Portfolio", gallery: "Gallery", about: "About", contact: "Contact / Booking" },
+    nav: { home: "Home", work: "Work", portfolio: "Portfolio", gallery: "Photography", about: "About", contact: "Contact" },
     work: {
       title: "Projects",
       subtitle: "Selection of projects as director, DP and producer.",
@@ -72,13 +80,21 @@ export const COPY: Record<
       tagline: "Director · Director of Photography · Producer",
       more: "Over 20 years telling stories. Buenos Aires.",
       role: "Director / Filmmaker",
-      workTitle: "Projects",
+      workTitle: "Work",
       reel: "Reel",
-      featured: "Featured work",
+      featured: "Featured Work",
       viewAll: "View all",
-      ctaVideos: "Videos",
-      ctaGallery: "Gallery",
+      ctaVideos: "Watch Reel",
+      ctaGallery: "Photography",
       ctaFeatured: "Projects",
+      heroH1: "Director & Executive Producer working across commercial and feature film projects.",
+      heroSub: "Founder of Sun Factory Films. Production partner for Accerts (USA). Collaborating with agencies and international producers from development to execution.",
+      ctaPrimary: "Watch Reel",
+      ctaSecondary: "Start a Project",
+      aboutText: "Director and Executive Producer with over 20 years of experience. Founder of Sun Factory Films, production partner for Accerts (USA). Collaborating with agencies and international producers from development to execution.",
+      ctaCollaborate: "Let's collaborate.",
+      photography: "Photography",
+      about: "About",
       ctaTitle: "Have a project in mind?",
       ctaText: "Let's talk about your next spot, music video or documentary.",
       ctaButton: "Contact / Booking",

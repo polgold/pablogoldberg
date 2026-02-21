@@ -2,11 +2,29 @@ import { Suspense } from "react";
 import { getPublicGalleriesWithPhotos } from "@/lib/portfolio-photos";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { GalleryFilterClient } from "./GalleryFilterClient";
+import { getHreflangUrls } from "@/lib/site";
+import { GalleryFilterClient } from "./PhotographyFilterClient";
 
 export const revalidate = 300;
 
-export default async function GalleryPage({
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const urls = getHreflangUrls("/photography");
+  const loc = getLocaleFromParam(locale);
+  return {
+    title: "Photography",
+    alternates: {
+      canonical: urls[loc],
+      languages: { es: urls.es, en: urls.en, "x-default": urls.es },
+    },
+  };
+}
+
+export default async function PhotographyPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -21,23 +39,10 @@ export default async function GalleryPage({
       <GalleryFilterClient
         galleries={galleries}
         locale={loc}
-        title={t.title}
+        title="Photography"
         subtitle={t.subtitle}
         allLabel={t.all}
       />
     </Suspense>
   );
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  const loc = getLocaleFromParam(locale);
-  const t = COPY[loc].gallery;
-  return {
-    title: t.title,
-  };
 }

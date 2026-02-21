@@ -1,30 +1,22 @@
 import Link from "next/link";
 
 interface HomeAboutProps {
-  locale: "es" | "en";
+  locale: string;
+  aboutText: string;
 }
 
-export function HomeAbout({ locale }: HomeAboutProps) {
-  const roleLine =
-    locale === "es" ? "Director / Productor / Director de fotografía" : "Director / Producer / Cinematographer";
-  const leadLine =
-    locale === "es" ? "Más de 20 años creando historias." : "Over 20 years crafting stories.";
-  const cta = locale === "es" ? "Conocé más" : "Learn more";
-
+export function HomeAbout({ locale, aboutText }: HomeAboutProps) {
   return (
-    <section className="border-b border-white/10 bg-black px-6 py-20 md:py-24">
-      <div className="mx-auto max-w-4xl text-center">
-        <h2 className="text-2xl font-light tracking-[0.08em] text-white md:text-4xl">
-          {roleLine}
-        </h2>
-        <p className="mx-auto mt-5 max-w-2xl text-base font-light leading-relaxed text-white/75 md:text-xl">
-          {leadLine}
+    <section className="border-b border-white/5 bg-black px-6 py-16 md:py-20">
+      <div className="mx-auto max-w-3xl text-center">
+        <p className="text-base leading-relaxed text-white/85 md:text-lg">
+          {aboutText}
         </p>
         <Link
           href={`/${locale}/about`}
-          className="mt-8 inline-flex items-center gap-2 text-sm uppercase tracking-[0.16em] text-white/80 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black"
+          className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand underline decoration-brand/50 underline-offset-2 transition-colors hover:text-brand/90 hover:decoration-brand focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2 focus:ring-offset-black"
         >
-          {cta}
+          {locale === "es" ? "Sobre mí" : "About"}
           <span aria-hidden>→</span>
         </Link>
       </div>
