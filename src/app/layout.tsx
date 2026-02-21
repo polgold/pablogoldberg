@@ -8,7 +8,12 @@ const defaultDescription =
 export const metadata: Metadata = {
   title: { default: "Pablo Goldberg | Director", template: "%s | Pablo Goldberg" },
   description: defaultDescription,
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+  },
   robots: { index: true, follow: true },
   openGraph: {
     title: "Pablo Goldberg | Director",
