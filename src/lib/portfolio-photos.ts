@@ -144,16 +144,19 @@ export type GalleryWithPhotos = {
   photos: PortfolioPhoto[];
 };
 
-/** Public: random photos for home mini grid. Slice 4–6, lazy-load ready. */
-export async function getRandomPhotosForHome(limit = 6): Promise<{ thumbUrl: string; largeUrl: string }[]> {
+/** Public: random photos for home mini grid. Slice 4–6, lazy-load ready. Incluye fallback por si thumb/large 404. */
+export async function getRandomPhotosForHome(limit = 6): Promise<{ thumbUrl: string; largeUrl: string; fallbackThumbUrl?: string; fallbackLargeUrl?: string }[]> {
   const galleries = await getPublicGalleriesWithPhotos();
   const allPhotos = galleries.flatMap((g) => g.photos);
   const shuffled = [...allPhotos].sort(() => Math.random() - 0.5);
   const slice = shuffled.slice(0, Math.min(limit, Math.max(4, shuffled.length)));
-  return slice.map((p) => ({
-    thumbUrl: getPublicImageUrl(toThumbPathPrefix(p.storage_path), PHOTOS_BUCKET),
-    largeUrl: getPublicImageUrl(toLargePathPrefix(p.storage_path), PHOTOS_BUCKET),
-  }));
+  return slice.map((p) => {
+    const path = p.storage_path;
+    const thumbUrl = getPublicImageUrl(toThumbPathPrefix(path), PHOTOS_BUCKET);
+    const largeUrl = getPublicImageUrl(toLargePathPrefix(path), PHOTOS_BUCKET);
+    const fallback = getPublicImageUrl(path, PHOTOS_BUCKET);
+    return { thumbUrl, largeUrl, fallbackThumbUrl: fallback, fallbackLargeUrl: fallback };
+  });
 }
 
 export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[]> {

@@ -7,6 +7,8 @@ import Image from "next/image";
 interface PhotoItem {
   thumbUrl: string;
   largeUrl: string;
+  fallbackThumbUrl?: string;
+  fallbackLargeUrl?: string;
 }
 
 interface HomePhotographyGridProps {
@@ -125,6 +127,13 @@ export function HomePhotographyGrid({
                   className="object-cover"
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   loading="lazy"
+                  unoptimized={photo.thumbUrl.includes("supabase")}
+                  onError={(e) => {
+                    const img = e.currentTarget as HTMLImageElement;
+                    if (photo.fallbackThumbUrl && img.src !== photo.fallbackThumbUrl) {
+                      img.src = photo.fallbackThumbUrl;
+                    }
+                  }}
                 />
               </span>
             </Link>
