@@ -175,6 +175,36 @@ export async function getProjects(locale: Locale = DEFAULT_LOCALE): Promise<Proj
   }
 }
 
+/** Try exact slug, then slug with hyphens removed (e.g. home-sick → homesick). */
+async function getProjectBySlugOne(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  slug: string,
+  locale: Locale
+): Promise<ProjectRow | null> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("slug", slug)
+    .eq("locale", locale)
+    .eq("published", true)
+    .maybeSingle();
+  if (error) {
+    console.error("[content] getProjectBySlug error:", error.message);
+    return null;
+  }
+  if (data) return data as ProjectRow;
+  const noHyphens = slug.replace(/-/g, "");
+  if (noHyphens === slug) return null;
+  const { data: alt } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("slug", noHyphens)
+    .eq("locale", locale)
+    .eq("published", true)
+    .maybeSingle();
+  return alt ? (alt as ProjectRow) : null;
+}
+
 export async function getProjectBySlug(
   slug: string,
   locale: Locale = DEFAULT_LOCALE
@@ -182,28 +212,13 @@ export async function getProjectBySlug(
   try {
     const supabase = createSupabaseServerClient();
     if (!supabase) return undefined;
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("slug", slug)
-      .eq("locale", locale)
-      .eq("published", true)
-      .maybeSingle();
-
-    if (error) {
-      console.error("[content] getProjectBySlug error:", error.message);
-      return undefined;
-    }
+    let data = await getProjectBySlugOne(supabase, slug, locale);
     if (data) return rowToProjectItem(data);
-    if (locale === DEFAULT_LOCALE) return undefined;
-    const { data: fallback } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("slug", slug)
-      .eq("locale", DEFAULT_LOCALE)
-      .eq("published", true)
-      .maybeSingle();
-    return fallback ? rowToProjectItem(fallback) : undefined;
+    if (locale !== DEFAULT_LOCALE) {
+      data = await getProjectBySlugOne(supabase, slug, DEFAULT_LOCALE);
+      if (data) return rowToProjectItem(data);
+    }
+    return undefined;
   } catch (e) {
     console.error("[content] getProjectBySlug:", e);
     return undefined;

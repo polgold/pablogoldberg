@@ -47,22 +47,22 @@ export function toLargePath(p: string): string {
 
 /**
  * Para proyectos: si el path ya tiene /large/ o /thumb/, devuelve la variante large.
- * Si no (ej. food/gallery/x.jpg), devuelve el path original para no pedir food/gallery/large/x.jpg que puede no existir.
+ * Si no, devuelve el path original (respeta .jpeg, .png, etc.) para no romper en Storage.
  */
 export function toLargePathOrOriginal(p: string): string {
   if (!p) return p;
   if (p.includes("/large/") || p.includes("/thumb/")) return toLargePath(p);
-  return forceJpg(p);
+  return p.replace(/^\//, "");
 }
 
 /**
  * Para proyectos: si el path ya tiene /thumb/ o /large/, devuelve la variante thumb.
- * Si no, devuelve el path original (no insertar /thumb/ que puede no existir).
+ * Si no, devuelve el path original (respeta extensión).
  */
 export function toThumbPathOrOriginal(p: string): string {
   if (!p) return p;
   if (p.includes("/thumb/") || p.includes("/large/")) return toThumbPath(p);
-  return forceJpg(p);
+  return p.replace(/^\//, "");
 }
 
 /**

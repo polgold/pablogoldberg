@@ -93,7 +93,7 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await getProjectBySlug(slug, loc);
   if (!project) notFound();
 
-  const { prev, next } = await getAdjacentArchiveProjects(slug, loc);
+  const { prev, next } = await getAdjacentArchiveProjects(project.slug, loc);
   const primaryVideo = project.primaryVideo;
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
   const desc =
@@ -161,6 +161,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 className="object-cover"
                 sizes="100vw"
                 priority
+                unoptimized={heroPoster.includes("supabase")}
               />
             </div>
           ) : null}
@@ -208,6 +209,7 @@ export default async function ProjectPage({ params }: PageProps) {
                   fill
                   className="object-cover"
                   sizes="(max-width: 900px) 100vw, 900px"
+                  unoptimized={src.includes("supabase")}
                 />
               </div>
             ))}
