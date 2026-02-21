@@ -469,3 +469,39 @@ export async function getAdjacentArchiveProjects(
     next: i < projects.length - 1 ? projects[i + 1] ?? null : null,
   };
 }
+
+const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
+
+function isImagePath(name: string): boolean {
+  const i = name.lastIndexOf(".");
+  return i >= 0 && IMAGE_EXT.has(name.slice(i).toLowerCase());
+}
+
+/**
+ * Cuando la galería en DB está vacía, lista imágenes en Storage en slug/ y slug/gallery/
+ * para mostrar en la página del proyecto (ej. bestefar con fotos en bestefar/).
+ */
+export async function getProjectGalleryFromStorage(slug: string): Promise<string[]> {
+  const supabase = createSupabaseServerClient();
+  if (!slug || !supabase) return [];
+  const out: string[] = [];
+  try {
+    const folders = [slug, `${slug}/gallery`];
+    for (const folder of folders) {
+      const { data: files, error } = await supabase.storage
+        .from(PROJECTS_BUCKET)
+        .list(folder, { limit: 200 });
+      if (error || !files?.length) continue;
+      for (const f of files) {
+        if (!f.name || f.name.startsWith(".")) continue;
+        if (f.id != null && isImagePath(f.name)) {
+          const path = folder === slug ? `${slug}/${f.name}` : `${folder}/${f.name}`;
+          out.push(getPublicImageUrl(toLargePathOrOriginal(path), PROJECTS_BUCKET));
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[content] getProjectGalleryFromStorage:", e);
+  }
+  return out;
+}

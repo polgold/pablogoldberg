@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getAdjacentArchiveProjects } from "@/lib/content";
+import { getProjectBySlug, getAdjacentArchiveProjects, getProjectGalleryFromStorage } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
@@ -144,12 +144,16 @@ export default async function ProjectPage({ params }: PageProps) {
         image: project.featuredImage ? absoluteImageUrl(project.featuredImage) : undefined,
       };
 
-  const gallery =
+  const galleryFromDb =
     project.galleryImages?.length > 0
       ? project.galleryImages
       : project.featuredImage
         ? [project.featuredImage]
         : [];
+  const gallery =
+    galleryFromDb.length > 0
+      ? galleryFromDb
+      : await getProjectGalleryFromStorage(project.slug);
   const heroPoster =
     project.featuredImage ??
     (primaryVideo ? null : (await getProjectPosterUrl(project)));
