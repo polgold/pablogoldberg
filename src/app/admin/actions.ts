@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
-import { toLargePath } from "@/lib/imageVariantPath";
+import { toLargePathPrefix } from "@/lib/imageVariantPath";
 import {
   getAdminPortfolioPhotos,
   listPortfolioGalleries,
@@ -91,7 +91,7 @@ function normalizeProjectRow(row: Record<string, unknown>): Record<string, unkno
     gallery = g.map((it: { path?: string; url?: string; order?: number }, i: number) => {
       const path = it.path ?? "";
       const fullPath = projectStoragePath(slug, path) || path;
-      const largePath = toLargePath(fullPath);
+      const largePath = toLargePathPrefix(fullPath);
       return {
         path,
         url: it.url ?? getProjectAssetUrl(largePath),
@@ -104,7 +104,7 @@ function normalizeProjectRow(row: Record<string, unknown>): Record<string, unkno
       .filter((p): p is string => Boolean(p))
       .map((path, order) => {
         const fullPath = projectStoragePath(slug, path) || path;
-        const largePath = toLargePath(fullPath);
+        const largePath = toLargePathPrefix(fullPath);
         return { path, url: getProjectAssetUrl(largePath), order };
       });
   }

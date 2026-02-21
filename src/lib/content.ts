@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl, getSignedImageUrlWithBucket } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
-import { toLargePath, toLargePathOrOriginal } from "./imageVariantPath";
+import { toLargePathOrOriginal, toLargePathPrefix } from "./imageVariantPath";
 import type { PageItem, ProjectItem } from "@/types/content";
 
 export type Locale = "es" | "en";
@@ -91,12 +91,12 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     galleryImages = g
       .filter((it) => it.path)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((it) => getPublicImageUrl(toLargePath(projectStoragePath(slug, it.path)), PROJECTS_BUCKET));
+      .map((it) => getPublicImageUrl(toLargePathPrefix(projectStoragePath(slug, it.path)), PROJECTS_BUCKET));
   } else {
     const paths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
     galleryImages = paths
       .filter((p): p is string => Boolean(p))
-      .map((p) => getPublicImageUrl(toLargePath(projectStoragePath(slug, p)), PROJECTS_BUCKET));
+      .map((p) => getPublicImageUrl(toLargePathPrefix(projectStoragePath(slug, p)), PROJECTS_BUCKET));
   }
 
   const rawCoverPath = row.cover_image ?? row.cover_image_path ?? null;
@@ -529,7 +529,7 @@ export async function getProjectGalleryFromStorage(slug: string): Promise<string
         if (!f.name || f.name.startsWith(".")) continue;
         if (f.id != null && isImagePath(f.name)) {
           const path = folder === slug ? `${slug}/${f.name}` : `${folder}/${f.name}`;
-          paths.push(toLargePath(path));
+          paths.push(toLargePathPrefix(path));
         }
       }
     }
