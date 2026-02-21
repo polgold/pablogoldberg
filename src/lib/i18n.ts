@@ -17,12 +17,12 @@ export const COPY: Record<
   {
     nav: { home: string; work: string; portfolio: string; gallery: string; about: string; contact: string };
     work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string; viewAllWork: string; archive: string; archiveSubtitle: string };
-    workDetail: { gallery: string; credits: string; viewAll: string };
+    workDetail: { gallery: string; galleryStills: string; credits: string; viewAll: string; viewProject: string; navLabel: string };
     gallery: { title: string; subtitle?: string; all: string };
     home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; viewAll: string; ctaVideos: string; ctaGallery: string; ctaFeatured: string; ctaTitle: string; ctaText: string; ctaButton: string; heroH1: string; heroSub: string; ctaPrimary: string; ctaSecondary: string; aboutText: string; ctaCollaborate: string; photography: string; about: string };
     about: { defaultTitle: string };
     contact: { defaultTitle: string; ctaButton: string };
-    metadata: { about: string; contact: string };
+    metadata: { about: string; contact: string; photography: string; archive: string; work: string; project: string };
   }
 > = {
   es: {
@@ -34,12 +34,12 @@ export const COPY: Record<
       all: "Todos",
       projectsCount: "proyecto",
       noResults: "No hay proyectos que coincidan.",
-      viewAllWork: "View All Work",
+      viewAllWork: "Ver todo el trabajo",
       archive: "Archivo",
       archiveSubtitle: "Todos los proyectos publicados.",
     },
-    workDetail: { gallery: "Galería", credits: "Créditos", viewAll: "Ver todos" },
-    gallery: { title: "Galería", all: "Todas" },
+    workDetail: { gallery: "Galería", galleryStills: "Galería / Stills", credits: "Créditos", viewAll: "Ver todos", viewProject: "Ver proyecto", navLabel: "Navegación entre proyectos" },
+    gallery: { title: "Galería", subtitle: "Fotografías seleccionadas.", all: "Todas" },
     home: {
       tagline: "Director · Director de fotografía · Productor",
       more: "Más de 20 años contando historias. Buenos Aires.",
@@ -65,7 +65,7 @@ export const COPY: Record<
     },
     about: { defaultTitle: "Sobre mí" },
     contact: { defaultTitle: "Contacto", ctaButton: "Contacto / Booking" },
-    metadata: { about: "Sobre mí | Pablo Goldberg", contact: "Contacto | Pablo Goldberg" },
+    metadata: { about: "Sobre mí | Pablo Goldberg", contact: "Contacto | Pablo Goldberg", photography: "Fotografía | Pablo Goldberg", archive: "Archivo | Pablo Goldberg", work: "Proyectos | Pablo Goldberg", project: "Proyecto | Pablo Goldberg" },
   },
   en: {
     nav: { home: "Home", work: "Work", portfolio: "Portfolio", gallery: "Photography", about: "About", contact: "Contact" },
@@ -80,8 +80,8 @@ export const COPY: Record<
       archive: "Archive",
       archiveSubtitle: "All published projects.",
     },
-    workDetail: { gallery: "Gallery", credits: "Credits", viewAll: "View all" },
-    gallery: { title: "Gallery", all: "All" },
+    workDetail: { gallery: "Gallery", galleryStills: "Gallery / Stills", credits: "Credits", viewAll: "View all", viewProject: "View project", navLabel: "Project navigation" },
+    gallery: { title: "Gallery", subtitle: "Selected photographs.", all: "All" },
     home: {
       tagline: "Director · Director of Photography · Producer",
       more: "Over 20 years telling stories. Buenos Aires.",
@@ -107,6 +107,6 @@ export const COPY: Record<
     },
     about: { defaultTitle: "About" },
     contact: { defaultTitle: "Contact", ctaButton: "Contact / Booking" },
-    metadata: { about: "About | Pablo Goldberg", contact: "Contact | Pablo Goldberg" },
+    metadata: { about: "About | Pablo Goldberg", contact: "Contact | Pablo Goldberg", photography: "Photography | Pablo Goldberg", archive: "Archive | Pablo Goldberg", work: "Projects | Pablo Goldberg", project: "Project | Pablo Goldberg" },
   },
 };

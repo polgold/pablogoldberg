@@ -76,7 +76,7 @@ export async function generateMetadata({
   const urls = getHreflangUrls("/work/archive");
   const loc = getLocaleFromParam(locale);
   return {
-    title: "Archive",
+    title: COPY[loc].metadata.archive,
     alternates: {
       canonical: urls[loc],
       languages: { es: urls.es, en: urls.en, "x-default": urls.es },

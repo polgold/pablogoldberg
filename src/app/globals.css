@@ -139,3 +139,15 @@
     @apply border-l-2 border-white/30 pl-4 italic text-white/80;
   }
 }
+
+@keyframes photography-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-photography-fade {
+  animation: photography-fade-in 0.25s ease-in forwards;
+}

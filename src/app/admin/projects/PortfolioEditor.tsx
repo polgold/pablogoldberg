@@ -54,6 +54,9 @@ type Props = {
     video_url: string | null;
     cover_image: string | null;
     gallery: GalleryItem[];
+    is_featured?: boolean;
+    published?: boolean;
+    piece_type?: string | null;
   } | null;
   submitLabel?: string;
 };
@@ -66,6 +69,9 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
   const [videoUrl, setVideoUrl] = useState(project?.video_url ?? "");
   const [coverImage, setCoverImage] = useState<string | null>(project?.cover_image ?? null);
   const [gallery, setGallery] = useState<GalleryItem[]>(project?.gallery ?? []);
+  const [isFeatured, setIsFeatured] = useState(project?.is_featured ?? false);
+  const [published, setPublished] = useState(project?.published ?? false);
+  const [pieceType, setPieceType] = useState(project?.piece_type ?? "");
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -130,6 +136,9 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
         if (description) formData.set("description", description);
         if (videoUrl) formData.set("video_url", videoUrl);
         if (coverFile) formData.set("cover_file", coverFile);
+        formData.set("is_featured", isFeatured ? "on" : "off");
+        formData.set("published", published ? "on" : "off");
+        if (pieceType) formData.set("piece_type", pieceType);
         galleryFiles.forEach((f) => formData.append("gallery_files", f));
 
         const result = await createProject(formData);
@@ -143,6 +152,9 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
         formData.set("video_url", videoUrl || "");
         formData.set("cover_image", coverImage || "");
         formData.set("gallery_json", JSON.stringify(gallery));
+        formData.set("is_featured", isFeatured ? "on" : "off");
+        formData.set("published", published ? "on" : "off");
+        if (pieceType) formData.set("piece_type", pieceType);
 
         const result = await updateProject(project.id, formData);
         if (result.error) throw new Error(result.error);
@@ -237,6 +249,40 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
               <VideoEmbed type={primaryVideo.type} id={primaryVideo.id} title={title} />
             </div>
           )}
+        </div>
+        <div className="flex flex-wrap items-center gap-6">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+              className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-amber-600 focus:ring-amber-500"
+            />
+            <span className="text-sm text-zinc-400">Destacado (Featured Work)</span>
+          </label>
+          {!isNew && (
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={published}
+                onChange={(e) => setPublished(e.target.checked)}
+                className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="text-sm text-zinc-400">Publicado (visible en sitio)</span>
+            </label>
+          )}
+        </div>
+        <div>
+          <label htmlFor="piece_type" className="mb-1 block text-sm text-zinc-400">
+            Tipo (work/project/video o photo/photography/fotografia/gallery)
+          </label>
+          <input
+            id="piece_type"
+            value={pieceType}
+            onChange={(e) => setPieceType(e.target.value)}
+            placeholder="work, video, photo, etc."
+            className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          />
         </div>
         <div>
           <label className="mb-2 block text-sm text-zinc-400">Portada</label>

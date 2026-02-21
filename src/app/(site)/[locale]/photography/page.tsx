@@ -16,7 +16,7 @@ export async function generateMetadata({
   const urls = getHreflangUrls("/photography");
   const loc = getLocaleFromParam(locale);
   return {
-    title: "Photography",
+    title: COPY[loc].metadata.photography,
     alternates: {
       canonical: urls[loc],
       languages: { es: urls.es, en: urls.en, "x-default": urls.es },
@@ -39,7 +39,7 @@ export default async function PhotographyPage({
       <GalleryFilterClient
         galleries={galleries}
         locale={loc}
-        title="Photography"
+        title={t.title}
         subtitle={t.subtitle}
         allLabel={t.all}
       />

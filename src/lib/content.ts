@@ -239,6 +239,19 @@ export async function getFeaturedVideoProjects(
   return featured.filter((p) => p.primaryVideo).slice(0, limit);
 }
 
+/**
+ * Featured Work: solo proyectos (NO fotografía).
+ * Filtra pieceType en ['photo','photography','fotografia','gallery'] (case-insensitive).
+ * pieceType NULL se incluye como proyecto.
+ */
+export async function getFeaturedWorkProjects(
+  limit = 4,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ProjectItem[]> {
+  const featured = await getFeaturedProjects(limit * 2, locale);
+  return featured.filter((p) => !isPhotography(p.pieceType)).slice(0, limit);
+}
+
 /** Projects with video only, for /work listing. */
 export async function getVideoProjects(locale: Locale = DEFAULT_LOCALE): Promise<ProjectItem[]> {
   const all = await getProjects(locale);
@@ -330,6 +343,31 @@ export async function getAdjacentProjects(
     prev: i > 0 ? projects[i - 1] ?? null : null,
     next: i < projects.length - 1 ? projects[i + 1] ?? null : null,
   };
+}
+
+/**
+ * Imágenes para la grilla Photography en home: solo de projects con pieceType foto.
+ * pieceType IN ['photo','photography','fotografia','gallery'] (case-insensitive).
+ * Si hay menos de limit, completa con portfolio_photos.
+ */
+export async function getPhotographyImagesForHome(
+  limit = 8,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<{ thumbUrl: string; largeUrl: string }[]> {
+  const all = await getPublishedProjects(locale);
+  const photoProjects = all.filter((p) => isPhotography(p.pieceType));
+  const urls: string[] = [];
+  for (const p of photoProjects) {
+    if (p.featuredImage) urls.push(p.featuredImage);
+    if (p.galleryImages?.length) urls.push(...p.galleryImages);
+  }
+  if (urls.length === 0) {
+    const { getRandomPhotosForHome } = await import("./portfolio-photos");
+    return getRandomPhotosForHome(limit);
+  }
+  const shuffled = [...urls].sort(() => Math.random() - 0.5);
+  const slice = shuffled.slice(0, limit);
+  return slice.map((u) => ({ thumbUrl: u, largeUrl: u }));
 }
 
 /** Adjacent projects within archive work list (for /work/[slug]). */

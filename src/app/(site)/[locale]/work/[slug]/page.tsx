@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { getProjectBySlug, getAdjacentArchiveProjects } from "@/lib/content";
+import { getProjectPosterUrl } from "@/lib/poster";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { SITE_URL, getCanonicalUrl, getHreflangUrls } from "@/lib/site";
@@ -50,7 +51,8 @@ export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params;
   const loc = getLocaleFromParam(locale);
   const project = await getProjectBySlug(slug, loc);
-  if (!project) return { title: loc === "es" ? "Proyecto" : "Project" };
+  const meta = COPY[loc].metadata;
+  if (!project) return { title: meta.project };
   const desc =
     (project.summary || project.excerpt)?.trim()?.slice(0, 160) ||
     (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
@@ -128,6 +130,9 @@ export default async function ProjectPage({ params }: PageProps) {
       : project.featuredImage
         ? [project.featuredImage]
         : [];
+  const heroPoster =
+    project.featuredImage ??
+    (primaryVideo ? null : (await getProjectPosterUrl(project)));
   const t = COPY[loc].workDetail;
 
   return (
@@ -136,7 +141,7 @@ export default async function ProjectPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(projectJsonLd) }}
       />
-      {(primaryVideo || project.featuredImage) && (
+      {(primaryVideo || heroPoster) && (
         <div className="relative w-full">
           {primaryVideo ? (
             <div className="aspect-video w-full bg-black">
@@ -147,10 +152,10 @@ export default async function ProjectPage({ params }: PageProps) {
                 className="h-full w-full"
               />
             </div>
-          ) : project.featuredImage ? (
+          ) : heroPoster ? (
             <div className="relative aspect-video w-full bg-black">
               <Image
-                src={project.featuredImage}
+                src={heroPoster}
                 alt=""
                 fill
                 className="object-cover"
@@ -185,9 +190,13 @@ export default async function ProjectPage({ params }: PageProps) {
           </div>
         ) : null}
 
-        {/* Gallery — clean, cinematic spacing */}
+        {/* Gallery / Stills — clean, cinematic spacing */}
         {gallery.length > 0 ? (
-          <section className="space-y-8 md:space-y-12">
+          <section className="space-y-8 md:space-y-12" aria-labelledby="gallery-heading">
+            <h2 id="gallery-heading" className="text-[10px] uppercase tracking-wider text-white/40">
+              {t.galleryStills}
+            </h2>
+            <div className="space-y-8 md:space-y-12">
             {gallery.map((src, i) => (
               <div
                 key={i}
@@ -202,6 +211,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 />
               </div>
             ))}
+            </div>
           </section>
         ) : null}
 
@@ -224,7 +234,7 @@ export default async function ProjectPage({ params }: PageProps) {
               rel="noopener noreferrer"
               className="text-xs text-white/60 hover:text-white"
             >
-              {locale === "es" ? "Ver proyecto" : "View project"} →
+              {t.viewProject} →
             </a>
           </p>
         ) : null}
@@ -232,7 +242,7 @@ export default async function ProjectPage({ params }: PageProps) {
         {/* Minimal project nav */}
         <nav
           className="mt-16 flex flex-wrap items-center justify-between gap-6 border-t border-white/5 pt-10"
-          aria-label={locale === "es" ? "Navegación entre proyectos" : "Project navigation"}
+          aria-label={t.navLabel}
         >
           <div className="min-w-0 flex-1">
             {prev ? (

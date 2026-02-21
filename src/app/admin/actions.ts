@@ -22,6 +22,9 @@ type ProjectRow = {
   video_url: string | null;
   cover_image: string | null;
   gallery: GalleryItem[];
+  is_featured: boolean;
+  published: boolean;
+  piece_type: string | null;
 };
 
 async function ensureAdmin() {
@@ -90,6 +93,9 @@ function normalizeProjectRow(row: Record<string, unknown>): Record<string, unkno
     video_url: row.video_url ?? null,
     cover_image: coverImage,
     gallery,
+    is_featured: Boolean(row.is_featured),
+    published: Boolean(row.published),
+    piece_type: (row.piece_type as string | null) ?? null,
   };
 }
 
@@ -130,6 +136,10 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
   const description = String(formData.get("description") ?? "").trim() || null;
   const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
 
+  const isFeatured = formData.get("is_featured") === "on" || formData.get("is_featured") === "true";
+  const published = formData.get("published") === "on" || formData.get("published") === "true";
+  const pieceType = String(formData.get("piece_type") ?? "").trim() || null;
+
   const { data: inserted, error: insertErr } = await supabase
     .from("projects")
     .insert({
@@ -140,6 +150,9 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
       video_url: videoUrl,
       cover_image: null,
       gallery: [],
+      is_featured: isFeatured,
+      published,
+      piece_type: pieceType,
     })
     .select("id")
     .single();
@@ -202,6 +215,9 @@ export async function updateProject(
   const description = String(formData.get("description") ?? "").trim() || null;
   const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
   const coverImage = String(formData.get("cover_image") ?? "").trim() || null;
+  const isFeatured = formData.get("is_featured") === "on" || formData.get("is_featured") === "true";
+  const published = formData.get("published") === "on" || formData.get("published") === "true";
+  const pieceType = String(formData.get("piece_type") ?? "").trim() || null;
   const galleryJson = formData.get("gallery_json");
   let gallery: GalleryItem[] = [];
   if (galleryJson && typeof galleryJson === "string") {
@@ -219,6 +235,9 @@ export async function updateProject(
       video_url: videoUrl,
       cover_image: coverImage || null,
       gallery,
+      is_featured: isFeatured,
+      published,
+      piece_type: pieceType,
     })
     .eq("id", id);
 

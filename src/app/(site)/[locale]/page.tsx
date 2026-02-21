@@ -1,14 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getFeaturedVideoProjects } from "@/lib/content";
-import { getRandomPhotosForHome } from "@/lib/portfolio-photos";
+import { getFeaturedWorkProjects, getPhotographyImagesForHome } from "@/lib/content";
+import { getProjectPosterUrl } from "@/lib/poster";
+import type { ProjectItem } from "@/types/content";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
-import { getPublicImageUrl } from "@/lib/supabase/storage";
-import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
-import { toThumbPath } from "@/lib/imageVariantPath";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeReel } from "@/components/HomeReel";
 import { HomeAbout } from "@/components/HomeAbout";
@@ -40,11 +38,19 @@ export default async function HomePage({
   const loc = getLocaleFromParam(locale);
   const heroVimeoEnv = process.env.HERO_VIMEO_ID?.trim();
 
-  const [featuredVideoProjects, randomPhotos, vimeoVideos] = await Promise.all([
-    getFeaturedVideoProjects(4, loc),
-    getRandomPhotosForHome(6),
+  const safeMode = process.env.NEXT_PUBLIC_SAFE_MODE === "true";
+  const [featuredWorkProjects, photographyImages, vimeoVideos] = await Promise.all([
+    safeMode ? (await import("@/lib/content")).getFeaturedVideoProjects(4, loc) : getFeaturedWorkProjects(4, loc),
+    getPhotographyImagesForHome(8, loc),
     heroVimeoEnv ? Promise.resolve([]) : getVimeoPortfolioVideos(),
   ]);
+
+  const featuredWithPosters = await Promise.all(
+    featuredWorkProjects.map(async (project) => ({
+      project,
+      posterUrl: await getProjectPosterUrl(project),
+    }))
+  );
 
   const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
   const t = COPY[loc].home;
@@ -84,22 +90,20 @@ export default async function HomePage({
             </Link>
           </div>
           <ul className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
-            {featuredVideoProjects.map((project) => {
-              const cardImageUrl = project.coverImagePath
-                ? getPublicImageUrl(
-                    toThumbPath(project.coverImagePath),
-                    PROJECTS_BUCKET
-                  )
-                : project.featuredImage;
+            {featuredWithPosters.map(({ project, posterUrl }: { project: ProjectItem; posterUrl: string | null }) => {
+              const shortDesc =
+                project.summary?.trim() ||
+                project.excerpt?.trim() ||
+                "";
               return (
                 <li key={project.slug} className="group bg-black">
                   <Link
                     href={`/${locale}/work/${project.slug}`}
                     className="relative block aspect-[4/3] overflow-hidden focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-inset"
                   >
-                    {cardImageUrl ? (
+                    {posterUrl ? (
                       <Image
-                        src={cardImageUrl}
+                        src={posterUrl}
                         alt=""
                         fill
                         className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
@@ -114,6 +118,11 @@ export default async function HomePage({
                       <span className="text-sm font-medium text-white">
                         {project.title}
                       </span>
+                      {shortDesc && (
+                        <p className="mt-1 line-clamp-2 text-xs text-white/70">
+                          {shortDesc}
+                        </p>
+                      )}
                       <div className="mt-1 flex flex-wrap gap-x-2 text-xs text-white/70">
                         {project.roles?.[0] && <span>{project.roles[0]}</span>}
                         {project.year && <span>{project.year}</span>}
@@ -129,9 +138,10 @@ export default async function HomePage({
 
       {/* SECTION 4 — PHOTOGRAPHY */}
       <HomePhotographyGrid
-        photos={randomPhotos}
+        photos={photographyImages}
         locale={locale}
         title={t.photography}
+        viewAllLabel={t.viewAll}
       />
 
       {/* SECTION 5 — ABOUT */}

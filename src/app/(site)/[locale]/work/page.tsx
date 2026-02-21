@@ -57,6 +57,7 @@ export async function generateMetadata({
   const urls = getHreflangUrls("/work");
   const loc = getLocaleFromParam(locale);
   return {
+    title: COPY[loc].metadata.work,
     alternates: {
       canonical: urls[loc],
       languages: { es: urls.es, en: urls.en, "x-default": urls.es },

@@ -7,13 +7,17 @@ import { SafeHtml } from "@/components/SafeHtml";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
 const BIO_ES = `
-<p>Soy Pablo, nací en Quilmes y vivo en Pereyra, Buenos Aires. Soy dueño de <a href="https://www.sunfactory.com.ar" target="_blank" rel="noopener noreferrer">Sun Factory</a>, una productora de cine ubicada en Argentina. Me licencié en Artes Visuales y Diseño en la Escuela Panamericana de Diseño y Publicidad de Buenos Aires en 1997. Hoy en día, sigo aprendiendo.</p>
-<p>Durante los últimos 20 años he trabajado como director y director de fotografía en cortometrajes, documentales, comerciales, vídeos musicales, largometrajes, televisión, conciertos, branded content y fotografía publicitaria. En los trabajos comerciales y artísticos en América Latina hay que hacer de todo. Así que adquirí experiencia en todas las áreas necesarias para dar vida a las historias.</p>
+<p>Soy Director de <a href="https://www.sunfactory.com.ar" target="_blank" rel="noopener noreferrer">Sun Factory</a>, donde realizo servicios de producción audiovisual.</p>
+<p>Dirigí el documental BESTEFAR (40') y fui director de fotografía en Home(Sick). También dirigí la serie Sirenas Rock.</p>
+<p>En la actualidad trabajo como Director, DF, productor y colaborador creativo en agencias de publicidad.</p>
+<p>Hace más de 20 años realizo cine documental y contenido comercial para empresas y agencias, desarrollando piezas con una mirada clara y un enfoque específico según cada proyecto.</p>
 `;
 
 const BIO_EN = `
-<p>I'm Pablo, I was born in Quilmes and live in Pereyra, Buenos Aires. I own <a href="https://www.sunfactory.com.ar" target="_blank" rel="noopener noreferrer">Sun Factory</a>, a film production company located in Argentina. I graduated in Visual Arts & Design at the Panamerican School of Design & Advertising in Buenos Aires, 1997. But I'm still learning.</p>
-<p>For the last 20 years I've worked as a director & cinematographer in commercial short films, music videos, feature films, television, live events, branded content, and advertising photography. In commercial and art works in Latin America, you have to do everything. So I gained experience in all areas required to bring stories to life.</p>
+<p>I'm Director at <a href="https://www.sunfactory.com.ar" target="_blank" rel="noopener noreferrer">Sun Factory</a>, where I provide audiovisual production services.</p>
+<p>I directed the documentary BESTEFAR (40') and was director of photography on Home(Sick). I also directed the series Sirenas Rock.</p>
+<p>I currently work as Director, DP, producer, and creative collaborator with advertising agencies.</p>
+<p>For over 20 years I've been making documentary film and commercial content for companies and agencies, developing pieces with a clear vision and a specific approach for each project.</p>
 `;
 
 const PORTRAIT_PATH = "/images/about-portrait.jpg";
