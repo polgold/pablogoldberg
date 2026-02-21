@@ -261,7 +261,18 @@ async function getPublishedProjects(locale: Locale = DEFAULT_LOCALE): Promise<Pr
     console.error("[content] getPublishedProjects error:", error.message);
     return [];
   }
-  const workItems = (data ?? [])
+  let rows = data ?? [];
+  if (rows.length === 0 && locale !== DEFAULT_LOCALE) {
+    const { data: fallbackData } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("locale", DEFAULT_LOCALE)
+      .eq("published", true)
+      .order("year", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false, nullsFirst: false });
+    rows = fallbackData ?? [];
+  }
+  const workItems = rows
     .map((row) => rowToProjectItem(row))
     .filter((p) => !isPhotography(p.pieceType));
   return workItems;
