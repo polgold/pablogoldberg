@@ -238,23 +238,26 @@ export default async function ProjectPage({ params }: PageProps) {
               {t.galleryStills}
             </h2>
             <div className="space-y-8 md:space-y-12">
-            {gallery.map((src, i) => (
+            {gallery.map((src, i) => {
+              const imgSrc = src.includes("supabase")
+                ? `/api/proxy-image?url=${encodeURIComponent(src)}`
+                : src;
+              return (
               <div
                 key={i}
                 className="relative aspect-[16/10] w-full overflow-hidden bg-white/5"
               >
                 {src.includes("supabase") ? (
                   <img
-                    src={src}
+                    src={imgSrc}
                     alt=""
                     className="h-full w-full object-cover"
                     loading="lazy"
                     decoding="async"
-                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <Image
-                    src={src}
+                    src={imgSrc}
                     alt=""
                     fill
                     className="object-cover"
@@ -262,7 +265,8 @@ export default async function ProjectPage({ params }: PageProps) {
                   />
                 )}
               </div>
-            ))}
+            );
+            })}
             </div>
           </section>
         ) : null}
