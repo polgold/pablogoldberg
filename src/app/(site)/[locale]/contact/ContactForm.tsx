@@ -4,7 +4,23 @@ import { useState } from "react";
 
 const WHATSAPP_URL = "https://wa.me/5491136511204";
 
-export function ContactForm() {
+type ContactCopy = {
+  formName: string;
+  formContact: string;
+  formMessage: string;
+  formPlaceholderName: string;
+  formPlaceholderContact: string;
+  formPlaceholderMessage: string;
+  formSubmit: string;
+  formSending: string;
+  formSuccess: string;
+  formErrorRequired: string;
+  formErrorSend: string;
+  formErrorInvalid: string;
+  formOrWhatsApp: string;
+};
+
+export function ContactForm({ contactCopy: t }: { contactCopy: ContactCopy }) {
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +38,12 @@ export function ContactForm() {
     const website = String(formData.get("website") ?? "").trim();
 
     if (website) {
-      setError("Invalid request.");
+      setError(t.formErrorInvalid);
       setSending(false);
       return;
     }
     if (!name || !contact || !message) {
-      setError("Completa todos los campos.");
+      setError(t.formErrorRequired);
       setSending(false);
       return;
     }
@@ -41,13 +57,13 @@ export function ContactForm() {
       const data = (await res.json()) as { ok?: boolean; error?: string };
 
       if (!res.ok) {
-        setError(data.error || "No se pudo enviar. Intenta más tarde.");
+        setError(data.error || t.formErrorSend);
         return;
       }
       setSuccess(true);
       form.reset();
     } catch {
-      setError("No se pudo enviar. Intenta más tarde.");
+      setError(t.formErrorSend);
     } finally {
       setSending(false);
     }
@@ -56,7 +72,7 @@ export function ContactForm() {
   if (success) {
     return (
       <div className="rounded border border-white/10 bg-white/5 p-6 text-center">
-        <p className="text-white/90">Mensaje enviado.</p>
+        <p className="text-white/90">{t.formSuccess}</p>
       </div>
     );
   }
@@ -70,7 +86,7 @@ export function ContactForm() {
         </div>
         <div>
           <label htmlFor="name" className="mb-1 block text-xs uppercase tracking-wider text-white/60">
-            Nombre
+            {t.formName}
           </label>
           <input
             id="name"
@@ -79,12 +95,12 @@ export function ContactForm() {
             required
             disabled={sending}
             className="w-full rounded border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-white/40 focus:outline-none disabled:opacity-60"
-            placeholder="Tu nombre"
+            placeholder={t.formPlaceholderName}
           />
         </div>
         <div>
           <label htmlFor="contact" className="mb-1 block text-xs uppercase tracking-wider text-white/60">
-            Contacto
+            {t.formContact}
           </label>
           <input
             id="contact"
@@ -93,12 +109,12 @@ export function ContactForm() {
             required
             disabled={sending}
             className="w-full rounded border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-white/40 focus:outline-none disabled:opacity-60"
-            placeholder="Email o WhatsApp"
+            placeholder={t.formPlaceholderContact}
           />
         </div>
         <div>
           <label htmlFor="message" className="mb-1 block text-xs uppercase tracking-wider text-white/60">
-            Mensaje
+            {t.formMessage}
           </label>
           <textarea
             id="message"
@@ -107,7 +123,7 @@ export function ContactForm() {
             disabled={sending}
             rows={4}
             className="w-full rounded border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-white/40 focus:outline-none resize-y min-h-[120px] disabled:opacity-60"
-            placeholder="Cuéntame sobre tu proyecto..."
+            placeholder={t.formPlaceholderMessage}
           />
         </div>
         {error && <p className="text-sm text-red-400">{error}</p>}
@@ -116,10 +132,10 @@ export function ContactForm() {
           disabled={sending}
           className="w-full rounded border border-white/30 bg-white/10 py-3 text-sm font-medium text-white transition-colors hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {sending ? "Enviando…" : "Enviar"}
+          {sending ? t.formSending : t.formSubmit}
         </button>
       </form>
-      <p className="text-center text-xs text-white/50">o escribe directo por WhatsApp</p>
+      <p className="text-center text-xs text-white/50">{t.formOrWhatsApp}</p>
       <a
         href={WHATSAPP_URL}
         target="_blank"

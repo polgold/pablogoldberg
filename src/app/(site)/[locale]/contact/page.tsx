@@ -21,13 +21,11 @@ export default async function ContactPage({
             {t.defaultTitle}
           </h1>
           <p className="mt-2 text-sm text-white/60">
-            {loc === "es"
-              ? "Formulario de contacto y booking."
-              : "Contact and booking form."}
+            {t.subtitle}
           </p>
         </ScrollReveal>
         <ScrollReveal className="mt-10" delayMs={100}>
-          <ContactForm />
+          <ContactForm contactCopy={COPY[loc].contact} />
         </ScrollReveal>
       </div>
     </div>
@@ -41,11 +39,9 @@ export async function generateMetadata({
 }) {
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
-  const title = COPY[loc].contact.defaultTitle;
-  const description =
-    loc === "es"
-      ? "Contacto y booking. Pablo Goldberg."
-      : "Contact and booking. Pablo Goldberg.";
+  const t = COPY[loc].contact;
+  const title = t.defaultTitle;
+  const description = t.metaDescription;
   const urls = getHreflangUrls("/contact");
   return {
     title,

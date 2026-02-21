@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
+import { COPY } from "@/lib/i18n";
 
 const SUNFACTORY_URL = "https://www.sunfactory.com.ar";
 const SUNFACTORY_LOGO = "/images/sunfactory-logo.svg";
@@ -135,7 +136,7 @@ export function Footer() {
           href={`/${locale}/contact`}
           className="text-[11px] font-light uppercase tracking-[0.2em] text-white/55 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
         >
-          {locale === "es" ? "Contacto" : "Contact"}
+          {COPY[locale].nav.contact}
         </Link>
       </div>
     </footer>
