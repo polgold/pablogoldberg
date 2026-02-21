@@ -11,14 +11,6 @@ import type { ProjectItem } from "@/types/content";
 
 export const revalidate = 300;
 
-function hasVisual(project: ProjectItem): boolean {
-  return Boolean(
-    project.coverImagePath ||
-    project.featuredImage ||
-    project.primaryVideo
-  );
-}
-
 function projectToWorkItem(project: ProjectItem, locale: string): WorkItem {
   const cardThumb = project.coverImagePath
     ? getPublicImageUrl(toThumbPath(project.coverImagePath), PROJECTS_BUCKET)
@@ -64,9 +56,7 @@ export default async function WorkPage({
   if (workProjects.length === 0) {
     workProjects = (await getArchiveWork(loc)).slice(0, 6);
   }
-  const items: WorkItem[] = workProjects
-    .filter(hasVisual)
-    .map((p) => projectToWorkItem(p, locale));
+  const items: WorkItem[] = workProjects.map((p) => projectToWorkItem(p, locale));
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">

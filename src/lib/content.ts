@@ -272,10 +272,7 @@ async function getPublishedProjects(locale: Locale = DEFAULT_LOCALE): Promise<Pr
       .order("created_at", { ascending: false, nullsFirst: false });
     rows = fallbackData ?? [];
   }
-  const workItems = rows
-    .map((row) => rowToProjectItem(row))
-    .filter((p) => !isPhotography(p.pieceType));
-  return workItems;
+  return rows.map((row) => rowToProjectItem(row));
 }
 
 /** Curated work: featured, published, not photography. Max 6, newest first. */
