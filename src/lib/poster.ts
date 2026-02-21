@@ -5,7 +5,7 @@
  */
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
-import { toThumbPath } from "./imageVariantPath";
+import { toThumbPathOrOriginal } from "./imageVariantPath";
 import type { ProjectItem } from "@/types/content";
 
 /** YouTube thumbnail oficial hqdefault.jpg */
@@ -40,7 +40,7 @@ async function fetchVimeoThumbnail(videoId: string): Promise<string | null> {
 export async function getProjectPosterUrl(project: ProjectItem): Promise<string | null> {
   // 1) coverImagePath / featuredImage
   if (project.coverImagePath) {
-    return getPublicImageUrl(toThumbPath(project.coverImagePath), PROJECTS_BUCKET);
+    return getPublicImageUrl(toThumbPathOrOriginal(project.coverImagePath), PROJECTS_BUCKET);
   }
   if (project.featuredImage) {
     return project.featuredImage;

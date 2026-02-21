@@ -4,7 +4,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { PhotosGridWithLightbox } from "@/components/PhotosGridWithLightbox";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
-import { toThumbPath, toLargePath } from "@/lib/imageVariantPath";
+import { toThumbPathPrefix, toLargePathPrefix } from "@/lib/imageVariantPath";
 import { PHOTOS_BUCKET } from "@/lib/portfolio-photos";
 import type { Locale } from "@/lib/content";
 import type { GalleryWithPhotos } from "@/lib/portfolio-photos";
@@ -89,37 +89,39 @@ export function GalleryFilterClient({
 
         <div className="mt-6 md:mt-8">
           <div
-            className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 md:flex-wrap md:overflow-visible"
+            className="sticky top-14 z-20 -mx-5 md:-mx-8 bg-black/80 backdrop-blur-md border-b border-white/5 px-5 py-3 md:px-8"
             role="tablist"
             aria-label={locale === "es" ? "Filtrar por categoría" : "Filter by category"}
           >
-            {tabs.map((tab) => {
-              const isActive = (tab.slug === "all" && currentSlug === "all") || tab.slug === currentSlug;
-              return (
-                <button
-                  key={tab.slug}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-current={isActive ? "true" : undefined}
-                  onClick={() => setFilter(tab.slug)}
-                  className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black ${
-                    isActive
-                      ? "border-brand bg-brand/20 text-white"
-                      : "border-white/15 bg-white/5 text-white/80 hover:border-white/25 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {tab.title}
-                </button>
-              );
-            })}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 md:flex-wrap md:overflow-visible">
+              {tabs.map((tab) => {
+                const isActive = (tab.slug === "all" && currentSlug === "all") || tab.slug === currentSlug;
+                return (
+                  <button
+                    key={tab.slug}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-current={isActive ? "true" : undefined}
+                    onClick={() => setFilter(tab.slug)}
+                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-black ${
+                      isActive
+                        ? "border-brand bg-brand/20 text-white"
+                        : "border-white/15 bg-white/5 text-white/80 hover:border-white/25 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {tab.title}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="mt-8">
             <PhotosGridWithLightbox
               items={photosToShow.map((p) => ({
-                thumbUrl: getPublicImageUrl(toThumbPath(p.storage_path), PHOTOS_BUCKET),
-                largeUrl: getPublicImageUrl(toLargePath(p.storage_path), PHOTOS_BUCKET),
+                thumbUrl: getPublicImageUrl(toThumbPathPrefix(p.storage_path), PHOTOS_BUCKET),
+                largeUrl: getPublicImageUrl(toLargePathPrefix(p.storage_path), PHOTOS_BUCKET),
               }))}
             />
           </div>

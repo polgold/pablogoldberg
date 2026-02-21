@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
-import { toThumbPath, toLargePath } from "./imageVariantPath";
+import { toThumbPathPrefix, toLargePathPrefix } from "./imageVariantPath";
 
 /** Bucket único para fotos de portfolio: projects. Path = slug/filename (ej. retratos/IMG_x.png). */
 export const PHOTOS_BUCKET = PROJECTS_BUCKET;
@@ -151,8 +151,8 @@ export async function getRandomPhotosForHome(limit = 6): Promise<{ thumbUrl: str
   const shuffled = [...allPhotos].sort(() => Math.random() - 0.5);
   const slice = shuffled.slice(0, Math.min(limit, Math.max(4, shuffled.length)));
   return slice.map((p) => ({
-    thumbUrl: getPublicImageUrl(toThumbPath(p.storage_path), PHOTOS_BUCKET),
-    largeUrl: getPublicImageUrl(toLargePath(p.storage_path), PHOTOS_BUCKET),
+    thumbUrl: getPublicImageUrl(toThumbPathPrefix(p.storage_path), PHOTOS_BUCKET),
+    largeUrl: getPublicImageUrl(toLargePathPrefix(p.storage_path), PHOTOS_BUCKET),
   }));
 }
 

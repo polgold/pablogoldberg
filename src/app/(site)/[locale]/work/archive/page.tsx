@@ -4,7 +4,7 @@ import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
-import { toThumbPath } from "@/lib/imageVariantPath";
+import { toThumbPathOrOriginal } from "@/lib/imageVariantPath";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
 import type { WorkItem } from "@/types/work";
 import type { ProjectItem } from "@/types/content";
@@ -42,7 +42,7 @@ function getYouTubeUrl(project: ProjectItem): string | null {
 
 function projectToWorkItem(project: ProjectItem, locale: string): WorkItem {
   const cardThumb = project.coverImagePath
-    ? getPublicImageUrl(toThumbPath(project.coverImagePath), PROJECTS_BUCKET)
+    ? getPublicImageUrl(toThumbPathOrOriginal(project.coverImagePath), PROJECTS_BUCKET)
     : project.featuredImage ?? undefined;
   const youtubeUrl = getYouTubeUrl(project);
   if (youtubeUrl) {

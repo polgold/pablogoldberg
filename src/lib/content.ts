@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
-import { toLargePath } from "./imageVariantPath";
+import { toLargePathOrOriginal } from "./imageVariantPath";
 import type { PageItem, ProjectItem } from "@/types/content";
 
 export type Locale = "es" | "en";
@@ -72,14 +72,14 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     galleryImages = g
       .filter((it) => it.path)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((it) => getPublicImageUrl(toLargePath(it.path), PROJECTS_BUCKET));
+      .map((it) => getPublicImageUrl(toLargePathOrOriginal(it.path), PROJECTS_BUCKET));
   } else {
     const paths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
-    galleryImages = paths.filter((p): p is string => Boolean(p)).map((p) => getPublicImageUrl(toLargePath(p), PROJECTS_BUCKET));
+    galleryImages = paths.filter((p): p is string => Boolean(p)).map((p) => getPublicImageUrl(toLargePathOrOriginal(p), PROJECTS_BUCKET));
   }
 
   const coverPath = row.cover_image ?? row.cover_image_path ?? null;
-  const coverUrl = coverPath ? getPublicImageUrl(toLargePath(coverPath), PROJECTS_BUCKET) : undefined;
+  const coverUrl = coverPath ? getPublicImageUrl(toLargePathOrOriginal(coverPath), PROJECTS_BUCKET) : undefined;
 
   return {
     slug: String(row.slug),

@@ -571,3 +571,56 @@ export async function reorderPortfolioPhotos(updates: { id: string; order: numbe
   revalidatePath("/admin/portfolio-photos");
   return {};
 }
+
+// ——— Páginas (About, etc.) ———
+
+export type PageContentByLocale = {
+  es: { title: string; content: string } | null;
+  en: { title: string; content: string } | null;
+};
+
+export async function getPageContentForAdmin(slug: string): Promise<PageContentByLocale> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { es: null, en: null };
+  const { data, error } = await supabase
+    .from("pages")
+    .select("locale, title, content")
+    .eq("slug", slug)
+    .in("locale", ["es", "en"]);
+  if (error) {
+    console.error("[admin] getPageContentForAdmin:", error.message);
+    return { es: null, en: null };
+  }
+  const rows = data ?? [];
+  const es = rows.find((r) => r.locale === "es");
+  const en = rows.find((r) => r.locale === "en");
+  return {
+    es: es ? { title: String(es.title ?? ""), content: String(es.content ?? "") } : null,
+    en: en ? { title: String(en.title ?? ""), content: String(en.content ?? "") } : null,
+  };
+}
+
+export async function updatePageContent(
+  slug: string,
+  updates: {
+    es?: { title: string; content: string };
+    en?: { title: string; content: string };
+  }
+): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const toUpsert: { slug: string; locale: string; title: string; content: string }[] = [];
+  if (updates.es) toUpsert.push({ slug, locale: "es", title: updates.es.title, content: updates.es.content });
+  if (updates.en) toUpsert.push({ slug, locale: "en", title: updates.en.title, content: updates.en.content });
+  for (const row of toUpsert) {
+    const { error } = await supabase.from("pages").upsert(row, { onConflict: "slug,locale" });
+    if (error) return { error: error.message };
+  }
+  revalidatePath("/es/about");
+  revalidatePath("/en/about");
+  revalidatePath("/admin/pages");
+  revalidatePath("/admin/pages/about");
+  return {};
+}

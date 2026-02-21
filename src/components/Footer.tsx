@@ -89,6 +89,14 @@ function getLocaleFromPathname(pathname: string): "es" | "en" {
   return segments[0] === "en" ? "en" : "es";
 }
 
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2a4 4 0 0 1 4 4v2h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h2V6a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v2h4V6a2 2 0 0 0-2-2z" />
+    </svg>
+  );
+}
+
 export function Footer() {
   const pathname = usePathname();
   const locale = useMemo(() => getLocaleFromPathname(pathname), [pathname]);
@@ -139,6 +147,15 @@ export function Footer() {
           {COPY[locale].nav.contact}
         </Link>
       </div>
+
+      {/* Candado oculto: enlace al admin */}
+      <Link
+        href="/admin"
+        className="fixed bottom-3 left-3 z-50 rounded p-1.5 text-white/20 transition-colors hover:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
+        aria-label="Admin"
+      >
+        <LockIcon className="h-4 w-4" />
+      </Link>
     </footer>
   );
 }

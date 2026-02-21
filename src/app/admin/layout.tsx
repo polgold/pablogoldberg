@@ -35,6 +35,12 @@ export default async function AdminLayout({
             >
               Portfolio Photos
             </Link>
+            <Link
+              href="/admin/pages"
+              className="text-zinc-400 hover:text-white"
+            >
+              Páginas
+            </Link>
             <form action={logout} className="inline">
               <button type="submit" className="text-zinc-400 hover:text-white">
                 Salir

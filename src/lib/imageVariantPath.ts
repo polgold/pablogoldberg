@@ -44,3 +44,51 @@ export function toLargePath(p: string): string {
   if (p.includes("/thumb/")) return forceJpg(p.replace("/thumb/", "/large/"));
   return insertSegmentAndJpg(p, "large");
 }
+
+/**
+ * Para proyectos: si el path ya tiene /large/ o /thumb/, devuelve la variante large.
+ * Si no (ej. food/gallery/x.jpg), devuelve el path original para no pedir food/gallery/large/x.jpg que puede no existir.
+ */
+export function toLargePathOrOriginal(p: string): string {
+  if (!p) return p;
+  if (p.includes("/large/") || p.includes("/thumb/")) return toLargePath(p);
+  return forceJpg(p);
+}
+
+/**
+ * Para proyectos: si el path ya tiene /thumb/ o /large/, devuelve la variante thumb.
+ * Si no, devuelve el path original (no insertar /thumb/ que puede no existir).
+ */
+export function toThumbPathOrOriginal(p: string): string {
+  if (!p) return p;
+  if (p.includes("/thumb/") || p.includes("/large/")) return toThumbPath(p);
+  return forceJpg(p);
+}
+
+/**
+ * Inserta segment (large o thumb) como carpeta antes del filename. Respeta la extensión.
+ * Para Fotografía: en Supabase es categoría/large/archivo.jpg y categoría/thumb/archivo.jpg.
+ * Ej: bosque/CHICAS_BOSQUE-3.jpg → bosque/large/CHICAS_BOSQUE-3.jpg
+ */
+function insertSegmentBeforeFilename(p: string, segment: "large" | "thumb"): string {
+  if (!p) return p;
+  const trimmed = p.replace(/^\//, "");
+  if (trimmed.includes(`/${segment}/`)) return trimmed;
+  if (segment === "large" && trimmed.includes("/thumb/")) return trimmed.replace("/thumb/", "/large/");
+  if (segment === "thumb" && trimmed.includes("/large/")) return trimmed.replace("/large/", "/thumb/");
+  const lastSlash = trimmed.lastIndexOf("/");
+  const dir = lastSlash === -1 ? "" : trimmed.slice(0, lastSlash);
+  const filename = lastSlash === -1 ? trimmed : trimmed.slice(lastSlash + 1);
+  if (!dir) return `${segment}/${filename}`;
+  return `${dir}/${segment}/${filename}`;
+}
+
+/** Fotografía: categoría/large/archivo.jpg */
+export function toLargePathPrefix(p: string): string {
+  return insertSegmentBeforeFilename(p, "large");
+}
+
+/** Fotografía: categoría/thumb/archivo.jpg */
+export function toThumbPathPrefix(p: string): string {
+  return insertSegmentBeforeFilename(p, "thumb");
+}

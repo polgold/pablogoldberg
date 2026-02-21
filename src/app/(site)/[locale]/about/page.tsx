@@ -7,17 +7,19 @@ import { SafeHtml } from "@/components/SafeHtml";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
 const BIO_ES = `
-<p>Soy Director de <a href="https://www.sunfactory.com.ar" target="_blank" rel="noopener noreferrer">Sun Factory</a>, donde realizo servicios de producción audiovisual.</p>
-<p>Dirigí el documental BESTEFAR (40') y fui director de fotografía en Home(Sick). También dirigí la serie Sirenas Rock.</p>
-<p>En la actualidad trabajo como Director, DF, productor y colaborador creativo en agencias de publicidad.</p>
-<p>Hace más de 20 años realizo cine documental y contenido comercial para empresas y agencias, desarrollando piezas con una mirada clara y un enfoque específico según cada proyecto.</p>
+<p>Nací en Quilmes, en el año 1976. Egresado de la Escuela Panamericana de Diseño y Publicidad. Director de <a href="https://www.sunfactory.com.ar" target="_blank" rel="noopener noreferrer">Sun Factory</a>, realizando servicios de producción audiovisual.</p>
+<p>Actualmente, vivo en Pereyra, provincia de Buenos Aires y trabajo como Director, Creativo, Fotógrafo, Editor y Músico.</p>
+<p>La música es mi driver de conexiones neuronales y un cable a tierra, no solamente en los tiempos libres.</p>
+<p>Lo que más me inspira de mi trabajo, es que elegí hacer todos los días algo distinto, algo que me apasiona. Me permite conectar y trabajar con gente maravillosa, me hace viajar y conocer lugares increíbles. La inspiración sucede en el momento menos pensado.</p>
+<p>Siempre hay una historia apasionante que contar. Una perspectiva nueva y fresca que descubrir. Por eso, con más de 20 años de experiencia, pongo cada día toda mi energía y pasión en lo que hago. Para hacer que cada proyecto sea único e irrepetible.</p>
 `;
 
 const BIO_EN = `
-<p>I'm Director at <a href="https://www.sunfactory.com.ar" target="_blank" rel="noopener noreferrer">Sun Factory</a>, where I provide audiovisual production services.</p>
-<p>I directed the documentary BESTEFAR (40') and was director of photography on Home(Sick). I also directed the series Sirenas Rock.</p>
-<p>I currently work as Director, DP, producer, and creative collaborator with advertising agencies.</p>
-<p>For over 20 years I've been making documentary film and commercial content for companies and agencies, developing pieces with a clear vision and a specific approach for each project.</p>
+<p>I was born in Quilmes in 1976. I graduated from the Panamerican School of Design and Advertising. Director at <a href="https://www.sunfactory.com.ar" target="_blank" rel="noopener noreferrer">Sun Factory</a>, providing audiovisual production services.</p>
+<p>I currently live in Pereyra, Buenos Aires province, and work as Director, Creative, Photographer, Editor and Musician.</p>
+<p>Music is my driver for neural connections and a grounding wire, not only in my free time.</p>
+<p>What inspires me most about my work is that I chose to do something different every day, something I'm passionate about. It allows me to connect and work with wonderful people, it takes me traveling and to incredible places. Inspiration happens when you least expect it.</p>
+<p>There's always a compelling story to tell. A new and fresh perspective to discover. That's why, with over 20 years of experience, I put all my energy and passion into what I do every day. To make each project unique and one of a kind.</p>
 `;
 
 const PORTRAIT_PATH = "/images/about-portrait.jpg";
