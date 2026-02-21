@@ -99,14 +99,14 @@ export default async function HomePage({
                 <li key={project.slug} className="group bg-black">
                   <Link
                     href={`/${locale}/work/${project.slug}`}
-                    className="relative block aspect-[4/3] overflow-hidden focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-inset"
+                    className="relative block aspect-[4/3] overflow-hidden bg-black focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-inset"
                   >
                     {posterUrl ? (
                       <Image
                         src={posterUrl}
                         alt=""
                         fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                        className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />
                     ) : (

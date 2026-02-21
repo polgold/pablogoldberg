@@ -194,8 +194,16 @@ export async function getProjectBySlug(
       console.error("[content] getProjectBySlug error:", error.message);
       return undefined;
     }
-    if (!data) return undefined;
-    return rowToProjectItem(data);
+    if (data) return rowToProjectItem(data);
+    if (locale === DEFAULT_LOCALE) return undefined;
+    const { data: fallback } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("slug", slug)
+      .eq("locale", DEFAULT_LOCALE)
+      .eq("published", true)
+      .maybeSingle();
+    return fallback ? rowToProjectItem(fallback) : undefined;
   } catch (e) {
     console.error("[content] getProjectBySlug:", e);
     return undefined;
@@ -223,7 +231,20 @@ export async function getFeaturedProjects(
       console.error("[content] getFeaturedProjects error:", error.message);
       return [];
     }
-    return (data ?? []).map((row) => rowToProjectItem(row));
+    let rows = data ?? [];
+    if (rows.length === 0 && locale !== DEFAULT_LOCALE) {
+      const { data: fallback } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("locale", DEFAULT_LOCALE)
+        .eq("published", true)
+        .eq("is_featured", true)
+        .order("order", { ascending: false, nullsFirst: false })
+        .order("year", { ascending: false, nullsFirst: false })
+        .limit(limit);
+      rows = fallback ?? [];
+    }
+    return rows.map((row) => rowToProjectItem(row));
   } catch (e) {
     console.error("[content] getFeaturedProjects:", e);
     return [];
@@ -276,14 +297,14 @@ async function getPublishedProjects(locale: Locale = DEFAULT_LOCALE): Promise<Pr
   }
   let rows = data ?? [];
   if (rows.length === 0 && locale !== DEFAULT_LOCALE) {
-    const { data: fallbackData } = await supabase
+    const { data: fallback } = await supabase
       .from("projects")
       .select("*")
       .eq("locale", DEFAULT_LOCALE)
       .eq("published", true)
       .order("year", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false, nullsFirst: false });
-    rows = fallbackData ?? [];
+    rows = fallback ?? [];
   }
   return rows.map((row) => rowToProjectItem(row));
 }

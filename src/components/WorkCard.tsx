@@ -24,7 +24,7 @@ export function WorkCard({ item, href, external, onVimeoClick, badge, actions }:
           src={item.featuredImage}
           alt=""
           fill
-          className="object-cover transition-all duration-700 group-hover:scale-110"
+          className="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
       ) : (
@@ -45,7 +45,7 @@ export function WorkCard({ item, href, external, onVimeoClick, badge, actions }:
   );
 
   const className =
-    "relative block aspect-[4/3] overflow-hidden rounded-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset";
+    "relative block aspect-[4/3] overflow-hidden rounded-sm bg-black focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset";
 
   if (item.vimeoId && onVimeoClick) {
     return (
