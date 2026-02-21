@@ -177,7 +177,7 @@ export async function getProjects(locale: Locale = DEFAULT_LOCALE): Promise<Proj
 
 /** Try exact slug, then slug with hyphens removed (e.g. home-sick → homesick). */
 async function getProjectBySlugOne(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
+  supabase: NonNullable<ReturnType<typeof createSupabaseServerClient>>,
   slug: string,
   locale: Locale
 ): Promise<ProjectRow | null> {

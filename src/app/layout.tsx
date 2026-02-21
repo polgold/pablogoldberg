@@ -1,14 +1,6 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { SITE_URL, PERSON_SAME_AS, SUN_FACTORY_URL } from "@/lib/site";
-
-const dmSans = DM_Sans({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
 
 const defaultDescription =
   "Director and filmmaker. Buenos Aires. Commercials, music videos, documentaries.";
@@ -65,8 +57,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={dmSans.variable}>
+    <html lang="es">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap"
+          rel="stylesheet"
+        />
         <link rel="preconnect" href="https://player.vimeo.com" />
         <link rel="preconnect" href="https://i.vimeocdn.com" />
         {process.env.NEXT_PUBLIC_HERO_IMAGE && (
