@@ -132,20 +132,19 @@ function parseReelUrlsForm(value: FormDataEntryValue | null): string[] {
 
 function parseProjectLinksRow(raw: unknown): ProjectLinkItem[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item) => {
-      if (item && typeof item === "object" && "url" in item && typeof (item as { url: unknown }).url === "string") {
-        const url = String((item as { url: string }).url).trim();
-        if (!url) return null;
-        const label =
-          "label" in item && typeof (item as { label: unknown }).label === "string"
-            ? String((item as { label: string }).label).trim() || undefined
-            : undefined;
-        return { url, label };
-      }
-      return null;
-    })
-    .filter((v): v is ProjectLinkItem => v != null);
+  const result: ProjectLinkItem[] = [];
+  for (const item of raw) {
+    if (item && typeof item === "object" && "url" in item && typeof (item as { url: unknown }).url === "string") {
+      const url = String((item as { url: string }).url).trim();
+      if (!url) continue;
+      const label =
+        "label" in item && typeof (item as { label: unknown }).label === "string"
+          ? String((item as { label: string }).label).trim() || undefined
+          : undefined;
+      result.push({ url, label });
+    }
+  }
+  return result;
 }
 
 function parseProjectLinksForm(value: FormDataEntryValue | null): ProjectLinkItem[] {
