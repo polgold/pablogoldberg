@@ -66,14 +66,26 @@ export function toThumbPathOrOriginal(p: string): string {
 }
 
 /**
- * Fotografía (portfolio_photos): en Supabase es categoría/large/ y categoría/thumb/ con .jpg.
- * Estructura: projects -> art | retratos | food | ... -> dentro de cada uno: /thumb y /large (todas .jpg).
- * Ej: retratos/foto.jpg → retratos/large/foto.jpg y retratos/thumb/foto.jpg.
+ * Inserta large/ o thumb/ antes del filename respetando la extensión (.jpg, .jpeg, etc.).
+ * Fotografía: categoría/large/archivo.jpg y categoría/thumb/archivo.jpg (o .jpeg).
  */
+function insertSegmentKeepExt(p: string, segment: "large" | "thumb"): string {
+  if (!p) return p;
+  const trimmed = p.replace(/^\//, "");
+  if (trimmed.includes(`/${segment}/`)) return trimmed;
+  if (segment === "large" && trimmed.includes("/thumb/")) return trimmed.replace("/thumb/", "/large/");
+  if (segment === "thumb" && trimmed.includes("/large/")) return trimmed.replace("/large/", "/thumb/");
+  const lastSlash = trimmed.lastIndexOf("/");
+  const dir = lastSlash === -1 ? "" : trimmed.slice(0, lastSlash);
+  const filename = lastSlash === -1 ? trimmed : trimmed.slice(lastSlash + 1);
+  if (!dir) return `${segment}/${filename}`;
+  return `${dir}/${segment}/${filename}`;
+}
+
 export function toLargePathPrefix(p: string): string {
-  return toLargePath(p);
+  return insertSegmentKeepExt(p, "large");
 }
 
 export function toThumbPathPrefix(p: string): string {
-  return toThumbPath(p);
+  return insertSegmentKeepExt(p, "thumb");
 }

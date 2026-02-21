@@ -119,10 +119,13 @@ export function GalleryFilterClient({
 
           <div className="mt-8">
             <PhotosGridWithLightbox
-              items={photosToShow.map((p) => ({
-                thumbUrl: getPublicImageUrl(toThumbPathPrefix(p.storage_path), PHOTOS_BUCKET),
-                largeUrl: getPublicImageUrl(toLargePathPrefix(p.storage_path), PHOTOS_BUCKET),
-              }))}
+              items={photosToShow.map((p) => {
+                const path = p.storage_path;
+                const thumbUrl = getPublicImageUrl(toThumbPathPrefix(path), PHOTOS_BUCKET);
+                const largeUrl = getPublicImageUrl(toLargePathPrefix(path), PHOTOS_BUCKET);
+                const fallback = getPublicImageUrl(path, PHOTOS_BUCKET);
+                return { thumbUrl, largeUrl, fallbackThumbUrl: fallback, fallbackLargeUrl: fallback };
+              })}
             />
           </div>
         </div>
