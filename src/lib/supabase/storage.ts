@@ -58,12 +58,23 @@ export async function getSignedImageUrl(
   path: string,
   expiresInSeconds = 60 * 60
 ): Promise<string> {
+  return getSignedImageUrlWithBucket(supabase, path, expiresInSeconds, BUCKET);
+}
+
+/** URL firmada para un bucket concreto (ej. projects). */
+export async function getSignedImageUrlWithBucket(
+  supabase: SupabaseStorageClient,
+  path: string,
+  expiresInSeconds = 60 * 60,
+  bucket = PROJECTS_BUCKET
+): Promise<string> {
   if (!path) return "";
   try {
-    const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path.replace(/^\//, ""), expiresInSeconds);
-    return data?.signedUrl ?? getPublicImageUrl(path);
+    const clean = path.replace(/^\//, "");
+    const { data } = await supabase.storage.from(bucket).createSignedUrl(clean, expiresInSeconds);
+    return data?.signedUrl ?? getPublicImageUrl(path, bucket);
   } catch {
-    return getPublicImageUrl(path);
+    return getPublicImageUrl(path, bucket);
   }
 }
 

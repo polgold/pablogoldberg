@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "./supabase/server";
-import { getPublicImageUrl } from "./supabase/storage";
+import { getPublicImageUrl, getSignedImageUrlWithBucket } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toLargePathOrOriginal } from "./imageVariantPath";
 import type { PageItem, ProjectItem } from "@/types/content";
@@ -479,12 +479,12 @@ function isImagePath(name: string): boolean {
 
 /**
  * Cuando la galería en DB está vacía, lista imágenes en Storage en slug/ y slug/gallery/
- * para mostrar en la página del proyecto (ej. bestefar con fotos en bestefar/).
+ * y devuelve URLs firmadas (funcionan con bucket público o privado).
  */
 export async function getProjectGalleryFromStorage(slug: string): Promise<string[]> {
   const supabase = createSupabaseServerClient();
   if (!slug || !supabase) return [];
-  const out: string[] = [];
+  const paths: string[] = [];
   try {
     const folders = [slug, `${slug}/gallery`];
     for (const folder of folders) {
@@ -496,12 +496,19 @@ export async function getProjectGalleryFromStorage(slug: string): Promise<string
         if (!f.name || f.name.startsWith(".")) continue;
         if (f.id != null && isImagePath(f.name)) {
           const path = folder === slug ? `${slug}/${f.name}` : `${folder}/${f.name}`;
-          out.push(getPublicImageUrl(toLargePathOrOriginal(path), PROJECTS_BUCKET));
+          paths.push(toLargePathOrOriginal(path));
         }
       }
     }
+    const out: string[] = [];
+    const expiresIn = 60 * 60 * 24;
+    for (const p of paths) {
+      const url = await getSignedImageUrlWithBucket(supabase, p, expiresIn, PROJECTS_BUCKET);
+      if (url) out.push(url);
+    }
+    return out;
   } catch (e) {
     console.error("[content] getProjectGalleryFromStorage:", e);
+    return [];
   }
-  return out;
 }

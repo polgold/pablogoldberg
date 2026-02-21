@@ -243,14 +243,23 @@ export default async function ProjectPage({ params }: PageProps) {
                 key={i}
                 className="relative aspect-[16/10] w-full overflow-hidden bg-white/5"
               >
-                <Image
-                  src={src}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 900px) 100vw, 900px"
-                  unoptimized={src.includes("supabase")}
-                />
+                {src.includes("supabase") ? (
+                  <img
+                    src={src}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <Image
+                    src={src}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 900px) 100vw, 900px"
+                  />
+                )}
               </div>
             ))}
             </div>
