@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCuratedWork, getArchiveWork } from "@/lib/content";
+import { getFeaturedProjects, getProjects } from "@/lib/content";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
@@ -52,9 +52,9 @@ export default async function WorkPage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  let workProjects = await getCuratedWork(6, loc);
+  let workProjects = await getFeaturedProjects(6, loc);
   if (workProjects.length === 0) {
-    workProjects = (await getArchiveWork(loc)).slice(0, 6);
+    workProjects = (await getProjects(loc)).slice(0, 6);
   }
   const items: WorkItem[] = workProjects.map((p) => projectToWorkItem(p, locale));
 

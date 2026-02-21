@@ -1,4 +1,4 @@
-import { getArchiveWork } from "@/lib/content";
+import { getProjects } from "@/lib/content";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
@@ -72,7 +72,7 @@ export default async function WorkArchivePage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const archive = await getArchiveWork(loc);
+  const archive = await getProjects(loc);
   const items: WorkItem[] = archive.map((p) => projectToWorkItem(p, locale));
 
   return (

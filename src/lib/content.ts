@@ -337,7 +337,7 @@ export async function getAdjacentArchiveProjects(
   slug: string,
   locale: Locale = DEFAULT_LOCALE
 ): Promise<{ prev: ProjectItem | null; next: ProjectItem | null }> {
-  const projects = await getArchiveWork(locale);
+  const projects = await getProjects(locale);
   const i = projects.findIndex((p) => p.slug === slug);
   if (i < 0) return { prev: null, next: null };
   return {
