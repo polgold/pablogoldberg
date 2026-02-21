@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { getCuratedWork } from "@/lib/content";
+import { getArchiveWork } from "@/lib/content";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
@@ -11,10 +10,32 @@ import type { ProjectItem } from "@/types/content";
 
 export const revalidate = 300;
 
+function getYouTubeUrl(project: ProjectItem): string | null {
+  if (project.primaryVideo?.type === "youtube" && project.primaryVideo.id) {
+    return `https://www.youtube.com/watch?v=${project.primaryVideo.id}`;
+  }
+  const fromExternal = String(project.externalLink ?? "").trim();
+  if (/youtu\.?be|youtube\.com/i.test(fromExternal)) return fromExternal;
+  const contentMatch = project.content.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[^\s"'<]+/i);
+  return contentMatch ? contentMatch[0] : null;
+}
+
 function projectToWorkItem(project: ProjectItem, locale: string): WorkItem {
   const cardThumb = project.coverImagePath
     ? getPublicImageUrl(toThumbPath(project.coverImagePath), PROJECTS_BUCKET)
     : project.featuredImage ?? undefined;
+  const youtubeUrl = getYouTubeUrl(project);
+  if (youtubeUrl) {
+    return {
+      slug: `youtube-${project.slug}`,
+      title: project.title,
+      year: project.year || undefined,
+      featuredImage: cardThumb,
+      href: youtubeUrl,
+      external: true,
+      source: "youtube",
+    };
+  }
   return {
     slug: project.slug,
     title: project.title,
@@ -32,9 +53,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const urls = getHreflangUrls("/work");
+  const urls = getHreflangUrls("/work/archive");
   const loc = getLocaleFromParam(locale);
   return {
+    title: "Archive",
     alternates: {
       canonical: urls[loc],
       languages: { es: urls.es, en: urls.en, "x-default": urls.es },
@@ -42,7 +64,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function WorkPage({
+export default async function WorkArchivePage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -50,14 +72,14 @@ export default async function WorkPage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const curated = await getCuratedWork(6, loc);
+  const archive = await getArchiveWork(loc);
   const items: WorkItem[] =
-    curated.length > 0
-      ? curated.map((p) => projectToWorkItem(p, locale))
+    archive.length > 0
+      ? archive.map((p) => projectToWorkItem(p, locale))
       : [
           {
             slug: "coming-soon",
-            title: loc === "es" ? "Próximamente" : "Coming soon",
+            title: loc === "es" ? "No hay proyectos." : "No projects yet.",
             featuredImage: null,
             href: "#",
             external: false,
@@ -67,21 +89,13 @@ export default async function WorkPage({
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 md:px-8">
-        <h1 className="text-xl font-semibold text-white md:text-2xl">Work</h1>
-        <WorkGrid
-          items={items}
-          locale={locale}
-          linkCards
-          showFilters={false}
-        />
-        <div className="mt-12 flex justify-center">
-          <Link
-            href={`/${locale}/work/archive`}
-            className="inline-flex items-center justify-center rounded-sm border border-white/30 px-6 py-3 text-sm font-medium text-white transition-colors hover:border-brand hover:text-brand focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2 focus:ring-offset-black"
-          >
-            {COPY[loc].work.viewAllWork}
-          </Link>
-        </div>
+        <h1 className="text-xl font-semibold text-white md:text-2xl">
+          {COPY[loc].work.archive}
+        </h1>
+        <p className="mt-2 text-sm text-white/60">
+          {COPY[loc].work.archiveSubtitle}
+        </p>
+        <WorkGrid items={items} locale={locale} linkCards showFilters />
       </div>
     </div>
   );

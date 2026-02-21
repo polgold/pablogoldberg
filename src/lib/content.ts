@@ -236,6 +236,70 @@ export async function getVideoProjects(locale: Locale = DEFAULT_LOCALE): Promise
   return all.filter((p) => p.primaryVideo);
 }
 
+function isPhotographyPieceType(pieceType: string | null | undefined): boolean {
+  if (!pieceType || typeof pieceType !== "string") return false;
+  const v = pieceType.toLowerCase().trim();
+  return v === "photography" || v === "photo";
+}
+
+/** Curated work: featured, published, not photography. Max 6, newest first. */
+export async function getCuratedWork(
+  limit = 6,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<ProjectItem[]> {
+  try {
+    const supabase = createSupabaseServerClient();
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("locale", locale)
+      .eq("published", true)
+      .eq("is_featured", true)
+      .order("year", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false, nullsFirst: false })
+      .limit(limit * 2);
+
+    if (error) {
+      console.error("[content] getCuratedWork error:", error.message);
+      return [];
+    }
+    return (data ?? [])
+      .map((row) => rowToProjectItem(row))
+      .filter((p) => !isPhotographyPieceType(p.pieceType))
+      .slice(0, limit);
+  } catch (e) {
+    console.error("[content] getCuratedWork:", e);
+    return [];
+  }
+}
+
+/** Archive work: all published, not photography. Ordered by year desc, created_at desc. */
+export async function getArchiveWork(locale: Locale = DEFAULT_LOCALE): Promise<ProjectItem[]> {
+  try {
+    const supabase = createSupabaseServerClient();
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("locale", locale)
+      .eq("published", true)
+      .order("year", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false, nullsFirst: false });
+
+    if (error) {
+      console.error("[content] getArchiveWork error:", error.message);
+      return [];
+    }
+    return (data ?? [])
+      .map((row) => rowToProjectItem(row))
+      .filter((p) => !isPhotographyPieceType(p.pieceType));
+  } catch (e) {
+    console.error("[content] getArchiveWork:", e);
+    return [];
+  }
+}
+
 export async function getProjectSlugs(): Promise<string[]> {
   try {
     const supabase = createSupabaseServerClient();
@@ -267,12 +331,12 @@ export async function getAdjacentProjects(
   };
 }
 
-/** Adjacent projects within video-only list (for /work/[slug]). */
-export async function getAdjacentVideoProjects(
+/** Adjacent projects within archive work list (for /work/[slug]). */
+export async function getAdjacentArchiveProjects(
   slug: string,
   locale: Locale = DEFAULT_LOCALE
 ): Promise<{ prev: ProjectItem | null; next: ProjectItem | null }> {
-  const projects = await getVideoProjects(locale);
+  const projects = await getArchiveWork(locale);
   const i = projects.findIndex((p) => p.slug === slug);
   if (i < 0) return { prev: null, next: null };
   return {

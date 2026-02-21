@@ -16,7 +16,7 @@ export const COPY: Record<
   Locale,
   {
     nav: { home: string; work: string; portfolio: string; gallery: string; about: string; contact: string };
-    work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string };
+    work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string; viewAllWork: string; archive: string; archiveSubtitle: string };
     workDetail: { gallery: string; credits: string; viewAll: string };
     gallery: { title: string; subtitle?: string; all: string };
     home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; viewAll: string; ctaVideos: string; ctaGallery: string; ctaFeatured: string; ctaTitle: string; ctaText: string; ctaButton: string; heroH1: string; heroSub: string; ctaPrimary: string; ctaSecondary: string; aboutText: string; ctaCollaborate: string; photography: string; about: string };
@@ -34,6 +34,9 @@ export const COPY: Record<
       all: "Todos",
       projectsCount: "proyecto",
       noResults: "No hay proyectos que coincidan.",
+      viewAllWork: "View All Work",
+      archive: "Archivo",
+      archiveSubtitle: "Todos los proyectos publicados.",
     },
     workDetail: { gallery: "Galería", credits: "Créditos", viewAll: "Ver todos" },
     gallery: { title: "Galería", all: "Todas" },
@@ -73,6 +76,9 @@ export const COPY: Record<
       all: "All",
       projectsCount: "project",
       noResults: "No projects match.",
+      viewAllWork: "View All Work",
+      archive: "Archive",
+      archiveSubtitle: "All published projects.",
     },
     workDetail: { gallery: "Gallery", credits: "Credits", viewAll: "View all" },
     gallery: { title: "Gallery", all: "All" },

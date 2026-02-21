@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getAdjacentVideoProjects } from "@/lib/content";
+import { getProjectBySlug, getAdjacentArchiveProjects } from "@/lib/content";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { SITE_URL, getCanonicalUrl, getHreflangUrls } from "@/lib/site";
@@ -91,7 +91,7 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await getProjectBySlug(slug, loc);
   if (!project) notFound();
 
-  const { prev, next } = await getAdjacentVideoProjects(slug, loc);
+  const { prev, next } = await getAdjacentArchiveProjects(slug, loc);
   const primaryVideo = project.primaryVideo;
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
   const desc =

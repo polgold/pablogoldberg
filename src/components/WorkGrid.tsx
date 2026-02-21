@@ -9,13 +9,15 @@ export interface WorkGridProps {
   locale: string;
   /** If true, cards are links (public work). If false, cards are divs (admin). */
   linkCards?: boolean;
+  /** If false, hide year/sort filters (e.g. for curated 6-item grid). */
+  showFilters?: boolean;
   /** When set, Vimeo items open in this lightbox instead of external link. */
   onVimeoClick?: (vimeoId: string) => void;
   /** Optional extra per card (badge + actions) for admin. */
   renderCardExtra?: (item: WorkItem) => { badge?: React.ReactNode; actions?: React.ReactNode };
 }
 
-export function WorkGrid({ items, locale, linkCards = true, onVimeoClick, renderCardExtra }: WorkGridProps) {
+export function WorkGrid({ items, locale, linkCards = true, showFilters = true, onVimeoClick, renderCardExtra }: WorkGridProps) {
   const [yearFilter, setYearFilter] = useState("");
   const [sortBy, setSortBy] = useState<"manual" | "year_desc" | "year_asc" | "title_asc">("manual");
   const years = useMemo(() => {
@@ -45,7 +47,7 @@ export function WorkGrid({ items, locale, linkCards = true, onVimeoClick, render
 
   return (
     <>
-      {!isPlaceholder && (
+      {showFilters && !isPlaceholder && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {years.length > 0 && (
             <>
