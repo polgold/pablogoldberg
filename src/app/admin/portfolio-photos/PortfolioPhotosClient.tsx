@@ -8,6 +8,8 @@ import {
   listAdminPortfolioPhotos,
   createPortfolioGallery,
   uploadPortfolioPhotos,
+  clearGallery,
+  deleteGallery,
   type PortfolioPhoto,
   type PortfolioGallery,
 } from "../actions";
@@ -41,6 +43,8 @@ export function PortfolioPhotosClient({
   const [toast, setToast] = useState<string | null>(null);
   const [newGalleryNamesText, setNewGalleryNamesText] = useState("");
   const [addingGalleries, setAddingGalleries] = useState(false);
+  const [deletingGalleryId, setDeletingGalleryId] = useState<string | null>(null);
+  const [clearingGalleryId, setClearingGalleryId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadCancelledRef = useRef(false);
 
@@ -225,6 +229,45 @@ export function PortfolioPhotosClient({
     [selectedGalleryId, showToast, doUpload]
   );
 
+  const handleClearGallery = useCallback(
+    async (galleryId: string) => {
+      if (!confirm("¿Vaciar esta galería? Se borrarán todas las fotos de la lista (la galería sigue existiendo).")) return;
+      setClearingGalleryId(galleryId);
+      const { error } = await clearGallery(galleryId);
+      setClearingGalleryId(null);
+      if (error) {
+        showToast(error);
+        return;
+      }
+      if (selectedGalleryId === galleryId) {
+        setPhotos([]);
+      }
+      showToast("Galería vaciada");
+      await loadPhotosForGallery(selectedGalleryId);
+    },
+    [selectedGalleryId, showToast, loadPhotosForGallery]
+  );
+
+  const handleDeleteGallery = useCallback(
+    async (galleryId: string) => {
+      if (!confirm("¿Eliminar esta galería? Se borrarán la galería y todas sus fotos de la lista. Los archivos en Storage no se borran (podés borrarlos en Supabase).")) return;
+      setDeletingGalleryId(galleryId);
+      const { error } = await deleteGallery(galleryId);
+      setDeletingGalleryId(null);
+      if (error) {
+        showToast(error);
+        return;
+      }
+      setGalleries((prev) => prev.filter((g) => g.id !== galleryId));
+      if (selectedGalleryId === galleryId) {
+        setSelectedGalleryId(null);
+        setPhotos([]);
+      }
+      showToast("Galería eliminada");
+    },
+    [selectedGalleryId, showToast]
+  );
+
   const handleCreateGalleries = useCallback(async () => {
     const names = newGalleryNamesText
       .split(/\n/)
@@ -283,11 +326,11 @@ export function PortfolioPhotosClient({
             </button>
           </li>
           {galleries.map((g) => (
-            <li key={g.id}>
+            <li key={g.id} className="group flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => handleSelectGallery(g.id)}
-                className={`w-full rounded px-3 py-2 text-left text-sm transition-colors ${
+                className={`min-w-0 flex-1 rounded px-3 py-2 text-left text-sm transition-colors ${
                   selectedGalleryId === g.id
                     ? "bg-amber-600/30 text-amber-200"
                     : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
@@ -295,9 +338,57 @@ export function PortfolioPhotosClient({
               >
                 {g.name}
               </button>
+              {selectedGalleryId === g.id && (
+                <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearGallery(g.id);
+                    }}
+                    disabled={clearingGalleryId === g.id}
+                    title="Vaciar galería (borrar todas las fotos de la lista)"
+                    className="rounded px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-700 hover:text-white disabled:opacity-50"
+                  >
+                    {clearingGalleryId === g.id ? "…" : "Vaciar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteGallery(g.id);
+                    }}
+                    disabled={deletingGalleryId === g.id}
+                    title="Eliminar galería"
+                    className="rounded px-2 py-1 text-xs text-red-400 hover:bg-red-900/30 disabled:opacity-50"
+                  >
+                    {deletingGalleryId === g.id ? "…" : "Eliminar"}
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
+        {currentGallery && (
+          <div className="mt-2 flex flex-wrap gap-2 border-t border-zinc-800 pt-2">
+            <button
+              type="button"
+              onClick={() => handleClearGallery(currentGallery.id)}
+              disabled={!!clearingGalleryId}
+              className="rounded border border-zinc-600 bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 disabled:opacity-50"
+            >
+              {clearingGalleryId ? "Vaciando…" : "Vaciar galería"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDeleteGallery(currentGallery.id)}
+              disabled={!!deletingGalleryId}
+              className="rounded border border-red-900/50 bg-red-900/20 px-2 py-1 text-xs text-red-400 hover:bg-red-900/30 disabled:opacity-50"
+            >
+              {deletingGalleryId ? "Eliminando…" : "Eliminar galería"}
+            </button>
+          </div>
+        )}
         <div className="mt-3 border-t border-zinc-800 pt-3">
           <textarea
             value={newGalleryNamesText}

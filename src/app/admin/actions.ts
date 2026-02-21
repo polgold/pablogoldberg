@@ -512,16 +512,25 @@ export async function uploadPortfolioPhotos(
     let uploaded = 0;
 
     for (const file of images) {
-      const safeName = uniqueStorageName(file.name);
-      const path = `${slug}/${safeName}`;
-      const { error: uploadErr } = await supabase.storage.from(PROJECTS_BUCKET).upload(path, file, { upsert: true, cacheControl: "31536000" });
-      if (uploadErr) {
-        const msg = `Subida fallida: ${uploadErr.message}${(uploadErr as { statusCode?: number }).statusCode ? ` (${(uploadErr as { statusCode?: number }).statusCode})` : ""}`;
-        return { error: msg, uploaded };
+      const base = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9.-]/g, "_") || "img";
+      const safeName = `${base}-${crypto.randomUUID().slice(0, 8)}.jpg`;
+      const storagePath = `${slug}/${safeName}`;
+      const pathLarge = `${slug}/large/${safeName}`;
+      const pathThumb = `${slug}/thumb/${safeName}`;
+      const buf = await file.arrayBuffer();
+      const contentType = file.type || "image/jpeg";
+      const blob = new Blob([buf], { type: contentType });
+      const { error: errLarge } = await supabase.storage.from(PROJECTS_BUCKET).upload(pathLarge, blob, { upsert: true, cacheControl: "31536000", contentType });
+      if (errLarge) {
+        return { error: `Subida large: ${errLarge.message}`, uploaded };
       }
-      const publicUrl = getProjectsImageUrl(path);
+      const { error: errThumb } = await supabase.storage.from(PROJECTS_BUCKET).upload(pathThumb, blob, { upsert: true, cacheControl: "31536000", contentType });
+      if (errThumb) {
+        return { error: `Subida thumb: ${errThumb.message}`, uploaded };
+      }
+      const publicUrl = getProjectsImageUrl(pathLarge);
       const { error: insertErr } = await supabase.from("portfolio_photos").insert({
-        storage_path: path,
+        storage_path: storagePath,
         public_url: publicUrl,
         is_visible: true,
         order: nextOrder++,
@@ -538,6 +547,34 @@ export async function uploadPortfolioPhotos(
     const message = err instanceof Error ? err.message : "Error inesperado al subir";
     return { error: message };
   }
+}
+
+/** Vacía la galería: borra todas las fotos de la galería (solo en DB). */
+export async function clearGallery(galleryId: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const { error } = await supabase.from("portfolio_photos").delete().eq("gallery_id", galleryId);
+  if (error) return { error: error.message };
+  revalidatePath("/es/photography");
+  revalidatePath("/en/photography");
+  revalidatePath("/admin/portfolio-photos");
+  return {};
+}
+
+/** Elimina la galería y todas sus fotos (solo en DB). Los archivos en Storage quedan; podés borrarlos manualmente en Supabase si querés. */
+export async function deleteGallery(galleryId: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const { error: errPhotos } = await supabase.from("portfolio_photos").delete().eq("gallery_id", galleryId);
+  if (errPhotos) return { error: errPhotos.message };
+  const { error: errGal } = await supabase.from("portfolio_galleries").delete().eq("id", galleryId);
+  if (errGal) return { error: errGal.message };
+  revalidatePath("/es/photography");
+  revalidatePath("/en/photography");
+  revalidatePath("/admin/portfolio-photos");
+  return {};
 }
 
 export async function togglePortfolioPhotoVisibility(id: string): Promise<{ error?: string }> {
