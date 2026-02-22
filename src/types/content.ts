@@ -33,8 +33,8 @@ export interface ProjectItem {
   primaryVideo?: { type: "vimeo" | "youtube"; id: string };
   /** Reels o trailers (YouTube/Vimeo) para mostrar en la página del proyecto. */
   reelVideos?: { type: "vimeo" | "youtube"; id: string }[];
-  /** thumbUrl = preview (slug/thumbs), largeUrl = lightbox (slug/large). */
-  galleryImages: { thumbUrl: string; largeUrl: string }[];
+  /** Paths en Storage (bucket projects), ej. slug/thumbs/foto.jpg. Se sirven por /api/proxy-image?path=... */
+  galleryImages: string[];
 }
 
 export interface Taxonomy {

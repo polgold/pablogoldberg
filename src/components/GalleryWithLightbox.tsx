@@ -2,23 +2,25 @@
 
 import { useState, useCallback } from "react";
 
-type GalleryItem = { thumbUrl: string; largeUrl: string };
-
-function proxyUrl(url: string): string {
-  if (url.includes("supabase")) return `/api/proxy-image?url=${encodeURIComponent(url)}`;
-  return url;
+/** Paths en Storage (ej. bestefar/thumbs/foto.jpg). Se sirven por /api/proxy-image?path=... */
+function thumbSrc(path: string): string {
+  return `/api/proxy-image?path=${encodeURIComponent(path)}`;
+}
+function largeSrc(path: string): string {
+  const large = path.replace(/\/thumbs?\//, "/large/");
+  return `/api/proxy-image?path=${encodeURIComponent(large)}`;
 }
 
-export function GalleryWithLightbox({ items }: { items: GalleryItem[] }) {
+export function GalleryWithLightbox({ paths }: { paths: string[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const close = useCallback(() => setOpenIndex(null), []);
 
-  if (items.length === 0) return null;
+  if (paths.length === 0) return null;
 
   return (
     <>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
-        {items.map((item, i) => (
+        {paths.map((path, i) => (
           <button
             key={i}
             type="button"
@@ -26,7 +28,7 @@ export function GalleryWithLightbox({ items }: { items: GalleryItem[] }) {
             className="relative aspect-square w-full overflow-hidden rounded bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/30"
           >
             <img
-              src={proxyUrl(item.thumbUrl)}
+              src={thumbSrc(path)}
               alt=""
               className="h-full w-full object-cover"
               loading="lazy"
@@ -53,7 +55,7 @@ export function GalleryWithLightbox({ items }: { items: GalleryItem[] }) {
             ×
           </button>
           <img
-            src={proxyUrl(items[openIndex].largeUrl)}
+            src={largeSrc(paths[openIndex])}
             alt=""
             className="max-h-full max-w-full object-contain"
             onClick={(e) => e.stopPropagation()}

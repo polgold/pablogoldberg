@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
-import { getPublicImageUrl, getSignedImageUrlWithBucket } from "./supabase/storage";
+import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
-import { toLargePathOrOriginal, toLargePathPrefix, toThumbsPathPrefix } from "./imageVariantPath";
+import { toLargePathOrOriginal, toThumbsPathPrefix } from "./imageVariantPath";
 import type { PageItem, ProjectItem } from "@/types/content";
 
 export type Locale = "es" | "en";
@@ -86,32 +86,18 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
   const excerpt = summaryRaw || content.slice(0, 300);
   const slug = String(row.slug);
 
-  let galleryImages: { thumbUrl: string; largeUrl: string }[] = [];
+  let galleryImages: string[] = [];
   const g = row.gallery;
   if (Array.isArray(g) && g.length > 0) {
     galleryImages = g
       .filter((it) => it.path)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((it) => {
-        const base = projectStoragePath(slug, it.path);
-        const thumbPath = toThumbsPathPrefix(base);
-        const largePath = toLargePathPrefix(base);
-        return {
-          thumbUrl: getPublicImageUrl(thumbPath, PROJECTS_BUCKET),
-          largeUrl: getPublicImageUrl(largePath, PROJECTS_BUCKET),
-        };
-      });
+      .map((it) => toThumbsPathPrefix(projectStoragePath(slug, it.path)));
   } else {
     const paths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
     galleryImages = paths
       .filter((p): p is string => Boolean(p))
-      .map((p) => {
-        const base = projectStoragePath(slug, p);
-        return {
-          thumbUrl: getPublicImageUrl(toThumbsPathPrefix(base), PROJECTS_BUCKET),
-          largeUrl: getPublicImageUrl(toLargePathPrefix(base), PROJECTS_BUCKET),
-        };
-      });
+      .map((p) => toThumbsPathPrefix(projectStoragePath(slug, p)));
   }
 
   const rawCoverPath = row.cover_image ?? row.cover_image_path ?? null;
@@ -459,7 +445,7 @@ export async function getPhotographyImagesForHome(
   const urls: string[] = [];
   for (const p of photoProjects) {
     if (p.featuredImage) urls.push(p.featuredImage);
-    if (p.galleryImages?.length) urls.push(...p.galleryImages.map((g) => g.largeUrl));
+    if (p.galleryImages?.length) urls.push(...p.galleryImages);
   }
   if (urls.length === 0) {
     const { getRandomPhotosForHome } = await import("./portfolio-photos");
@@ -467,7 +453,14 @@ export async function getPhotographyImagesForHome(
   }
   const shuffled = [...urls].sort(() => Math.random() - 0.5);
   const slice = shuffled.slice(0, limit);
-  return slice.map((u) => ({ thumbUrl: u, largeUrl: u }));
+  return slice.map((u) => {
+    if (u.startsWith("http")) return { thumbUrl: u, largeUrl: u };
+    const largePath = u.replace(/\/thumbs?\//, "/large/");
+    return {
+      thumbUrl: `/api/proxy-image?path=${encodeURIComponent(u)}`,
+      largeUrl: `/api/proxy-image?path=${encodeURIComponent(largePath)}`,
+    };
+  });
 }
 
 /** Adjacent projects within archive work list (for /work/[slug]). */
@@ -492,47 +485,13 @@ function isImagePath(name: string): boolean {
 }
 
 /**
- * Convierte URLs públicas de Supabase Storage a URLs firmadas (evita 403 por referrer/CORS).
- * Extrae path desde cada URL (formato .../object/public/BUCKET/PATH) y genera signed URL.
+ * Cuando la galería en DB está vacía, lista imágenes en slug/thumbs (o slug/thumb)
+ * y devuelve paths (slug/thumbs/filename) para servir por proxy.
  */
-async function signOneUrl(supabase: NonNullable<ReturnType<typeof createSupabaseServerClient>>, url: string): Promise<string> {
-  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
-  const prefixWithBucket = `${base}/storage/v1/object/public/${PROJECTS_BUCKET}/`;
-  if (!url?.includes(prefixWithBucket)) return url;
-  try {
-    const afterBucket = url.slice(prefixWithBucket.length).split("?")[0] ?? "";
-    const path = afterBucket.split("/").map((seg) => decodeURIComponent(seg)).join("/");
-    const signed = await getSignedImageUrlWithBucket(supabase, path, 60 * 60 * 24, PROJECTS_BUCKET);
-    return signed || url;
-  } catch {
-    return url;
-  }
-}
-
-/** Convierte thumbUrl y largeUrl públicas a firmadas para la galería. */
-export async function getSignedGalleryItems(
-  items: { thumbUrl: string; largeUrl: string }[]
-): Promise<{ thumbUrl: string; largeUrl: string }[]> {
-  const supabase = createSupabaseServerClient();
-  if (!supabase || items.length === 0) return items;
-  const out: { thumbUrl: string; largeUrl: string }[] = [];
-  for (const it of items) {
-    out.push({
-      thumbUrl: await signOneUrl(supabase, it.thumbUrl),
-      largeUrl: await signOneUrl(supabase, it.largeUrl),
-    });
-  }
-  return out;
-}
-
-/**
- * Cuando la galería en DB está vacía, lista imágenes en slug/thumbs y slug/large
- * y devuelve { thumbUrl, largeUrl } con URLs firmadas.
- */
-export async function getProjectGalleryFromStorage(slug: string): Promise<{ thumbUrl: string; largeUrl: string }[]> {
+export async function getProjectGalleryFromStorage(slug: string): Promise<string[]> {
   const supabase = createSupabaseServerClient();
   if (!slug || !supabase) return [];
-  const out: { thumbUrl: string; largeUrl: string }[] = [];
+  const out: string[] = [];
   try {
     let thumbFiles: { name: string; id?: string }[] = [];
     let thumbFolder = `${slug}/thumbs`;
@@ -548,16 +507,9 @@ export async function getProjectGalleryFromStorage(slug: string): Promise<{ thum
         thumbFolder = `${slug}/thumb`;
       }
     }
-    if (!thumbFiles.length) return [];
-    const expiresIn = 60 * 60 * 24;
     for (const f of thumbFiles) {
-      if (!f.name || f.name.startsWith(".") || f.id == null || !isImagePath(f.name)) continue;
-      const thumbPath = `${thumbFolder}/${f.name}`;
-      const largePath = `${slug}/large/${f.name}`;
-      const thumbUrl = await getSignedImageUrlWithBucket(supabase, thumbPath, expiresIn, PROJECTS_BUCKET);
-      const largeUrl = await getSignedImageUrlWithBucket(supabase, largePath, expiresIn, PROJECTS_BUCKET);
-      if (thumbUrl && largeUrl) out.push({ thumbUrl, largeUrl });
-      else if (thumbUrl) out.push({ thumbUrl, largeUrl: thumbUrl });
+      if (!f.name || f.name.startsWith(".") || !isImagePath(f.name)) continue;
+      out.push(`${thumbFolder}/${f.name}`);
     }
     return out;
   } catch (e) {

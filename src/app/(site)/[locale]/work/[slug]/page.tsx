@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getAdjacentArchiveProjects, getProjectGalleryFromStorage, getSignedGalleryItems } from "@/lib/content";
+import { getProjectBySlug, getAdjacentArchiveProjects, getProjectGalleryFromStorage } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
@@ -145,15 +145,9 @@ export default async function ProjectPage({ params }: PageProps) {
         image: project.featuredImage ? absoluteImageUrl(project.featuredImage) : undefined,
       };
 
-  const galleryFromDb =
+  const gallery =
     project.galleryImages?.length > 0
       ? project.galleryImages
-      : project.featuredImage
-        ? [{ thumbUrl: project.featuredImage, largeUrl: project.featuredImage }]
-        : [];
-  const gallery =
-    galleryFromDb.length > 0
-      ? await getSignedGalleryItems(galleryFromDb)
       : await getProjectGalleryFromStorage(project.slug);
   const heroPoster =
     project.featuredImage ??
@@ -186,7 +180,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 className="object-cover"
                 sizes="100vw"
                 priority
-                unoptimized={heroPoster.includes("supabase")}
+                unoptimized={heroPoster.startsWith("/api/")}
               />
             </div>
           ) : null}
@@ -238,7 +232,7 @@ export default async function ProjectPage({ params }: PageProps) {
             <h2 id="gallery-heading" className="mb-4 text-[10px] uppercase tracking-wider text-white/40">
               {t.galleryStills}
             </h2>
-            <GalleryWithLightbox items={gallery} />
+            <GalleryWithLightbox paths={gallery} />
           </section>
         ) : null}
 

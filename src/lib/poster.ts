@@ -1,7 +1,6 @@
 /**
  * Obtiene la URL del poster/thumbnail para un proyecto.
- * Orden: coverImagePath → video thumbnail (YT/Vimeo) → primera imagen de galería → null
- * Sin placeholders externos.
+ * Orden: coverImagePath → video thumbnail (YT/Vimeo) → primera imagen de galería (proxy) → null
  */
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
@@ -58,9 +57,11 @@ export async function getProjectPosterUrl(project: ProjectItem): Promise<string 
     }
   }
 
-  // 3) primera imagen de galería del proyecto
+  // 3) primera imagen de galería (path → proxy)
   if (project.galleryImages?.length > 0) {
-    return project.galleryImages[0].largeUrl ?? project.galleryImages[0].thumbUrl;
+    const path = project.galleryImages[0];
+    const largePath = path.replace(/\/thumbs?\//, "/large/");
+    return `/api/proxy-image?path=${encodeURIComponent(largePath)}`;
   }
 
   return null;
