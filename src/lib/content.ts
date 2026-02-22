@@ -507,9 +507,13 @@ export async function getProjectGalleryFromStorage(slug: string): Promise<string
         thumbFolder = `${slug}/thumb`;
       }
     }
+    const seen = new Set<string>();
     for (const f of thumbFiles) {
       if (!f.name || f.name.startsWith(".") || !isImagePath(f.name)) continue;
-      out.push(`${thumbFolder}/${f.name}`);
+      const path = `${thumbFolder}/${f.name}`;
+      if (seen.has(path)) continue;
+      seen.add(path);
+      out.push(path);
     }
     return out;
   } catch (e) {

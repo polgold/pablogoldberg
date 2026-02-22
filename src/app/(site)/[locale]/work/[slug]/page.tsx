@@ -157,17 +157,20 @@ export default async function ProjectPage({ params }: PageProps) {
   const fromStorage = await getProjectGalleryFromStorage(project.slug);
   const seen = new Set<string>();
   const gallery: string[] = [];
+  const pathKey = (p: string) => p.replace(/\/thumb\//, "/thumbs/");
   for (const p of fromDb) {
-    if (p && !seen.has(p)) {
-      seen.add(p);
-      gallery.push(p);
-    }
+    if (!p) continue;
+    const key = pathKey(p);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    gallery.push(p);
   }
   for (const p of fromStorage) {
-    if (p && !seen.has(p)) {
-      seen.add(p);
-      gallery.push(p);
-    }
+    if (!p) continue;
+    const key = pathKey(p);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    gallery.push(p);
   }
   const heroPoster =
     project.featuredImage ??
@@ -267,39 +270,58 @@ export default async function ProjectPage({ params }: PageProps) {
           </section>
         ) : null}
 
-        {(project.projectLinks && project.projectLinks.length > 0) || project.externalLink?.trim() ? (
-          <section className="mt-10 space-y-2" aria-labelledby="links-heading">
-            <h2 id="links-heading" className="text-[10px] uppercase tracking-wider text-white/40">
-              {t.links}
-            </h2>
-            <ul className="flex flex-wrap gap-x-6 gap-y-1">
-              {project.externalLink?.trim() ? (
-                <li>
-                  <a
-                    href={normalizeExternalUrl(project.externalLink)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-white/70 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/50"
-                  >
-                    {t.viewProject} →
-                  </a>
-                </li>
-              ) : null}
-              {project.projectLinks?.map((link, i) => (
-                <li key={i}>
-                  <a
-                    href={normalizeExternalUrl(link.url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-white/70 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/50"
-                  >
-                    {link.label?.trim() || link.url}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+        {(() => {
+          const hasMain = Boolean(project.externalLink?.trim());
+          const links = project.projectLinks ?? [];
+          const hasLinks = hasMain || links.length > 0;
+          if (!hasLinks) return null;
+          const restLinks = hasMain ? links : links.slice(1);
+          return (
+            <section className="mt-10 space-y-2" aria-labelledby="links-heading">
+              <h2 id="links-heading" className="text-[10px] uppercase tracking-wider text-white/40">
+                {t.links}
+              </h2>
+              <ul className="flex flex-wrap gap-x-6 gap-y-1">
+                {hasMain && (
+                  <li>
+                    <a
+                      href={normalizeExternalUrl(project.externalLink!)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-white/70 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/50"
+                    >
+                      {t.viewProject} →
+                    </a>
+                  </li>
+                )}
+                {!hasMain && links.length > 0 && (
+                  <li>
+                    <a
+                      href={normalizeExternalUrl(links[0].url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-white/70 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/50"
+                    >
+                      {t.viewProject} →
+                    </a>
+                  </li>
+                )}
+                {restLinks.map((link, i) => (
+                  <li key={i}>
+                    <a
+                      href={normalizeExternalUrl(link.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-white/70 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/50"
+                    >
+                      {link.label?.trim() || link.url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })()}
 
         {/* Minimal project nav */}
         <nav
