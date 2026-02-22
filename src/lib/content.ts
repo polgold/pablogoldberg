@@ -133,20 +133,19 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
 
 function parseProjectLinks(raw: unknown): { url: string; label?: string }[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item) => {
-      if (item && typeof item === "object" && "url" in item && typeof (item as { url: unknown }).url === "string") {
-        const url = (item as { url: string }).url.trim();
-        if (!url) return null;
-        const label =
-          "label" in item && typeof (item as { label: unknown }).label === "string"
-            ? (item as { label: string }).label.trim() || undefined
-            : undefined;
-        return { url, label };
-      }
-      return null;
-    })
-    .filter((v): v is { url: string; label?: string } => v != null);
+  const out: { url: string; label?: string }[] = [];
+  for (const item of raw) {
+    if (item && typeof item === "object" && "url" in item && typeof (item as { url: unknown }).url === "string") {
+      const url = (item as { url: string }).url.trim();
+      if (!url) continue;
+      const label =
+        "label" in item && typeof (item as { label: unknown }).label === "string"
+          ? (item as { label: string }).label.trim() || undefined
+          : undefined;
+      out.push({ url, label });
+    }
+  }
+  return out;
 }
 
 function parseReelUrls(urls: string[] | null | undefined): { type: "vimeo" | "youtube"; id: string }[] {

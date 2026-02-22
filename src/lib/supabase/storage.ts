@@ -42,7 +42,7 @@ export function getProjectAssetUrl(path: string): string {
 type SupabaseStorageClient = {
   storage: {
     from: (b: string) => {
-      createSignedUrl: (path: string, expiresIn: number) => Promise<{ data: { signedUrl: string } }>;
+      createSignedUrl: (path: string, expiresIn: number) => Promise<{ data: { signedUrl: string } | null }>;
       upload: (path: string, body: Blob | ArrayBuffer | ArrayBufferView | File, options?: { upsert?: boolean }) => Promise<{ data: { path: string } | null; error: unknown }>;
       remove: (paths: string[]) => Promise<{ data: unknown; error: unknown }>;
     };
