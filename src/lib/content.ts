@@ -63,13 +63,14 @@ export function isPhotography(type: string | null | undefined): boolean {
   return ["photo", "photography", "fotografia", "gallery"].includes(type.toLowerCase().trim());
 }
 
-/** Path en Storage del bucket projects: si no tiene "/", se asume en slug/gallery/ (donde se suben).
+/** Path en Storage del bucket projects: si no tiene "/", se asume en slug/ (raíz del proyecto).
+ * toLargePathPrefix inserta large/ antes del filename → slug/large/archivo.png
  * Si el path ya tiene "/", se normaliza slug con guiones (ej. home-sick → homesick) para no 404. */
 function projectStoragePath(slug: string, path: string | null | undefined): string {
   if (!path || !slug) return path ?? "";
   const trimmed = String(path).replace(/^\//, "").trim();
   if (!trimmed) return "";
-  if (!trimmed.includes("/")) return `${slug}/gallery/${trimmed}`;
+  if (!trimmed.includes("/")) return `${slug}/${trimmed}`;
   const [first, ...rest] = trimmed.split("/");
   const firstNoHyphens = (first ?? "").replace(/-/g, "");
   const slugNoHyphens = slug.replace(/-/g, "");
@@ -519,7 +520,7 @@ export async function getProjectGalleryFromStorage(slug: string): Promise<string
   if (!slug || !supabase) return [];
   const paths: string[] = [];
   try {
-    const folders = [slug, `${slug}/gallery`, `${slug}/gallery/large`, `${slug}/gallery/thumb`];
+    const folders = [slug, `${slug}/large`, `${slug}/thumb`];
     for (const folder of folders) {
       const { data: files, error } = await supabase.storage
         .from(PROJECTS_BUCKET)

@@ -74,12 +74,12 @@ export async function getProject(id: string): Promise<ProjectRow | null> {
   return normalizeProjectRow(data) as ProjectRow;
 }
 
-/** Path completo en Storage: si no tiene "/", va en slug/gallery/ (donde se suben las fotos). */
+/** Path completo en Storage: si no tiene "/", va en slug/ (raíz). toLargePathPrefix da slug/large/archivo. */
 function projectStoragePath(slug: string, path: string | null | undefined): string {
   if (!path || !slug) return path ?? "";
   const trimmed = String(path).replace(/^\//, "").trim();
   if (!trimmed || trimmed.includes("/")) return trimmed;
-  return `${slug}/gallery/${trimmed}`;
+  return `${slug}/${trimmed}`;
 }
 
 function normalizeProjectRow(row: Record<string, unknown>): Record<string, unknown> {
@@ -120,6 +120,7 @@ function normalizeProjectRow(row: Record<string, unknown>): Record<string, unkno
     title: row.title,
     description: row.description ?? null,
     video_url: row.video_url ?? null,
+    external_link: (row.external_link as string | null) ?? null,
     reel_urls: reelUrlsArr,
     project_links: projectLinks,
     cover_image: coverImage,
@@ -195,6 +196,7 @@ function uniqueStorageName(filename: string): string {
 }
 
 export async function createProject(formData: FormData): Promise<{ id?: string; error?: string }> {
+  try {
   await ensureAdmin();
   const supabase = createSupabaseServerClient();
   if (!supabase) return { error: "Supabase no configurado" };
@@ -208,6 +210,7 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
 
   const description = String(formData.get("description") ?? "").trim() || null;
   const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
+  const externalLink = String(formData.get("external_link") ?? "").trim() || null;
   const reelUrls = parseReelUrlsForm(formData.get("reel_urls"));
   const projectLinks = parseProjectLinksForm(formData.get("project_links"));
 
@@ -223,6 +226,7 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
       title,
       description,
       video_url: videoUrl,
+      external_link: externalLink,
       reel_urls: reelUrls,
       project_links: projectLinks,
       cover_image: null,
@@ -236,6 +240,9 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
 
   if (insertErr) {
     console.error("[admin] createProject:", insertErr.message);
+    if (insertErr.code === "23505" || /duplicate key|unique constraint/i.test(insertErr.message ?? "")) {
+      return { error: "Ya existe un proyecto con ese slug. Eliminalo primero si querés recrearlo." };
+    }
     return { error: insertErr.message };
   }
   const projectId = inserted?.id;
@@ -253,13 +260,24 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
     }
   }
 
-  const galleryFiles = formData.getAll("gallery_files") as File[];
+  const galleryJson = formData.get("gallery_json");
   const gallery: GalleryItem[] = [];
   let order = 0;
+  if (galleryJson && typeof galleryJson === "string") {
+    try {
+      const parsed = JSON.parse(galleryJson) as GalleryItem[];
+      for (const it of parsed ?? []) {
+        if (it.path) {
+          gallery.push({ path: it.path, url: it.url ?? getProjectsImageUrl(it.path), order: order++ });
+        }
+      }
+    } catch {}
+  }
+  const galleryFiles = formData.getAll("gallery_files") as File[];
   for (const file of galleryFiles) {
     if (!file?.size) continue;
     const safeName = uniqueStorageName(file.name);
-    const path = `${slug}/gallery/${safeName}`;
+    const path = `${slug}/large/${safeName}`;
     const { error: uploadErr } = await supabase.storage
       .from(PROJECTS_BUCKET)
       .upload(path, file, { upsert: true, cacheControl: "31536000" });
@@ -272,6 +290,11 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
   }
 
   return { id: projectId };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[admin] createProject:", msg);
+    return { error: msg };
+  }
 }
 
 export async function updateProject(
@@ -291,6 +314,7 @@ export async function updateProject(
 
   const description = String(formData.get("description") ?? "").trim() || null;
   const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
+  const externalLink = String(formData.get("external_link") ?? "").trim() || null;
   const reelUrls = parseReelUrlsForm(formData.get("reel_urls"));
   const projectLinks = parseProjectLinksForm(formData.get("project_links"));
   const coverImage = String(formData.get("cover_image") ?? "").trim() || null;
@@ -312,6 +336,7 @@ export async function updateProject(
       title,
       description,
       video_url: videoUrl,
+      external_link: externalLink,
       reel_urls: reelUrls,
       project_links: projectLinks,
       cover_image: coverImage || null,
@@ -365,7 +390,7 @@ export async function uploadProjectGalleryFile(
   const prevGallery = (project?.gallery ?? []) as GalleryItem[];
   const order = prevGallery.length;
   const safeName = uniqueStorageName(file.name);
-  const path = `${slug}/gallery/${safeName}`;
+  const path = `${slug}/large/${safeName}`;
 
   const { error } = await supabase.storage
     .from(PROJECTS_BUCKET)
@@ -410,31 +435,41 @@ export async function setProjectCover(projectId: string, path: string): Promise<
 
 export async function listProjectStorageFiles(slug: string): Promise<{ path: string; url: string }[]> {
   await ensureAdmin();
+  if (!slug?.trim()) return [];
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
 
-  let folder = `${slug}/gallery`;
-  let { data: files, error } = await supabase.storage
-    .from(PROJECTS_BUCKET)
-    .list(folder, { limit: 200 });
-  if ((error || !files?.length) && slug.includes("-")) {
-    const slugNoHyphens = slug.replace(/-/g, "");
-    if (slugNoHyphens !== slug) {
-      folder = `${slugNoHyphens}/gallery`;
-      const next = await supabase.storage.from(PROJECTS_BUCKET).list(folder, { limit: 200 });
-      files = next.data ?? [];
-      error = next.error;
+  const s = slug.trim().toLowerCase();
+  const folders = [`${s}/large`, `${s}/thumb`];
+  if (s.includes("-")) {
+    const slugNoHyphens = s.replace(/-/g, "");
+    if (slugNoHyphens !== s) folders.push(`${slugNoHyphens}/large`, `${slugNoHyphens}/thumb`);
+  }
+  const out: { path: string; url: string }[] = [];
+  const seen = new Set<string>();
+  for (const folder of folders) {
+    const { data: files, error } = await supabase.storage.from(PROJECTS_BUCKET).list(folder, { limit: 200 });
+    if (error || !files?.length) continue;
+    const prefix = folder.replace(/\/?$/, "");
+    for (const f of files ?? []) {
+      if (!f.name || f.name.startsWith(".") || f.id == null) continue;
+      const path = `${prefix}/${f.name}`;
+      const key = f.name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ path, url: getProjectsImageUrl(path) });
     }
   }
-  if (error || !files?.length) return [];
+  return out;
+}
 
-  const prefix = folder.replace(/\/?$/, "");
-  return files
-    .filter((f) => f.name && !f.name.startsWith(".") && f.id != null)
-    .map((f) => {
-      const path = `${prefix}/${f.name}`;
-      return { path, url: getProjectsImageUrl(path) };
-    });
+export async function deleteProject(projectId: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "Supabase no configurado" };
+  const { error } = await supabase.from("projects").delete().eq("id", projectId);
+  if (error) return { error: error.message };
+  return {};
 }
 
 // ——— Hidden Vimeo IDs (no se muestran en portfolio público) ———

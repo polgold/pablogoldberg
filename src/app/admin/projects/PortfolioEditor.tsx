@@ -6,6 +6,7 @@ import { getProjectsImageUrl } from "@/lib/supabase/storage";
 import {
   createProject,
   updateProject,
+  deleteProject,
   uploadProjectCover,
   uploadProjectGalleryFile,
   updateProjectGallery,
@@ -52,6 +53,7 @@ type Props = {
     title: string;
     description: string | null;
     video_url: string | null;
+    external_link?: string | null;
     reel_urls?: string[];
     project_links?: ProjectLinkItem[];
     cover_image: string | null;
@@ -71,6 +73,7 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
   const [slug, setSlug] = useState(project?.slug ?? "");
   const [description, setDescription] = useState(project?.description ?? "");
   const [videoUrl, setVideoUrl] = useState(project?.video_url ?? "");
+  const [externalLink, setExternalLink] = useState(project?.external_link ?? "");
   const [reelUrls, setReelUrls] = useState<string[]>(project?.reel_urls ?? []);
   const [projectLinks, setProjectLinks] = useState<ProjectLinkItem[]>(project?.project_links ?? []);
   const [coverImage, setCoverImage] = useState<string | null>(project?.cover_image ?? null);
@@ -81,6 +84,7 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [storageFiles, setStorageFiles] = useState<{ path: string; url: string }[]>([]);
   const [browseOpen, setBrowseOpen] = useState(false);
@@ -141,12 +145,14 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
         formData.set("slug", slug);
         if (description) formData.set("description", description);
         if (videoUrl) formData.set("video_url", videoUrl);
+        if (externalLink) formData.set("external_link", externalLink);
         formData.set("reel_urls", JSON.stringify(reelUrls));
         formData.set("project_links", JSON.stringify(projectLinks));
         if (coverFile) formData.set("cover_file", coverFile);
         formData.set("is_featured", isFeatured ? "on" : "off");
         formData.set("published", published ? "on" : "off");
         if (pieceType) formData.set("piece_type", pieceType);
+        formData.set("gallery_json", JSON.stringify(gallery));
         galleryFiles.forEach((f) => formData.append("gallery_files", f));
 
         const result = await createProject(formData);
@@ -158,6 +164,7 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
         formData.set("slug", slug);
         formData.set("description", description || "");
         formData.set("video_url", videoUrl || "");
+        formData.set("external_link", externalLink || "");
         formData.set("reel_urls", JSON.stringify(reelUrls));
         formData.set("project_links", JSON.stringify(projectLinks));
         formData.set("cover_image", coverImage || "");
@@ -202,6 +209,23 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
     const item: GalleryItem = { path, url, order };
     setGallery((prev) => [...prev, item]);
     setStorageFiles((prev) => prev.filter((f) => f.path !== path));
+  };
+
+  const handleDelete = async () => {
+    if (!project?.id) return;
+    if (!confirm("¿Eliminar este proyecto? No se puede deshacer.")) return;
+    setError("");
+    setDeleting(true);
+    try {
+      const { error: err } = await deleteProject(project.id);
+      if (err) throw new Error(err);
+      router.push("/admin");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al eliminar");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -260,14 +284,36 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
             </div>
           )}
         </div>
-        <div>
-          <label className="mb-1 block text-sm text-zinc-400">
-            Reels / Trailers (YouTube o Vimeo)
-          </label>
-          <p className="mb-2 text-xs text-zinc-500">
-            Links adicionales para reels o trailers estilo Netflix. Se muestran en la página del proyecto.
-          </p>
-          <div className="space-y-2">
+
+        {/* Links y enlaces externos — sección visible */}
+        <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-4">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-amber-400/90">
+            Links y enlaces externos
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="external_link" className="mb-1 block text-sm text-zinc-400">
+                Link principal (web, IMDb, etc.)
+              </label>
+              <input
+                id="external_link"
+                type="url"
+                value={externalLink}
+                onChange={(e) => setExternalLink(e.target.value)}
+                placeholder="https://ejemplo.com o https://imdb.com/..."
+                className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-white focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+              <p className="mt-1 text-xs text-zinc-500">Se muestra como &quot;Ver proyecto →&quot; en la página</p>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm text-zinc-400">
+                Reels / Trailers (YouTube o Vimeo)
+              </label>
+              <p className="mb-2 text-xs text-zinc-500">
+                URLs adicionales de YouTube/Vimeo. Se muestran en la página del proyecto.
+              </p>
+              <div className="space-y-2">
             {reelUrls.map((url, i) => (
               <div key={i} className="flex gap-2">
                 <input
@@ -295,17 +341,18 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
               onClick={() => setReelUrls((prev) => [...prev, ""])}
               className="rounded border border-dashed border-zinc-600 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-400 hover:border-amber-500 hover:text-amber-500"
             >
-              + Añadir link
+              + Añadir reel / trailer
             </button>
-          </div>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm text-zinc-400">
-            Enlaces (web de la película, prensa, etc.)
-          </label>
-          <p className="mb-2 text-xs text-zinc-500">
-            URL y opcionalmente una etiqueta (ej. &quot;Web oficial&quot;, &quot;Prensa&quot;). Se muestran en la página del proyecto.
-          </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm text-zinc-400">
+                Enlaces (web, prensa, redes sociales, etc.)
+              </label>
+              <p className="mb-2 text-xs text-zinc-500">
+                URL + etiqueta opcional (ej. &quot;Web oficial&quot;, &quot;Instagram&quot;, &quot;Prensa&quot;).
+              </p>
           <div className="space-y-3">
             {projectLinks.map((link, i) => (
               <div key={i} className="flex flex-wrap gap-2 rounded border border-zinc-700 bg-zinc-900/50 p-2">
@@ -347,6 +394,8 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
             >
               + Añadir enlace
             </button>
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-6">
@@ -437,7 +486,7 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
               className="block w-full text-sm text-zinc-400 file:mr-2 file:rounded file:border-0 file:bg-amber-600 file:px-3 file:py-1 file:text-white"
             />
           </div>
-          {project && slug && (
+          {slug && (
             <button
               type="button"
               onClick={openBrowse}
@@ -448,7 +497,7 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
           )}
           {browseOpen && storageFiles.length > 0 && (
             <div className="mt-4 rounded border border-zinc-700 bg-zinc-900/50 p-4">
-              <p className="mb-2 text-sm text-zinc-400">Archivos en {slug}/gallery/</p>
+              <p className="mb-2 text-sm text-zinc-400">Archivos en {slug}/large y {slug}/thumb</p>
               <div className="grid max-h-48 grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-6">
                 {storageFiles.map((f) => (
                   <button
@@ -541,16 +590,28 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col items-start lg:items-end">
-        {error && <p className="mb-2 text-sm text-red-400">{error}</p>}
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={loading || !title.trim() || !slug.trim()}
-          className="rounded bg-amber-600 px-6 py-3 font-medium text-white hover:bg-amber-500 disabled:opacity-50"
-        >
-          {loading ? "Guardando…" : submitLabel}
-        </button>
+      <div className="flex flex-col items-start gap-4 lg:items-end">
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading || !title.trim() || !slug.trim()}
+            className="rounded bg-amber-600 px-6 py-3 font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+          >
+            {loading ? "Guardando…" : submitLabel}
+          </button>
+          {project && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded bg-red-900/80 px-4 py-3 font-medium text-red-200 hover:bg-red-800 disabled:opacity-50"
+            >
+              {deleting ? "Eliminando…" : "Eliminar proyecto"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
