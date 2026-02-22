@@ -73,7 +73,7 @@ function insertSegmentKeepExt(p: string, segment: "large" | "thumb"): string {
   if (!p) return p;
   const trimmed = p.replace(/^\//, "");
   if (trimmed.includes(`/${segment}/`)) return trimmed;
-  if (segment === "large" && trimmed.includes("/thumb/")) return trimmed.replace("/thumb/", "/large/");
+  if (segment === "large" && (trimmed.includes("/thumb/") || trimmed.includes("/thumbs/"))) return trimmed.replace("/thumbs/", "/large/").replace("/thumb/", "/large/");
   if (segment === "thumb" && trimmed.includes("/large/")) return trimmed.replace("/large/", "/thumb/");
   const lastSlash = trimmed.lastIndexOf("/");
   const dir = lastSlash === -1 ? "" : trimmed.slice(0, lastSlash);
@@ -88,4 +88,17 @@ export function toLargePathPrefix(p: string): string {
 
 export function toThumbPathPrefix(p: string): string {
   return insertSegmentKeepExt(p, "thumb");
+}
+
+/** Path a carpeta thumbs (plural): slug/thumbs/filename. Para previews en grid. */
+export function toThumbsPathPrefix(p: string): string {
+  if (!p) return p;
+  const trimmed = p.replace(/^\//, "");
+  if (trimmed.includes("/thumbs/")) return trimmed;
+  if (trimmed.includes("/large/")) return trimmed.replace("/large/", "/thumbs/");
+  if (trimmed.includes("/thumb/")) return trimmed.replace("/thumb/", "/thumbs/");
+  const lastSlash = trimmed.lastIndexOf("/");
+  const dir = lastSlash === -1 ? "" : trimmed.slice(0, lastSlash + 1);
+  const filename = lastSlash === -1 ? trimmed : trimmed.slice(lastSlash + 1);
+  return dir + "thumbs/" + filename;
 }

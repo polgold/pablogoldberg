@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl, getSignedImageUrlWithBucket } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
-import { toLargePathOrOriginal, toLargePathPrefix } from "./imageVariantPath";
+import { toLargePathOrOriginal, toLargePathPrefix, toThumbsPathPrefix } from "./imageVariantPath";
 import type { PageItem, ProjectItem } from "@/types/content";
 
 export type Locale = "es" | "en";
@@ -86,18 +86,32 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
   const excerpt = summaryRaw || content.slice(0, 300);
   const slug = String(row.slug);
 
-  let galleryImages: string[] = [];
+  let galleryImages: { thumbUrl: string; largeUrl: string }[] = [];
   const g = row.gallery;
   if (Array.isArray(g) && g.length > 0) {
     galleryImages = g
       .filter((it) => it.path)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((it) => getPublicImageUrl(toLargePathPrefix(projectStoragePath(slug, it.path)), PROJECTS_BUCKET));
+      .map((it) => {
+        const base = projectStoragePath(slug, it.path);
+        const thumbPath = toThumbsPathPrefix(base);
+        const largePath = toLargePathPrefix(base);
+        return {
+          thumbUrl: getPublicImageUrl(thumbPath, PROJECTS_BUCKET),
+          largeUrl: getPublicImageUrl(largePath, PROJECTS_BUCKET),
+        };
+      });
   } else {
     const paths = Array.isArray(row.gallery_image_paths) ? row.gallery_image_paths : [];
     galleryImages = paths
       .filter((p): p is string => Boolean(p))
-      .map((p) => getPublicImageUrl(toLargePathPrefix(projectStoragePath(slug, p)), PROJECTS_BUCKET));
+      .map((p) => {
+        const base = projectStoragePath(slug, p);
+        return {
+          thumbUrl: getPublicImageUrl(toThumbsPathPrefix(base), PROJECTS_BUCKET),
+          largeUrl: getPublicImageUrl(toLargePathPrefix(base), PROJECTS_BUCKET),
+        };
+      });
   }
 
   const rawCoverPath = row.cover_image ?? row.cover_image_path ?? null;
@@ -445,7 +459,7 @@ export async function getPhotographyImagesForHome(
   const urls: string[] = [];
   for (const p of photoProjects) {
     if (p.featuredImage) urls.push(p.featuredImage);
-    if (p.galleryImages?.length) urls.push(...p.galleryImages);
+    if (p.galleryImages?.length) urls.push(...p.galleryImages.map((g) => g.largeUrl));
   }
   if (urls.length === 0) {
     const { getRandomPhotosForHome } = await import("./portfolio-photos");
@@ -481,63 +495,69 @@ function isImagePath(name: string): boolean {
  * Convierte URLs públicas de Supabase Storage a URLs firmadas (evita 403 por referrer/CORS).
  * Extrae path desde cada URL (formato .../object/public/BUCKET/PATH) y genera signed URL.
  */
-export async function getSignedGalleryUrls(publicUrls: string[]): Promise<string[]> {
-  const supabase = createSupabaseServerClient();
-  if (!supabase || publicUrls.length === 0) return publicUrls;
+async function signOneUrl(supabase: NonNullable<ReturnType<typeof createSupabaseServerClient>>, url: string): Promise<string> {
   const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
-  const prefix = `${base}/storage/v1/object/public/`;
-  const bucket = PROJECTS_BUCKET;
-  const prefixWithBucket = `${prefix}${bucket}/`;
-  const out: string[] = [];
-  const expiresIn = 60 * 60 * 24;
-  for (const url of publicUrls) {
-    if (!url?.includes(prefixWithBucket)) {
-      out.push(url);
-      continue;
-    }
-    try {
-      const afterBucket = url.slice(prefixWithBucket.length).split("?")[0] ?? "";
-      const path = afterBucket
-        .split("/")
-        .map((seg) => decodeURIComponent(seg))
-        .join("/");
-      const signed = await getSignedImageUrlWithBucket(supabase, path, expiresIn, bucket);
-      out.push(signed || url);
-    } catch {
-      out.push(url);
-    }
+  const prefixWithBucket = `${base}/storage/v1/object/public/${PROJECTS_BUCKET}/`;
+  if (!url?.includes(prefixWithBucket)) return url;
+  try {
+    const afterBucket = url.slice(prefixWithBucket.length).split("?")[0] ?? "";
+    const path = afterBucket.split("/").map((seg) => decodeURIComponent(seg)).join("/");
+    const signed = await getSignedImageUrlWithBucket(supabase, path, 60 * 60 * 24, PROJECTS_BUCKET);
+    return signed || url;
+  } catch {
+    return url;
+  }
+}
+
+/** Convierte thumbUrl y largeUrl públicas a firmadas para la galería. */
+export async function getSignedGalleryItems(
+  items: { thumbUrl: string; largeUrl: string }[]
+): Promise<{ thumbUrl: string; largeUrl: string }[]> {
+  const supabase = createSupabaseServerClient();
+  if (!supabase || items.length === 0) return items;
+  const out: { thumbUrl: string; largeUrl: string }[] = [];
+  for (const it of items) {
+    out.push({
+      thumbUrl: await signOneUrl(supabase, it.thumbUrl),
+      largeUrl: await signOneUrl(supabase, it.largeUrl),
+    });
   }
   return out;
 }
 
 /**
- * Cuando la galería en DB está vacía, lista imágenes en Storage en slug/ y slug/gallery/
- * y devuelve URLs firmadas (funcionan con bucket público o privado).
+ * Cuando la galería en DB está vacía, lista imágenes en slug/thumbs y slug/large
+ * y devuelve { thumbUrl, largeUrl } con URLs firmadas.
  */
-export async function getProjectGalleryFromStorage(slug: string): Promise<string[]> {
+export async function getProjectGalleryFromStorage(slug: string): Promise<{ thumbUrl: string; largeUrl: string }[]> {
   const supabase = createSupabaseServerClient();
   if (!slug || !supabase) return [];
-  const paths: string[] = [];
+  const out: { thumbUrl: string; largeUrl: string }[] = [];
   try {
-    const folders = [slug, `${slug}/large`, `${slug}/thumb`];
-    for (const folder of folders) {
-      const { data: files, error } = await supabase.storage
-        .from(PROJECTS_BUCKET)
-        .list(folder, { limit: 200 });
-      if (error || !files?.length) continue;
-      for (const f of files) {
-        if (!f.name || f.name.startsWith(".")) continue;
-        if (f.id != null && isImagePath(f.name)) {
-          const path = folder === slug ? `${slug}/${f.name}` : `${folder}/${f.name}`;
-          paths.push(toLargePathPrefix(path));
-        }
+    let thumbFiles: { name: string; id?: string }[] = [];
+    let thumbFolder = `${slug}/thumbs`;
+    const { data: thumbsData, error: thumbsErr } = await supabase.storage
+      .from(PROJECTS_BUCKET)
+      .list(`${slug}/thumbs`, { limit: 200 });
+    if (!thumbsErr && thumbsData?.length) {
+      thumbFiles = thumbsData;
+    } else {
+      const { data: thumbData } = await supabase.storage.from(PROJECTS_BUCKET).list(`${slug}/thumb`, { limit: 200 });
+      if (thumbData?.length) {
+        thumbFiles = thumbData;
+        thumbFolder = `${slug}/thumb`;
       }
     }
-    const out: string[] = [];
+    if (!thumbFiles.length) return [];
     const expiresIn = 60 * 60 * 24;
-    for (const p of paths) {
-      const url = await getSignedImageUrlWithBucket(supabase, p, expiresIn, PROJECTS_BUCKET);
-      if (url) out.push(url);
+    for (const f of thumbFiles) {
+      if (!f.name || f.name.startsWith(".") || f.id == null || !isImagePath(f.name)) continue;
+      const thumbPath = `${thumbFolder}/${f.name}`;
+      const largePath = `${slug}/large/${f.name}`;
+      const thumbUrl = await getSignedImageUrlWithBucket(supabase, thumbPath, expiresIn, PROJECTS_BUCKET);
+      const largeUrl = await getSignedImageUrlWithBucket(supabase, largePath, expiresIn, PROJECTS_BUCKET);
+      if (thumbUrl && largeUrl) out.push({ thumbUrl, largeUrl });
+      else if (thumbUrl) out.push({ thumbUrl, largeUrl: thumbUrl });
     }
     return out;
   } catch (e) {

@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getAdjacentArchiveProjects, getProjectGalleryFromStorage, getSignedGalleryUrls } from "@/lib/content";
+import { getProjectBySlug, getAdjacentArchiveProjects, getProjectGalleryFromStorage, getSignedGalleryItems } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { SITE_URL, getCanonicalUrl, getHreflangUrls } from "@/lib/site";
 import { SafeHtml } from "@/components/SafeHtml";
 import { VideoEmbed } from "@/components/VideoEmbed";
+import { GalleryWithLightbox } from "@/components/GalleryWithLightbox";
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -148,11 +149,11 @@ export default async function ProjectPage({ params }: PageProps) {
     project.galleryImages?.length > 0
       ? project.galleryImages
       : project.featuredImage
-        ? [project.featuredImage]
+        ? [{ thumbUrl: project.featuredImage, largeUrl: project.featuredImage }]
         : [];
   const gallery =
     galleryFromDb.length > 0
-      ? await getSignedGalleryUrls(galleryFromDb)
+      ? await getSignedGalleryItems(galleryFromDb)
       : await getProjectGalleryFromStorage(project.slug);
   const heroPoster =
     project.featuredImage ??
@@ -231,43 +232,13 @@ export default async function ProjectPage({ params }: PageProps) {
           </section>
         ) : null}
 
-        {/* Gallery / Stills — clean, cinematic spacing */}
+        {/* Gallery — 4x4 desktop, 2 cols mobile; thumbs para grid, large para lightbox */}
         {gallery.length > 0 ? (
-          <section className="space-y-8 md:space-y-12" aria-labelledby="gallery-heading">
-            <h2 id="gallery-heading" className="text-[10px] uppercase tracking-wider text-white/40">
+          <section className="mt-14" aria-labelledby="gallery-heading">
+            <h2 id="gallery-heading" className="mb-4 text-[10px] uppercase tracking-wider text-white/40">
               {t.galleryStills}
             </h2>
-            <div className="space-y-8 md:space-y-12">
-            {gallery.map((src, i) => {
-              const imgSrc = src.includes("supabase")
-                ? `/api/proxy-image?url=${encodeURIComponent(src)}`
-                : src;
-              return (
-              <div
-                key={i}
-                className="relative aspect-[16/10] w-full overflow-hidden bg-white/5"
-              >
-                {src.includes("supabase") ? (
-                  <img
-                    src={imgSrc}
-                    alt=""
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <Image
-                    src={imgSrc}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 900px) 100vw, 900px"
-                  />
-                )}
-              </div>
-            );
-            })}
-            </div>
+            <GalleryWithLightbox items={gallery} />
           </section>
         ) : null}
 

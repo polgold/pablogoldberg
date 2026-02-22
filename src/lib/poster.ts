@@ -60,7 +60,7 @@ export async function getProjectPosterUrl(project: ProjectItem): Promise<string 
 
   // 3) primera imagen de galería del proyecto
   if (project.galleryImages?.length > 0) {
-    return project.galleryImages[0];
+    return project.galleryImages[0].largeUrl ?? project.galleryImages[0].thumbUrl;
   }
 
   return null;

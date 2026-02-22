@@ -440,10 +440,10 @@ export async function listProjectStorageFiles(slug: string): Promise<{ path: str
   if (!supabase) return [];
 
   const s = slug.trim().toLowerCase();
-  const folders = [`${s}/large`, `${s}/thumb`];
+  const folders = [`${s}/large`, `${s}/thumbs`];
   if (s.includes("-")) {
     const slugNoHyphens = s.replace(/-/g, "");
-    if (slugNoHyphens !== s) folders.push(`${slugNoHyphens}/large`, `${slugNoHyphens}/thumb`);
+    if (slugNoHyphens !== s) folders.push(`${slugNoHyphens}/large`, `${slugNoHyphens}/thumbs`);
   }
   const out: { path: string; url: string }[] = [];
   const seen = new Set<string>();
