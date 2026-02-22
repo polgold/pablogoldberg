@@ -179,14 +179,12 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
         if (coverFile) {
           const fd = new FormData();
           fd.set("file", coverFile);
-          await uploadProjectCover(project.id, slug, fd);
+          const coverRes = await uploadProjectCover(project.id, slug, fd);
+          if (coverRes.error) throw new Error(coverRes.error);
         }
         for (const file of galleryFiles) {
-          await uploadProjectGalleryFile(project.id, slug, file);
-        }
-        if (galleryFiles.length > 0) {
-          router.refresh();
-          return;
+          const up = await uploadProjectGalleryFile(project.id, slug, file);
+          if (up.error) throw new Error(up.error);
         }
         router.refresh();
       }
@@ -522,7 +520,13 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
           {(gallery.length > 0 || galleryFiles.length > 0) && (
             <div className="mt-4 space-y-2">
               <p className="text-sm text-zinc-400">
-                {gallery.length} en galería{galleryFiles.length ? ` + ${galleryFiles.length} pendientes` : ""}
+                {gallery.length} en galería
+                {galleryFiles.length ? ` · ${galleryFiles.length} por subir al guardar` : ""}
+              </p>
+              <p className="text-xs text-zinc-500">
+                {gallery.length === 0 && galleryFiles.length > 0
+                  ? "Guardá el proyecto para subir las fotos. Si son muchas, subí en dos veces."
+                  : "Las de la galería ya están guardadas. Las \"por subir\" se suben al hacer clic en Guardar."}
               </p>
               <div className="grid max-h-64 grid-cols-4 gap-2 overflow-y-auto sm:grid-cols-6">
                 {gallery.map((item, i) => (

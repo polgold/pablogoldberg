@@ -274,6 +274,7 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
     } catch {}
   }
   const galleryFiles = formData.getAll("gallery_files") as File[];
+  let firstUploadError: string | null = null;
   for (const file of galleryFiles) {
     if (!file?.size) continue;
     const safeName = uniqueStorageName(file.name);
@@ -283,10 +284,15 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
       .upload(path, file, { upsert: true, cacheControl: "31536000" });
     if (!uploadErr) {
       gallery.push({ path, url: getProjectsImageUrl(path), order: order++ });
+    } else if (!firstUploadError) {
+      firstUploadError = uploadErr.message;
     }
   }
   if (gallery.length > 0) {
     await supabase.from("projects").update({ gallery }).eq("id", projectId);
+  }
+  if (galleryFiles.length > 0 && gallery.length === 0 && firstUploadError) {
+    return { error: `No se pudieron subir las fotos: ${firstUploadError}` };
   }
 
   return { id: projectId };
@@ -301,57 +307,63 @@ export async function updateProject(
   id: string,
   formData: FormData
 ): Promise<{ error?: string }> {
-  await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  try {
+    await ensureAdmin();
+    const supabase = createSupabaseServerClient();
+    if (!supabase) return { error: "Supabase no configurado" };
 
-  const title = String(formData.get("title") ?? "").trim();
-  if (!title) return { error: "Título requerido" };
+    const title = String(formData.get("title") ?? "").trim();
+    if (!title) return { error: "Título requerido" };
 
-  let slug = String(formData.get("slug") ?? "").trim();
-  if (!slug) slug = slugFromTitle(title);
-  slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-|-$/g, "") || "proyecto";
+    let slug = String(formData.get("slug") ?? "").trim();
+    if (!slug) slug = slugFromTitle(title);
+    slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/^-|-$/g, "") || "proyecto";
 
-  const description = String(formData.get("description") ?? "").trim() || null;
-  const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
-  const externalLink = String(formData.get("external_link") ?? "").trim() || null;
-  const reelUrls = parseReelUrlsForm(formData.get("reel_urls"));
-  const projectLinks = parseProjectLinksForm(formData.get("project_links"));
-  const coverImage = String(formData.get("cover_image") ?? "").trim() || null;
-  const isFeatured = formData.get("is_featured") === "on" || formData.get("is_featured") === "true";
-  const published = formData.get("published") === "on" || formData.get("published") === "true";
-  const pieceType = String(formData.get("piece_type") ?? "").trim() || null;
-  const galleryJson = formData.get("gallery_json");
-  let gallery: GalleryItem[] = [];
-  if (galleryJson && typeof galleryJson === "string") {
-    try {
-      gallery = JSON.parse(galleryJson) as GalleryItem[];
-    } catch {}
+    const description = String(formData.get("description") ?? "").trim() || null;
+    const videoUrl = String(formData.get("video_url") ?? "").trim() || null;
+    const externalLink = String(formData.get("external_link") ?? "").trim() || null;
+    const reelUrls = parseReelUrlsForm(formData.get("reel_urls"));
+    const projectLinks = parseProjectLinksForm(formData.get("project_links"));
+    const coverImage = String(formData.get("cover_image") ?? "").trim() || null;
+    const isFeatured = formData.get("is_featured") === "on" || formData.get("is_featured") === "true";
+    const published = formData.get("published") === "on" || formData.get("published") === "true";
+    const pieceType = String(formData.get("piece_type") ?? "").trim() || null;
+    const galleryJson = formData.get("gallery_json");
+    let gallery: GalleryItem[] = [];
+    if (galleryJson && typeof galleryJson === "string") {
+      try {
+        gallery = JSON.parse(galleryJson) as GalleryItem[];
+      } catch {}
+    }
+
+    const { error } = await supabase
+      .from("projects")
+      .update({
+        slug,
+        title,
+        description,
+        video_url: videoUrl,
+        external_link: externalLink,
+        reel_urls: reelUrls,
+        project_links: projectLinks,
+        cover_image: coverImage || null,
+        gallery,
+        is_featured: isFeatured,
+        published,
+        piece_type: pieceType,
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("[admin] updateProject:", error.message);
+      return { error: error.message };
+    }
+    return {};
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[admin] updateProject:", msg);
+    return { error: msg };
   }
-
-  const { error } = await supabase
-    .from("projects")
-    .update({
-      slug,
-      title,
-      description,
-      video_url: videoUrl,
-      external_link: externalLink,
-      reel_urls: reelUrls,
-      project_links: projectLinks,
-      cover_image: coverImage || null,
-      gallery,
-      is_featured: isFeatured,
-      published,
-      piece_type: pieceType,
-    })
-    .eq("id", id);
-
-  if (error) {
-    console.error("[admin] updateProject:", error.message);
-    return { error: error.message };
-  }
-  return {};
 }
 
 export async function uploadProjectCover(
