@@ -4,6 +4,8 @@ import { getHreflangUrls } from "@/lib/site";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { ContactForm } from "./ContactForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function ContactPage({
   params,
 }: {
@@ -25,7 +27,7 @@ export default async function ContactPage({
           </p>
         </ScrollReveal>
         <ScrollReveal className="mt-10" delayMs={100}>
-          <ContactForm contactCopy={COPY[loc].contact} />
+          <ContactForm key={loc} contactCopy={COPY[loc].contact} />
         </ScrollReveal>
       </div>
     </div>

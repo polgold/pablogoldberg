@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listProjects } from "./actions";
+import { DeleteProjectButton } from "./DeleteProjectButton";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function AdminDashboardPage() {
                     >
                       Editar
                     </Link>
+                    <DeleteProjectButton projectId={p.id} title={p.title} />
                   </td>
                 </tr>
               ))
