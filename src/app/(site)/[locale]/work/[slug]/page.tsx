@@ -33,11 +33,6 @@ function normalizeExternalUrl(url: string): string {
   return `https://${u}`;
 }
 
-function getVideoUrl(primary: { type: "vimeo" | "youtube"; id: string }): string {
-  if (primary.type === "vimeo") return `https://vimeo.com/video/${primary.id}`;
-  return `https://www.youtube.com/watch?v=${primary.id}`;
-}
-
 /** OG video: secure_url (HTTPS) + type for Vimeo; url + type for YouTube. */
 function getOgVideos(primary: { type: "vimeo" | "youtube"; id: string }): Array<{ url: string; type: string; width?: number; height?: number }> {
   if (primary.type === "vimeo") {
@@ -102,12 +97,14 @@ export async function generateMetadata({ params }: PageProps) {
         ? `${SITE_URL}/api/proxy-image?path=${encodeURIComponent(toLargePathOrOriginal((project as { coverImagePath: string }).coverImagePath))}`
         : `${SITE_URL}${DEFAULT_OG_IMAGE}`;
   const primaryVideo =
-    "primaryVideo" in project
-      ? (project as { primaryVideo?: { type: "vimeo" | "youtube"; id: string } }).primaryVideo
+    "primaryVideo" in project && project.primaryVideo
+      ? (project as { primaryVideo: { type: "vimeo" | "youtube"; id: string; embedUrl?: string } }).primaryVideo
       : "videoUrl" in project
         ? parseVideoUrl((project as { videoUrl?: string }).videoUrl)
         : undefined;
-  const videos = primaryVideo ? getOgVideos(primaryVideo) : undefined;
+  const videos = primaryVideo
+    ? getOgVideos({ type: "type" in primaryVideo ? primaryVideo.type : primaryVideo.provider, id: primaryVideo.id })
+    : undefined;
   const hreflang = getHreflangUrls(`/work/${slug}`);
   return {
     title: project.title,
@@ -193,9 +190,10 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         url: pageUrl,
         thumbnailUrl: project.featuredImage ? absoluteImageUrl(project.featuredImage) : undefined,
         embedUrl:
-          primaryVideo.type === "vimeo"
+          (primaryVideo as { embedUrl?: string }).embedUrl ??
+          ("type" in primaryVideo && primaryVideo.type === "vimeo"
             ? `https://player.vimeo.com/video/${primaryVideo.id}`
-            : `https://www.youtube.com/embed/${primaryVideo.id}`,
+            : `https://www.youtube.com/embed/${primaryVideo.id}`),
         uploadDate: project.year ? `${project.year}-01-01` : undefined,
       }
     : {
@@ -239,11 +237,12 @@ export default async function ProjectPageRoute({ params }: PageProps) {
       />
       {(primaryVideo?.id || heroPoster) && (
         <div className="relative w-full">
-          {primaryVideo?.id ? (
+          {primaryVideo ? (
             <div className="aspect-video w-full bg-black">
               <VideoEmbed
                 type={primaryVideo.type}
                 id={primaryVideo.id}
+                embedUrl={primaryVideo.embedUrl}
                 title={project.title}
                 className="h-full w-full"
               />

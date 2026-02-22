@@ -9,11 +9,10 @@ import {
   deleteProject,
   uploadProjectCover,
   uploadProjectGalleryFile,
-  updateProjectGallery,
-  setProjectCover,
   listProjectStorageFiles,
   type GalleryItem,
 } from "../actions";
+import { parseVideoUrl } from "@/lib/content";
 import { VideoEmbed } from "@/components/VideoEmbed";
 
 const IMAGE_EXTS = new Set(["jpg", "jpeg", "png", "gif", "webp", "avif"]);
@@ -25,15 +24,6 @@ function getExt(name: string): string {
 
 function isImage(name: string): boolean {
   return IMAGE_EXTS.has(getExt(name));
-}
-
-function parseVideoUrl(url: string | null | undefined): { type: "vimeo" | "youtube"; id: string } | null {
-  if (!url || typeof url !== "string") return null;
-  const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  if (vimeo) return { type: "vimeo", id: vimeo[1] };
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
-  if (yt) return { type: "youtube", id: yt[1] };
-  return null;
 }
 
 function slugFromTitle(title: string): string {
@@ -278,7 +268,12 @@ export function PortfolioEditor({ project, submitLabel = "Guardar" }: Props) {
           />
           {primaryVideo && (
             <div className="mt-3 aspect-video max-w-md overflow-hidden rounded bg-black">
-              <VideoEmbed type={primaryVideo.type} id={primaryVideo.id} title={title} />
+              <VideoEmbed
+                type={primaryVideo.provider}
+                id={primaryVideo.id}
+                embedUrl={primaryVideo.embedUrl}
+                title={title}
+              />
             </div>
           )}
         </div>

@@ -27,7 +27,7 @@ export function ProjectPage({
   project: Project;
   coverUrl: string | null;
   backstageImages: BackstageImage[];
-  primaryVideo: { type: "vimeo" | "youtube"; id: string } | null;
+  primaryVideo: { provider: "vimeo" | "youtube"; id: string; embedUrl: string } | null;
   linksLabel: string;
   viewProjectLabel: string;
   viewAllLabel: string;
@@ -67,12 +67,14 @@ export function ProjectPage({
           </div>
         )}
 
-        {/* Video */}
-        {primaryVideo?.id && (
+        {/* Video: iframe uses parsed embedUrl only; fallback link if parse failed */}
+        {(primaryVideo?.embedUrl || project.videoUrl?.trim()) && (
           <div className="mb-12 aspect-video w-full overflow-hidden rounded bg-black">
             <VideoEmbed
-              type={primaryVideo.type}
-              id={primaryVideo.id}
+              type={primaryVideo?.provider}
+              id={primaryVideo?.id}
+              embedUrl={primaryVideo?.embedUrl ?? null}
+              fallbackUrl={primaryVideo ? null : project.videoUrl ?? null}
               title={project.title}
               className="h-full w-full"
             />

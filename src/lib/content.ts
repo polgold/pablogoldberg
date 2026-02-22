@@ -11,16 +11,61 @@ export type Locale = "es" | "en";
 
 const DEFAULT_LOCALE: Locale = "es";
 
-/** Parsea URL de video a { type, id } para VideoEmbed. Exportado para uso en project page (JSON). */
-export function parseVideoUrl(
-  url: string | null | undefined
-): { type: "vimeo" | "youtube"; id: string } | undefined {
-  if (!url || typeof url !== "string") return undefined;
-  const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  if (vimeo) return { type: "vimeo", id: vimeo[1] };
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
-  if (yt) return { type: "youtube", id: yt[1] };
-  return undefined;
+/** Parsea URL de video. Devuelve provider, id y embedUrl para iframe. Extracción robusta de ID (youtu.be, watch?v=, embed). */
+export function parseVideoUrl(url?: string): {
+  provider: "youtube" | "vimeo";
+  id: string;
+  embedUrl: string;
+} | null {
+  if (!url) return null;
+
+  const raw = url.trim();
+
+  // youtu.be short
+  const shortMatch = raw.match(/^https?:\/\/youtu\.be\/([^?&]+)/);
+  if (shortMatch) {
+    const id = shortMatch[1];
+    return {
+      provider: "youtube",
+      id,
+      embedUrl: `https://www.youtube.com/embed/${id}`,
+    };
+  }
+
+  // watch?v=
+  const watchMatch = raw.match(/[?&]v=([^&]+)/);
+  if (watchMatch) {
+    const id = watchMatch[1];
+    return {
+      provider: "youtube",
+      id,
+      embedUrl: `https://www.youtube.com/embed/${id}`,
+    };
+  }
+
+  // embed URL
+  const embedMatch = raw.match(/youtube\.com\/embed\/([^?&]+)/);
+  if (embedMatch) {
+    const id = embedMatch[1];
+    return {
+      provider: "youtube",
+      id,
+      embedUrl: `https://www.youtube.com/embed/${id}`,
+    };
+  }
+
+  // Vimeo
+  const vimeoMatch = raw.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) {
+    const id = vimeoMatch[1];
+    return {
+      provider: "vimeo",
+      id,
+      embedUrl: `https://player.vimeo.com/video/${id}`,
+    };
+  }
+
+  return null;
 }
 
 function rowToPageItem(row: {
@@ -129,7 +174,10 @@ function rowToProjectItem(row: ProjectRow): ProjectItem {
     featuredImage: coverUrl,
     coverImagePath: coverPath ?? undefined,
     videoUrls: { vimeo: undefined, youtube: undefined },
-    primaryVideo: parseVideoUrl(row.video_url),
+    primaryVideo: (() => {
+      const parsed = parseVideoUrl(row.video_url ?? undefined);
+      return parsed ? { type: parsed.provider, id: parsed.id, embedUrl: parsed.embedUrl } : undefined;
+    })(),
     reelVideos: parseReelUrls(row.reel_urls),
     galleryImages,
   };
@@ -157,7 +205,8 @@ function parseReelUrls(urls: string[] | null | undefined): { type: "vimeo" | "yo
   return urls
     .filter((u): u is string => typeof u === "string" && u.trim().length > 0)
     .map((u) => parseVideoUrl(u.trim()))
-    .filter((v): v is { type: "vimeo" | "youtube"; id: string } => v != null);
+    .filter((v): v is NonNullable<ReturnType<typeof parseVideoUrl>> => v != null)
+    .map((v) => ({ type: v.provider, id: v.id }));
 }
 
 export async function getPages(locale: Locale = DEFAULT_LOCALE): Promise<PageItem[]> {

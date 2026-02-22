@@ -30,7 +30,7 @@ export interface ProjectItem {
   /** Path del cover en Storage; para construir thumb en cards sin tocar estructura. */
   coverImagePath?: string;
   videoUrls: { vimeo?: string[]; youtube?: string[] };
-  primaryVideo?: { type: "vimeo" | "youtube"; id: string };
+  primaryVideo?: { type: "vimeo" | "youtube"; id: string; embedUrl: string };
   /** Reels o trailers (YouTube/Vimeo) para mostrar en la página del proyecto. */
   reelVideos?: { type: "vimeo" | "youtube"; id: string }[];
   /** Paths en Storage (bucket projects), ej. slug/thumbs/foto.jpg. Se sirven por /api/proxy-image?path=... */
