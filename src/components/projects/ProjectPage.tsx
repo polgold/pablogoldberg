@@ -37,22 +37,22 @@ export function ProjectPage({
 
   return (
     <article className="min-h-screen border-t border-white/5 bg-black pt-14">
-      <div className="mx-auto max-w-[900px] px-5 pt-8 pb-16 md:px-8">
+      <div className="mx-auto max-w-5xl px-5 pt-8 pb-16 md:px-8">
         <header className="mb-10">
           <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
             {project.title}
           </h1>
         </header>
 
-        {/* Cover */}
+        {/* Cover — hero banner: max 40vh/50vh, cap 560px, full width */}
         {coverUrl && (
-          <div className="relative aspect-video w-full overflow-hidden rounded bg-white/5 mb-10">
+          <div className="relative mb-10 w-full overflow-hidden rounded-2xl border border-white/10 bg-black h-[min(40vh,560px)] md:h-[min(50vh,560px)]">
             <Image
               src={coverUrl}
               alt=""
               fill
               className="object-cover"
-              sizes="100vw"
+              sizes="(max-width: 1024px) 100vw, 1024px"
               priority
             />
           </div>
@@ -67,9 +67,9 @@ export function ProjectPage({
           </div>
         )}
 
-        {/* Video: iframe uses parsed embedUrl only; fallback link if parse failed */}
+        {/* Video: full width of content column, 16:9 */}
         {(primaryVideo?.embedUrl || project.videoUrl?.trim()) && (
-          <div className="mb-12 aspect-video w-full overflow-hidden rounded bg-black">
+          <div className="mb-12 w-full overflow-hidden rounded-2xl border border-white/10 bg-black aspect-video">
             <VideoEmbed
               type={primaryVideo?.provider}
               id={primaryVideo?.id}

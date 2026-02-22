@@ -23,22 +23,33 @@ export function ProjectCard({
     <li className="group bg-black">
       <Link
         href={href}
-        className="relative block aspect-[4/3] overflow-hidden bg-black focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-inset"
+        className="relative block aspect-[3/2] overflow-hidden bg-black focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-inset"
       >
         {coverUrl ? (
-          <Image
-            src={coverUrl}
-            alt=""
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          />
+          <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-black/60">
+            {/* Blurred background so letterboxing looks intentional */}
+            <Image
+              src={coverUrl}
+              alt=""
+              fill
+              className="object-cover opacity-30 blur-xl scale-110"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              aria-hidden
+            />
+            <Image
+              src={coverUrl}
+              alt=""
+              fill
+              className="relative z-10 object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            />
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">
             {project.title}
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4">
+        <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/85 to-transparent p-4">
           <span className="text-sm font-medium text-white">{project.title}</span>
           {shortDesc && (
             <p className="mt-1 line-clamp-2 text-xs text-white/70">{shortDesc}</p>

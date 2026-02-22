@@ -14,7 +14,8 @@ import { HomeAbout } from "@/components/HomeAbout";
 import { HomePhotographyGrid } from "@/components/HomePhotographyGrid";
 import { FeaturedWork } from "@/components/projects/FeaturedWork";
 
-export const revalidate = 300;
+// Featured work is content-driven; reflect changes immediately after deploy
+export const revalidate = 0;
 
 export async function generateMetadata({
   params,
