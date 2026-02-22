@@ -39,9 +39,12 @@ export async function middleware(request: NextRequest) {
   // Admin: refresh session and protect routes
   if (pathname.startsWith("/admin")) {
     if (!url || !anon) {
-      return NextResponse.next();
+      const res = NextResponse.next();
+      res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      return res;
     }
     const response = NextResponse.next({ request });
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
     const supabase = createServerClient(url, anon, {
       cookies: {
         getAll() {

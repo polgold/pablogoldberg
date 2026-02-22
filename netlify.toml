@@ -1,5 +1,6 @@
 # Build sin DB: datos vía Supabase (HTTP). Configurar en Netlify: Site settings → Environment variables.
 # NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_STORAGE_BUCKET
+# NEXT_SERVER_ACTIONS_ENCRYPTION_KEY (openssl rand -base64 32) para que Guardar/Eliminar no den "Server Action not found" tras deploy
 [build]
   base = "."
   command = "npm run build"

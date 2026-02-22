@@ -155,9 +155,20 @@ export default async function ProjectPage({ params }: PageProps) {
 
   const fromDb = project.galleryImages ?? [];
   const fromStorage = await getProjectGalleryFromStorage(project.slug);
-  const seen = new Set(fromDb);
-  const extra = fromStorage.filter((p) => !seen.has(p));
-  const gallery = fromDb.length > 0 ? [...fromDb, ...extra] : fromStorage;
+  const seen = new Set<string>();
+  const gallery: string[] = [];
+  for (const p of fromDb) {
+    if (p && !seen.has(p)) {
+      seen.add(p);
+      gallery.push(p);
+    }
+  }
+  for (const p of fromStorage) {
+    if (p && !seen.has(p)) {
+      seen.add(p);
+      gallery.push(p);
+    }
+  }
   const heroPoster =
     project.featuredImage ??
     (primaryVideo ? null : (await getProjectPosterUrl(project)));

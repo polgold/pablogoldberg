@@ -11,9 +11,11 @@ En **Site settings → Environment variables** (o en `netlify.toml` con `[build.
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (solo server, nunca en cliente) | `eyJ...` |
 | `SUPABASE_STORAGE_BUCKET` | Nombre del bucket de Storage | `public` |
 | `ADMIN_EMAILS` | Emails permitidos para /admin (whitelist) | `tu@email.com,otro@email.com` |
+| `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | Clave fija para Server Actions (evita "Server Action not found" tras deploy). Generar con: `openssl rand -base64 32` | string base64 de 32 bytes |
 
 ### Detalles
 
+- **NEXT_SERVER_ACTIONS_ENCRYPTION_KEY**: sin esta variable, cada deploy genera nuevos IDs para las Server Actions y el panel puede mostrar "Server Action was not found". Configúrala en Netlify (Build & deploy → Environment) con un valor fijo; por ejemplo genera uno con `openssl rand -base64 32` y úsalo en todos los deploys.
 - **ADMIN_EMAILS**: lista separada por comas. Solo esos emails pueden iniciar sesión en `/admin`. Si está vacío, nadie puede acceder.
 - **Service role**: necesario para que el panel admin escriba en la base de datos y suba archivos a Storage desde el servidor.
 - Las variables `NEXT_PUBLIC_*` se exponen al navegador; el resto solo en el servidor.
