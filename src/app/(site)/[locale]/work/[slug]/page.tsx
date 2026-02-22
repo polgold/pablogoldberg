@@ -20,6 +20,14 @@ function absoluteImageUrl(url: string): string {
   return `${SITE_URL}${url.startsWith("/") ? url : `/${url}`}`;
 }
 
+/** Asegura que el link sea absoluto (https://) para que no se interprete como ruta relativa. */
+function normalizeExternalUrl(url: string): string {
+  const u = url.trim();
+  if (!u) return u;
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  return `https://${u}`;
+}
+
 function getVideoUrl(primary: { type: "vimeo" | "youtube"; id: string }): string {
   if (primary.type === "vimeo") return `https://vimeo.com/video/${primary.id}`;
   return `https://www.youtube.com/watch?v=${primary.id}`;
@@ -145,10 +153,11 @@ export default async function ProjectPage({ params }: PageProps) {
         image: project.featuredImage ? absoluteImageUrl(project.featuredImage) : undefined,
       };
 
-  const gallery =
-    project.galleryImages?.length > 0
-      ? project.galleryImages
-      : await getProjectGalleryFromStorage(project.slug);
+  const fromDb = project.galleryImages ?? [];
+  const fromStorage = await getProjectGalleryFromStorage(project.slug);
+  const seen = new Set(fromDb);
+  const extra = fromStorage.filter((p) => !seen.has(p));
+  const gallery = fromDb.length > 0 ? [...fromDb, ...extra] : fromStorage;
   const heroPoster =
     project.featuredImage ??
     (primaryVideo ? null : (await getProjectPosterUrl(project)));
@@ -247,16 +256,28 @@ export default async function ProjectPage({ params }: PageProps) {
           </section>
         ) : null}
 
-        {(project.projectLinks && project.projectLinks.length > 0) ? (
+        {(project.projectLinks && project.projectLinks.length > 0) || project.externalLink?.trim() ? (
           <section className="mt-10 space-y-2" aria-labelledby="links-heading">
             <h2 id="links-heading" className="text-[10px] uppercase tracking-wider text-white/40">
               {t.links}
             </h2>
             <ul className="flex flex-wrap gap-x-6 gap-y-1">
-              {project.projectLinks.map((link, i) => (
+              {project.externalLink?.trim() ? (
+                <li>
+                  <a
+                    href={normalizeExternalUrl(project.externalLink)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-white/70 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/50"
+                  >
+                    {t.viewProject} →
+                  </a>
+                </li>
+              ) : null}
+              {project.projectLinks?.map((link, i) => (
                 <li key={i}>
                   <a
-                    href={link.url}
+                    href={normalizeExternalUrl(link.url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-white/70 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white/50"
@@ -267,19 +288,6 @@ export default async function ProjectPage({ params }: PageProps) {
               ))}
             </ul>
           </section>
-        ) : null}
-
-        {project.externalLink?.trim() ? (
-          <p className="mt-10">
-            <a
-              href={project.externalLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-white/60 hover:text-white"
-            >
-              {t.viewProject} →
-            </a>
-          </p>
         ) : null}
 
         {/* Minimal project nav */}
