@@ -13,12 +13,18 @@ function normalizeUrl(url: string): string {
   return `https://${u}`;
 }
 
-/** Layout proyecto: título, portada, descripción, video, 12 backstage, links. Secciones vacías no se muestran. */
+/** Item for "More Projects" strip: slug, title, coverUrl. */
+export type ProjectStripItem = { slug: string; title: string; coverUrl: string | null };
+
+/** Layout proyecto: título, portada, descripción, video, More Projects strip, 12 backstage, links. Secciones vacías no se muestran. */
 export function ProjectPage({
   project,
   coverUrl,
   backstageImages,
   primaryVideo,
+  allProjects,
+  currentSlug,
+  moreProjectsLabel,
   linksLabel,
   viewProjectLabel,
   viewAllLabel,
@@ -28,12 +34,16 @@ export function ProjectPage({
   coverUrl: string | null;
   backstageImages: BackstageImage[];
   primaryVideo: { provider: "vimeo" | "youtube"; id: string; embedUrl: string } | null;
+  allProjects?: ProjectStripItem[];
+  currentSlug?: string;
+  moreProjectsLabel?: string;
   linksLabel: string;
   viewProjectLabel: string;
   viewAllLabel: string;
   locale: string;
 }) {
   const hasLinks = Boolean(project.websiteUrl?.trim() || (project.socials?.length ?? 0) > 0);
+  const showMoreProjects = (allProjects?.length ?? 0) > 0 && moreProjectsLabel;
 
   return (
     <article className="min-h-screen border-t border-white/5 bg-black pt-14">
@@ -67,9 +77,9 @@ export function ProjectPage({
           </div>
         )}
 
-        {/* Video: full width of content column, 16:9 */}
+        {/* Video: full width on mobile; on desktop constrained and centered */}
         {(primaryVideo?.embedUrl || project.videoUrl?.trim()) && (
-          <div className="mb-12 w-full overflow-hidden rounded-2xl border border-white/10 bg-black aspect-video">
+          <div className="mb-12 w-full md:mx-auto md:max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-black aspect-video">
             <VideoEmbed
               type={primaryVideo?.provider}
               id={primaryVideo?.id}
@@ -79,6 +89,44 @@ export function ProjectPage({
               className="h-full w-full"
             />
           </div>
+        )}
+
+        {/* More Projects — horizontal strip */}
+        {showMoreProjects && (
+          <section className="mb-12" aria-labelledby="more-projects-heading">
+            <h2 id="more-projects-heading" className="mb-4 text-[10px] uppercase tracking-wider text-white/40">
+              {moreProjectsLabel}
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
+              {allProjects!.map((p) => {
+                const isCurrent = p.slug === currentSlug;
+                return (
+                  <Link
+                    key={p.slug}
+                    href={`/${locale}/work/${p.slug}`}
+                    className={`relative flex-shrink-0 w-[180px] snap-start overflow-hidden rounded-xl border bg-black focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2 focus:ring-offset-black ${isCurrent ? "border-white/30 opacity-60" : "border-white/10"}`}
+                  >
+                    {p.coverUrl ? (
+                      <Image
+                        src={p.coverUrl}
+                        alt=""
+                        width={180}
+                        height={101}
+                        className="aspect-video w-full object-cover"
+                      />
+                    ) : (
+                      <div className="aspect-video w-full bg-white/5 flex items-center justify-center text-xs text-white/40">
+                        {p.title}
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                      <span className="line-clamp-2 text-xs font-medium text-white">{p.title}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {/* Backstage — exactamente hasta 12 */}

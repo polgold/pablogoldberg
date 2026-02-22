@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getProjectBySlugFromJson, getAdjacentArchiveProjects, getProjectGalleryFromStorage, parseVideoUrl } from "@/lib/content";
+import { getProjectBySlug, getProjectBySlugFromJson, getProjectsFromJson, getAdjacentArchiveProjects, getProjectGalleryFromStorage, parseVideoUrl } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
 import { getBackstageImages } from "@/lib/projects-backstage";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
-import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
+import { toLargePathOrOriginal, toThumbPathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { SITE_URL, getCanonicalUrl, getHreflangUrls } from "@/lib/site";
@@ -138,8 +138,11 @@ export default async function ProjectPageRoute({ params }: PageProps) {
   // Nuevo sistema: proyecto desde JSON → layout fijo con 12 backstage
   const jsonProject = await getProjectBySlugFromJson(loc, slug);
   if (jsonProject) {
-    let backstageImages = await getBackstageImages(jsonProject.storageFolder, 12);
-    // Fallback: si no hay carpeta backstage, usar hasta 12 de thumbs (dedupe ya en getProjectGalleryFromStorage)
+    const [allJsonProjects, backstageImagesInitial] = await Promise.all([
+      getProjectsFromJson(loc),
+      getBackstageImages(jsonProject.storageFolder, 12),
+    ]);
+    let backstageImages = backstageImagesInitial;
     if (backstageImages.length === 0) {
       const thumbsPaths = await getProjectGalleryFromStorage(jsonProject.slug);
       const take = thumbsPaths.slice(0, 12);
@@ -154,6 +157,11 @@ export default async function ProjectPageRoute({ params }: PageProps) {
       ? getPublicImageUrl(toLargePathOrOriginal(jsonProject.coverImagePath), PROJECTS_BUCKET)
       : null;
     const primaryVideo = parseVideoUrl(jsonProject.videoUrl) ?? null;
+    const allProjects = allJsonProjects.map((p) => ({
+      slug: p.slug,
+      title: p.title,
+      coverUrl: p.coverImagePath ? getPublicImageUrl(toThumbPathOrOriginal(p.coverImagePath), PROJECTS_BUCKET) : null,
+    }));
     const t = COPY[loc].workDetail;
     return (
       <ProjectPageLayout
@@ -161,6 +169,9 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         coverUrl={coverUrl}
         backstageImages={backstageImages}
         primaryVideo={primaryVideo}
+        allProjects={allProjects}
+        currentSlug={jsonProject.slug}
+        moreProjectsLabel={t.moreProjects}
         linksLabel={t.links}
         viewProjectLabel={t.viewProject}
         viewAllLabel={t.viewAll}
