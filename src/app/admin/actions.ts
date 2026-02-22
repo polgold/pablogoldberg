@@ -445,6 +445,7 @@ export async function setProjectCover(projectId: string, path: string): Promise<
   return {};
 }
 
+/** Lista archivos en Storage en {slug}/large y {slug}/thumbs para "Adjuntar desde Storage". Prueba minúsculas y Large/Thumbs por si el bucket usa mayúsculas. */
 export async function listProjectStorageFiles(slug: string): Promise<{ path: string; url: string }[]> {
   await ensureAdmin();
   if (!slug?.trim()) return [];
@@ -452,21 +453,37 @@ export async function listProjectStorageFiles(slug: string): Promise<{ path: str
   if (!supabase) return [];
 
   const s = slug.trim().toLowerCase();
-  const folders = [`${s}/large`, `${s}/thumbs`];
+  const folders = [
+    `${s}/large`,
+    `${s}/thumbs`,
+    `${s}/Large`,
+    `${s}/Thumbs`,
+  ];
   if (s.includes("-")) {
     const slugNoHyphens = s.replace(/-/g, "");
-    if (slugNoHyphens !== s) folders.push(`${slugNoHyphens}/large`, `${slugNoHyphens}/thumbs`);
+    if (slugNoHyphens !== s) {
+      folders.push(
+        `${slugNoHyphens}/large`,
+        `${slugNoHyphens}/thumbs`,
+        `${slugNoHyphens}/Large`,
+        `${slugNoHyphens}/Thumbs`
+      );
+    }
   }
   const out: { path: string; url: string }[] = [];
   const seen = new Set<string>();
   for (const folder of folders) {
     const { data: files, error } = await supabase.storage.from(PROJECTS_BUCKET).list(folder, { limit: 200 });
-    if (error || !files?.length) continue;
+    if (error) {
+      console.error("[admin] listProjectStorageFiles", folder, error.message);
+      continue;
+    }
+    if (!files?.length) continue;
     const prefix = folder.replace(/\/?$/, "");
     for (const f of files ?? []) {
       if (!f.name || f.name.startsWith(".") || f.id == null) continue;
       const path = `${prefix}/${f.name}`;
-      const key = f.name.toLowerCase();
+      const key = path.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
       out.push({ path, url: getProjectsImageUrl(path) });
