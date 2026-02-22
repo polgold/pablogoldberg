@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
-import { getFeaturedWorkProjects, getPhotographyImagesForHome } from "@/lib/content";
-import { getProjectPosterUrl } from "@/lib/poster";
-import type { ProjectItem } from "@/types/content";
+import { getProjectsFromJson, getPhotographyImagesForHome } from "@/lib/content";
+import { getPublicImageUrl } from "@/lib/supabase/storage";
+import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
+import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
@@ -11,6 +11,7 @@ import { HomeHero } from "@/components/HomeHero";
 import { HomeReel } from "@/components/HomeReel";
 import { HomeAbout } from "@/components/HomeAbout";
 import { HomePhotographyGrid } from "@/components/HomePhotographyGrid";
+import { FeaturedWork } from "@/components/projects/FeaturedWork";
 
 export const revalidate = 300;
 
@@ -38,19 +39,20 @@ export default async function HomePage({
   const loc = getLocaleFromParam(locale);
   const heroVimeoEnv = process.env.HERO_VIMEO_ID?.trim();
 
-  const safeMode = process.env.NEXT_PUBLIC_SAFE_MODE === "true";
-  const [featuredWorkProjects, photographyImages, vimeoVideos] = await Promise.all([
-    safeMode ? (await import("@/lib/content")).getFeaturedVideoProjects(4, loc) : getFeaturedWorkProjects(4, loc),
+  // Featured Work: loader único JSON, determinístico, máx 6
+  const allProjects = await getProjectsFromJson(loc);
+  const featuredProjects = allProjects.filter((p) => p.featured).slice(0, 6);
+  const featuredWithCover = featuredProjects.map((p) => ({
+    project: p,
+    coverUrl: p.coverImagePath
+      ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
+      : null,
+  }));
+
+  const [photographyImages, vimeoVideos] = await Promise.all([
     getPhotographyImagesForHome(8, loc),
     heroVimeoEnv ? Promise.resolve([]) : getVimeoPortfolioVideos(),
   ]);
-
-  const featuredWithPosters = await Promise.all(
-    featuredWorkProjects.map(async (project) => ({
-      project,
-      posterUrl: await getProjectPosterUrl(project),
-    }))
-  );
 
   const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
   const t = COPY[loc].home;
@@ -69,72 +71,13 @@ export default async function HomePage({
       {/* SECTION 2 — REEL */}
       <HomeReel vimeoId={heroVimeoId} title={t.reel} />
 
-      {/* SECTION 3 — FEATURED WORK */}
-      <section
-        className="border-b border-white/5 bg-black px-4 py-14 sm:px-6 md:px-8"
-        aria-labelledby="featured-work-heading"
-      >
-        <div className="mx-auto max-w-[1600px]">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-            <h2
-              id="featured-work-heading"
-              className="text-xl font-semibold text-white md:text-2xl"
-            >
-              {t.featured}
-            </h2>
-            <Link
-              href={`/${locale}/work`}
-              className="text-sm font-medium text-white/80 underline decoration-brand/50 underline-offset-2 transition-colors hover:text-brand hover:decoration-brand focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2 focus:ring-offset-black"
-            >
-              {t.viewAll}
-            </Link>
-          </div>
-          <ul className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
-            {featuredWithPosters.map(({ project, posterUrl }: { project: ProjectItem; posterUrl: string | null }) => {
-              const shortDesc =
-                project.summary?.trim() ||
-                project.excerpt?.trim() ||
-                "";
-              return (
-                <li key={project.slug} className="group bg-black">
-                  <Link
-                    href={`/${locale}/work/${project.slug}`}
-                    className="relative block aspect-[4/3] overflow-hidden bg-black focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-inset"
-                  >
-                    {posterUrl ? (
-                      <Image
-                        src={posterUrl}
-                        alt=""
-                        fill
-                        className="object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">
-                        {project.title}
-                      </div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-4">
-                      <span className="text-sm font-medium text-white">
-                        {project.title}
-                      </span>
-                      {shortDesc && (
-                        <p className="mt-1 line-clamp-2 text-xs text-white/70">
-                          {shortDesc}
-                        </p>
-                      )}
-                      <div className="mt-1 flex flex-wrap gap-x-2 text-xs text-white/70">
-                        {project.roles?.[0] && <span>{project.roles[0]}</span>}
-                        {project.year && <span>{project.year}</span>}
-                      </div>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </section>
+      {/* SECTION 3 — FEATURED WORK (loader JSON, determinístico) */}
+      <FeaturedWork
+        projects={featuredWithCover}
+        locale={locale}
+        title={t.featured}
+        viewAllLabel={t.viewAll}
+      />
 
       {/* SECTION 4 — PHOTOGRAPHY */}
       <HomePhotographyGrid

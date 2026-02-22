@@ -41,3 +41,21 @@ export interface Taxonomy {
   categories: Array<{ slug: string; name: string }>;
   tags: Array<{ slug: string; name: string }>;
 }
+
+/** Modelo fijo para Projects/Featured Work (loader JSON; luego migrable a admin/Supabase). */
+export interface Project {
+  slug: string;
+  title: string;
+  description: string;
+  /** Path en bucket (original), ej. bestefar/cover.jpg */
+  coverImagePath: string;
+  /** URL YouTube o Vimeo (trailer/teaser o full) */
+  videoUrl?: string;
+  /** Link a web del proyecto */
+  websiteUrl?: string;
+  /** RRSS: Instagram, etc. */
+  socials?: { label: string; url: string }[];
+  /** Carpeta en Storage para backstage, ej. "bestefar" */
+  storageFolder: string;
+  featured?: boolean;
+}

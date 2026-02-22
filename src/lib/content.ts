@@ -2,13 +2,17 @@ import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toLargePathOrOriginal, toThumbsPathPrefix } from "./imageVariantPath";
-import type { PageItem, ProjectItem } from "@/types/content";
+import type { PageItem, ProjectItem, Project } from "@/types/content";
+// Loader Projects (JSON): datos desde src/content/projects.{locale}.json — migrable a Supabase después
+import projectsEsJson from "@/content/projects.es.json";
+import projectsEnJson from "@/content/projects.en.json";
 
 export type Locale = "es" | "en";
 
 const DEFAULT_LOCALE: Locale = "es";
 
-function parseVideoUrl(
+/** Parsea URL de video a { type, id } para VideoEmbed. Exportado para uso en project page (JSON). */
+export function parseVideoUrl(
   url: string | null | undefined
 ): { type: "vimeo" | "youtube"; id: string } | undefined {
   if (!url || typeof url !== "string") return undefined;
@@ -520,4 +524,56 @@ export async function getProjectGalleryFromStorage(slug: string): Promise<string
     console.error("[content] getProjectGalleryFromStorage:", e);
     return [];
   }
+}
+
+// ——— Loader único Projects (estructura fija, JSON por ahora) ———
+type ProjectsJson = { projects: Array<Record<string, unknown>> };
+
+function parseProjectFromJson(raw: Record<string, unknown>): Project | null {
+  const slug = typeof raw.slug === "string" ? raw.slug.trim() : "";
+  const title = typeof raw.title === "string" ? raw.title.trim() : "";
+  const description = typeof raw.description === "string" ? raw.description.trim() : "";
+  const coverImagePath = typeof raw.coverImagePath === "string" ? raw.coverImagePath.trim() : "";
+  const storageFolder = typeof raw.storageFolder === "string" ? raw.storageFolder.trim() : slug || "";
+  if (!slug || !title) return null;
+  const videoUrl = typeof raw.videoUrl === "string" ? raw.videoUrl.trim() || undefined : undefined;
+  const websiteUrl = typeof raw.websiteUrl === "string" ? raw.websiteUrl.trim() || undefined : undefined;
+  let socials: { label: string; url: string }[] | undefined;
+  if (Array.isArray(raw.socials) && raw.socials.length > 0) {
+    socials = raw.socials
+      .filter((s): s is Record<string, unknown> => s != null && typeof s === "object")
+      .map((s) => ({ label: String(s.label ?? "").trim(), url: String(s.url ?? "").trim() }))
+      .filter((s) => s.url);
+  }
+  const featured = raw.featured === true;
+  return {
+    slug,
+    title,
+    description,
+    coverImagePath: coverImagePath || `${storageFolder}/cover.jpg`,
+    videoUrl,
+    websiteUrl,
+    socials: socials?.length ? socials : undefined,
+    storageFolder: storageFolder || slug,
+    featured,
+  };
+}
+
+/** Lista de proyectos desde JSON (locale). Determinístico. Preparado para migrar a Supabase. */
+export async function getProjectsFromJson(locale: Locale): Promise<Project[]> {
+  const data = locale === "en" ? (projectsEnJson as ProjectsJson) : (projectsEsJson as ProjectsJson);
+  const list = Array.isArray(data.projects) ? data.projects : [];
+  const out: Project[] = [];
+  for (const raw of list) {
+    const p = parseProjectFromJson(raw as Record<string, unknown>);
+    if (p) out.push(p);
+  }
+  return out;
+}
+
+/** Un proyecto por slug desde JSON. Null si no existe. */
+export async function getProjectBySlugFromJson(locale: Locale, slug: string): Promise<Project | null> {
+  const list = await getProjectsFromJson(locale);
+  const normalized = (slug || "").trim().toLowerCase();
+  return list.find((p) => p.slug.toLowerCase() === normalized) ?? null;
 }

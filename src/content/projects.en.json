@@ -1,0 +1,17 @@
+{
+  "projects": [
+    {
+      "slug": "bestefar",
+      "title": "BESTEFAR",
+      "description": "As Christmas approaches, Karen decorates her tree in Argentina when an unexpected message arrives from a woman in Norway. The woman reveals a surprising connection: her grandmother was once romantically involved with Karen's grandfather, nearly a century ago. Intrigued, Karen sifts through old family photographs, hoping to uncover traces of this long-lost relationship. But the deeper she delves, the more questions arise. Determined to uncover the truth, Karen embarks on a journey to Norway to reunite with her family and trace her grandfather's past. Her trip unfolds into a rich exploration of childhood memories, her \"Bestefar's\" immigration story, lost love, and the scars of war—leading her closer to the answers she's been searching for.",
+      "coverImagePath": "bestefar/cover.jpg",
+      "videoUrl": "https://youtu.be/tDKGA_nLGO",
+      "websiteUrl": "https://bestefarmovie.com",
+      "socials": [
+        { "label": "Instagram", "url": "https://instagram.com/bestefarmovie" }
+      ],
+      "storageFolder": "bestefar",
+      "featured": true
+    }
+  ]
+}

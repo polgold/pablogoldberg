@@ -1,14 +1,19 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getAdjacentArchiveProjects, getProjectGalleryFromStorage } from "@/lib/content";
+import { getProjectBySlug, getProjectBySlugFromJson, getAdjacentArchiveProjects, getProjectGalleryFromStorage, parseVideoUrl } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
+import { getBackstageImages } from "@/lib/projects-backstage";
+import { getPublicImageUrl } from "@/lib/supabase/storage";
+import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
+import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { SITE_URL, getCanonicalUrl, getHreflangUrls } from "@/lib/site";
 import { SafeHtml } from "@/components/SafeHtml";
 import { VideoEmbed } from "@/components/VideoEmbed";
 import { GalleryWithLightbox } from "@/components/GalleryWithLightbox";
+import { ProjectPage as ProjectPageLayout } from "@/components/projects/ProjectPage";
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -79,17 +84,30 @@ function getProjectSummaryPlain(project: { slug: string; summary?: string; excer
 export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params;
   const loc = getLocaleFromParam(locale);
-  const project = await getProjectBySlug(slug, loc);
+  // Intentar primero proyecto JSON (nuevo sistema)
+  const jsonProject = await getProjectBySlugFromJson(loc, slug);
+  const project = jsonProject ?? (await getProjectBySlug(slug, loc));
   const meta = COPY[loc].metadata;
   if (!project) return { title: meta.project };
   const desc =
-    getProjectSummaryPlain(project, loc) ||
-    (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
+    "excerpt" in project
+      ? getProjectSummaryPlain(project, loc)
+      : ("description" in project ? String((project as { description?: string }).description ?? "").slice(0, 160) : "") ||
+        (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
-  const ogImage = project.featuredImage
-    ? absoluteImageUrl(project.featuredImage)
-    : `${SITE_URL}${DEFAULT_OG_IMAGE}`;
-  const videos = project.primaryVideo ? getOgVideos(project.primaryVideo) : undefined;
+  const ogImage =
+    "featuredImage" in project && project.featuredImage
+      ? absoluteImageUrl(project.featuredImage)
+      : "coverImagePath" in project && (project as { coverImagePath?: string }).coverImagePath
+        ? `${SITE_URL}/api/proxy-image?path=${encodeURIComponent(toLargePathOrOriginal((project as { coverImagePath: string }).coverImagePath))}`
+        : `${SITE_URL}${DEFAULT_OG_IMAGE}`;
+  const primaryVideo =
+    "primaryVideo" in project
+      ? (project as { primaryVideo?: { type: "vimeo" | "youtube"; id: string } }).primaryVideo
+      : "videoUrl" in project
+        ? parseVideoUrl((project as { videoUrl?: string }).videoUrl)
+        : undefined;
+  const videos = primaryVideo ? getOgVideos(primaryVideo) : undefined;
   const hreflang = getHreflangUrls(`/work/${slug}`);
   return {
     title: project.title,
@@ -116,9 +134,45 @@ export async function generateMetadata({ params }: PageProps) {
   };
 }
 
-export default async function ProjectPage({ params }: PageProps) {
+export default async function ProjectPageRoute({ params }: PageProps) {
   const { locale, slug } = await params;
   const loc = getLocaleFromParam(locale);
+
+  // Nuevo sistema: proyecto desde JSON → layout fijo con 12 backstage
+  const jsonProject = await getProjectBySlugFromJson(loc, slug);
+  if (jsonProject) {
+    let backstageImages = await getBackstageImages(jsonProject.storageFolder, 12);
+    // Fallback: si no hay carpeta backstage, usar hasta 12 de thumbs (dedupe ya en getProjectGalleryFromStorage)
+    if (backstageImages.length === 0) {
+      const thumbsPaths = await getProjectGalleryFromStorage(jsonProject.slug);
+      const take = thumbsPaths.slice(0, 12);
+      backstageImages = take.map((path) => ({
+        thumbUrl: getPublicImageUrl(path, PROJECTS_BUCKET),
+        largeUrl: getPublicImageUrl(path.replace(/\/thumbs?\//, "/large/"), PROJECTS_BUCKET),
+        originalUrl: getPublicImageUrl(path, PROJECTS_BUCKET),
+        alt: path.split("/").pop()?.replace(/\.[^/.]+$/, "") || "Backstage",
+      }));
+    }
+    const coverUrl = jsonProject.coverImagePath
+      ? getPublicImageUrl(toLargePathOrOriginal(jsonProject.coverImagePath), PROJECTS_BUCKET)
+      : null;
+    const primaryVideo = parseVideoUrl(jsonProject.videoUrl) ?? null;
+    const t = COPY[loc].workDetail;
+    return (
+      <ProjectPageLayout
+        project={jsonProject}
+        coverUrl={coverUrl}
+        backstageImages={backstageImages}
+        primaryVideo={primaryVideo}
+        linksLabel={t.links}
+        viewProjectLabel={t.viewProject}
+        viewAllLabel={t.viewAll}
+        locale={locale}
+      />
+    );
+  }
+
+  // Fallback: proyecto desde Supabase (sin romper rutas existentes)
   const project = await getProjectBySlug(slug, loc);
   if (!project) notFound();
 
