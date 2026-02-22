@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import type { Project } from "@/types/content";
+
+/** Item mínimo para card (JSON Project o proyecto desde Supabase/admin). */
+export type ProjectCardItem = { slug: string; title: string; description?: string };
 
 /** Card para grid: cover, título, descripción corta, link a /work/[slug]. */
 export function ProjectCard({
@@ -10,11 +12,11 @@ export function ProjectCard({
   coverUrl,
   locale,
 }: {
-  project: Project;
+  project: ProjectCardItem;
   coverUrl: string | null;
   locale: string;
 }) {
-  const shortDesc = project.description?.slice(0, 160).trim();
+  const shortDesc = (project.description ?? "").slice(0, 160).trim();
   const href = `/${locale}/work/${project.slug}`;
 
   return (

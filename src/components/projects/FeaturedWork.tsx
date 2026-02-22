@@ -1,17 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ProjectCard } from "./ProjectCard";
-import type { Project } from "@/types/content";
+import { ProjectCard, type ProjectCardItem } from "./ProjectCard";
 
-/** Featured Work: grid de ProjectCards debajo del hero. Determinístico. */
+/** Featured Work: grid de ProjectCards (JSON + Supabase). */
 export function FeaturedWork({
   projects,
   locale,
   title,
   viewAllLabel,
 }: {
-  projects: Array<{ project: Project; coverUrl: string | null }>;
+  projects: Array<{ project: ProjectCardItem; coverUrl: string | null }>;
   locale: string;
   title: string;
   viewAllLabel: string;

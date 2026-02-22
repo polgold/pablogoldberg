@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getProjectsFromJson, getPhotographyImagesForHome } from "@/lib/content";
+import { getProjectsFromJson, getFeaturedWorkProjects, getPhotographyImagesForHome } from "@/lib/content";
+import { getProjectPosterUrl } from "@/lib/poster";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
@@ -39,20 +40,36 @@ export default async function HomePage({
   const loc = getLocaleFromParam(locale);
   const heroVimeoEnv = process.env.HERO_VIMEO_ID?.trim();
 
-  // Featured Work: loader único JSON, determinístico, máx 6
-  const allProjects = await getProjectsFromJson(loc);
-  const featuredProjects = allProjects.filter((p) => p.featured).slice(0, 6);
-  const featuredWithCover = featuredProjects.map((p) => ({
-    project: p,
-    coverUrl: p.coverImagePath
-      ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
-      : null,
-  }));
-
-  const [photographyImages, vimeoVideos] = await Promise.all([
+  // Featured Work: JSON + Supabase (proyectos del admin marcados como destacados)
+  const [jsonProjects, supabaseFeatured, photographyImages, vimeoVideos] = await Promise.all([
+    getProjectsFromJson(loc),
+    getFeaturedWorkProjects(6, loc),
     getPhotographyImagesForHome(8, loc),
     heroVimeoEnv ? Promise.resolve([]) : getVimeoPortfolioVideos(),
   ]);
+  const fromJson = jsonProjects
+    .filter((p) => p.featured)
+    .slice(0, 6)
+    .map((p) => ({
+      project: { slug: p.slug, title: p.title, description: p.description },
+      coverUrl: p.coverImagePath
+        ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
+        : null,
+    }));
+  const seen = new Set(fromJson.map((x) => x.project.slug));
+  const fromSupabase = await Promise.all(
+    supabaseFeatured
+      .filter((p) => !seen.has(p.slug))
+      .slice(0, 6 - fromJson.length)
+      .map(async (p) => {
+        seen.add(p.slug);
+        return {
+          project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
+          coverUrl: await getProjectPosterUrl(p),
+        };
+      })
+  );
+  const featuredWithCover = [...fromJson, ...fromSupabase].slice(0, 6);
 
   const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
   const t = COPY[loc].home;

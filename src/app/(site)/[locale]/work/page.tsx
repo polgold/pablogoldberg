@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getProjectsFromJson } from "@/lib/content";
+import { getProjectsFromJson, getProjects } from "@/lib/content";
+import { getProjectPosterUrl } from "@/lib/poster";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
@@ -34,14 +35,30 @@ export default async function WorkPage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  // Loader único JSON, determinístico
-  const projects = await getProjectsFromJson(loc);
-  const projectsWithCover = projects.map((p) => ({
-    project: p,
+  // JSON + Supabase (proyectos del admin publicados), dedupe por slug (prioridad JSON)
+  const [jsonProjects, supabaseProjects] = await Promise.all([
+    getProjectsFromJson(loc),
+    getProjects(loc),
+  ]);
+  const fromJson = jsonProjects.map((p) => ({
+    project: { slug: p.slug, title: p.title, description: p.description },
     coverUrl: p.coverImagePath
       ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
       : null,
   }));
+  const seen = new Set(fromJson.map((x) => x.project.slug));
+  const fromSupabase = await Promise.all(
+    supabaseProjects
+      .filter((p) => !seen.has(p.slug))
+      .map(async (p) => {
+        seen.add(p.slug);
+        return {
+          project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
+          coverUrl: await getProjectPosterUrl(p),
+        };
+      })
+  );
+  const projectsWithCover = [...fromJson, ...fromSupabase];
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
