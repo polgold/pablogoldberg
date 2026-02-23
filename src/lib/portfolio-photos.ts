@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "./supabase/server";
+import { createSupabaseServerClient, createSupabaseAnonClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toThumbPathPrefix, toLargePathPrefix } from "./imageVariantPath";
@@ -173,9 +173,10 @@ export async function getRandomPhotosForHome(limit = 6): Promise<{ thumbUrl: str
 
 /**
  * Public: galerías y fotos visibles para /photography. Respeta "Oculta" (is_visible=false) del admin.
+ * Usa cliente anónimo para que RLS en DB aplique is_visible (el service_role lo bypasea).
  */
 export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAnonClient();
   if (!supabase) return [];
 
   const { data: galleries, error: ge } = await supabase
@@ -189,10 +190,10 @@ export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[
   for (const g of galleries) {
     const { data: photos, error: pe } = await supabase
       .from("portfolio_photos")
-      .select("*")
+      .select("id, storage_path, public_url, is_visible, order, created_at, gallery_id")
       .eq("gallery_id", g.id)
-      .eq("is_visible", true)
       .order("order", { ascending: true });
+    if (pe) continue;
     const list = (photos ?? []) as PortfolioPhoto[];
     out.push({
       id: g.id,
