@@ -1,13 +1,34 @@
 import Link from "next/link";
-import { getProjectsFromJson, getFeaturedWorkProjects, getProjects } from "@/lib/content";
+import { getProjectsFromJson, getFeaturedWorkProjects } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
+import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
-import { ProjectCard } from "@/components/projects/ProjectCard";
 import { FeaturedWork } from "@/components/projects/FeaturedWork";
+import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
+import type { WorkItem } from "@/types/work";
+import type { VimeoVideo } from "@/lib/vimeo";
+
+function yearFromReleaseTime(releaseTime: string): string {
+  if (!releaseTime || releaseTime.length < 4) return "";
+  return releaseTime.slice(0, 4);
+}
+
+function vimeoToWorkItem(v: VimeoVideo): WorkItem {
+  return {
+    slug: `vimeo-${v.id}`,
+    title: v.name,
+    year: yearFromReleaseTime(v.releaseTime) || undefined,
+    featuredImage: v.thumbnail || undefined,
+    href: v.link,
+    external: true,
+    source: "vimeo",
+    vimeoId: v.id,
+  };
+}
 
 // Featured + full list from JSON + Supabase; avoid stale
 export const revalidate = 0;
@@ -37,12 +58,13 @@ export default async function WorkPage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  // Destacados (igual que home): JSON + Supabase, máx 6
-  const [jsonProjects, supabaseFeatured, supabaseProjects] = await Promise.all([
+  // Destacados + feed Vimeo
+  const [jsonProjects, supabaseFeatured, vimeoVideos] = await Promise.all([
     getProjectsFromJson(loc),
     getFeaturedWorkProjects(6, loc),
-    getProjects(loc),
+    getVimeoPortfolioVideos(),
   ]);
+  const vimeoItems: WorkItem[] = vimeoVideos.map(vimeoToWorkItem);
   const fromJson = jsonProjects
     .filter((p) => p.featured)
     .slice(0, 6)
@@ -67,29 +89,6 @@ export default async function WorkPage({
   );
   const featuredWithCover = [...fromJson, ...fromSupabaseFeatured].slice(0, 6);
 
-  // Listado completo: JSON primero, luego Supabase (dedupe por slug)
-  const allFromJson = jsonProjects.map((p) => ({
-    project: { slug: p.slug, title: p.title, description: p.description },
-    coverUrl: p.coverImagePath
-      ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
-      : null,
-  }));
-  const seenAll = new Set(allFromJson.map((x) => x.project.slug));
-  const allFromSupabase = await Promise.all(
-    supabaseProjects
-      .filter((p) => !seenAll.has(p.slug))
-      .map(async (p) => {
-        seenAll.add(p.slug);
-        return {
-          project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
-          coverUrl: await getProjectPosterUrl(p),
-        };
-      })
-  );
-  const allProjectsWithCover = [...allFromJson, ...allFromSupabase];
-  const featuredSlugs = new Set(featuredWithCover.map((x) => x.project.slug));
-  const restProjectsWithCover = allProjectsWithCover.filter((x) => !featuredSlugs.has(x.project.slug));
-
   const tWork = COPY[loc].work;
 
   return (
@@ -103,21 +102,12 @@ export default async function WorkPage({
           viewAllLabel={tWork.viewAllWork}
         />
 
-        {/* 2) Resto de proyectos (Vimeo feed / listado, sin repetir destacados) */}
-        <section className="mt-12 border-t border-white/5 pt-10" aria-labelledby="work-all-heading">
-          <h2 id="work-all-heading" className="text-xl font-semibold text-white md:text-2xl">
+        {/* 2) Feed de Vimeo (videos del portfolio) */}
+        <section className="mt-12 border-t border-white/5 pt-10" aria-labelledby="work-vimeo-heading">
+          <h2 id="work-vimeo-heading" className="text-xl font-semibold text-white md:text-2xl">
             {tWork.title}
           </h2>
-          <ul className="mt-8 grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
-            {restProjectsWithCover.map(({ project, coverUrl }) => (
-              <ProjectCard
-                key={project.slug}
-                project={project}
-                coverUrl={coverUrl}
-                locale={locale}
-              />
-            ))}
-          </ul>
+          <WorkPageClient items={vimeoItems} locale={locale} />
           <div className="mt-12 flex justify-center">
             <Link
               href={`/${locale}/work/archive`}
