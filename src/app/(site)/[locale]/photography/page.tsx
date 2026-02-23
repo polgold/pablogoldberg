@@ -5,7 +5,8 @@ import { COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { GalleryFilterClient } from "./PhotographyFilterClient";
 
-export const revalidate = 300;
+// Respeta "Oculta" del admin; no cachear para que los cambios se vean al refrescar
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

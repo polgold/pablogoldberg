@@ -171,6 +171,9 @@ export async function getRandomPhotosForHome(limit = 6): Promise<{ thumbUrl: str
   });
 }
 
+/**
+ * Public: galerías y fotos visibles para /photography. Respeta "Oculta" (is_visible=false) del admin.
+ */
 export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
