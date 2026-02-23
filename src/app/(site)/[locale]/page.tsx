@@ -74,6 +74,7 @@ export default async function HomePage({
 
   const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
   const t = COPY[loc].home;
+  const tWork = COPY[loc].work;
 
   return (
     <div className="min-h-screen bg-black">
@@ -89,11 +90,11 @@ export default async function HomePage({
       {/* SECTION 2 — REEL */}
       <HomeReel vimeoId={heroVimeoId} title={t.reel} />
 
-      {/* SECTION 3 — FEATURED WORK (loader JSON, determinístico) */}
+      {/* SECTION 3 — TRABAJOS DESTACADOS / FEATURED WORK */}
       <FeaturedWork
         projects={featuredWithCover}
         locale={locale}
-        title={t.featured}
+        title={tWork.featuredTitle}
         viewAllLabel={t.viewAll}
       />
 

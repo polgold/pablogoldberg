@@ -87,28 +87,29 @@ export default async function WorkPage({
       })
   );
   const allProjectsWithCover = [...allFromJson, ...allFromSupabase];
+  const featuredSlugs = new Set(featuredWithCover.map((x) => x.project.slug));
+  const restProjectsWithCover = allProjectsWithCover.filter((x) => !featuredSlugs.has(x.project.slug));
 
   const tWork = COPY[loc].work;
-  const tHome = COPY[loc].home;
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 md:px-8">
-        {/* 1) Trabajo destacado (igual que en home) */}
+        {/* 1) Trabajos destacados (solo los 6 destacados) */}
         <FeaturedWork
           projects={featuredWithCover}
           locale={locale}
-          title={tHome.featured}
+          title={tWork.featuredTitle}
           viewAllLabel={tWork.viewAllWork}
         />
 
-        {/* 2) Listado completo de proyectos */}
+        {/* 2) Resto de proyectos (Vimeo feed / listado, sin repetir destacados) */}
         <section className="mt-12 border-t border-white/5 pt-10" aria-labelledby="work-all-heading">
           <h2 id="work-all-heading" className="text-xl font-semibold text-white md:text-2xl">
             {tWork.title}
           </h2>
           <ul className="mt-8 grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
-            {allProjectsWithCover.map(({ project, coverUrl }) => (
+            {restProjectsWithCover.map(({ project, coverUrl }) => (
               <ProjectCard
                 key={project.slug}
                 project={project}

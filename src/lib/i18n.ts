@@ -16,7 +16,7 @@ export const COPY: Record<
   Locale,
   {
     nav: { home: string; work: string; portfolio: string; gallery: string; about: string; contact: string };
-    work: { title: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string; viewAllWork: string; archive: string; archiveSubtitle: string };
+    work: { title: string; featuredTitle: string; subtitle: string; searchPlaceholder: string; all: string; projectsCount: string; noResults: string; viewAllWork: string; archive: string; archiveSubtitle: string };
     workDetail: { gallery: string; galleryStills: string; reelsTrailers: string; links: string; credits: string; viewAll: string; viewProject: string; navLabel: string; moreProjects: string };
     gallery: { title: string; subtitle?: string; all: string };
     home: { tagline: string; more: string; role: string; workTitle: string; reel: string; featured: string; viewAll: string; ctaVideos: string; ctaGallery: string; ctaFeatured: string; ctaTitle: string; ctaText: string; ctaButton: string; heroH1: string; heroSub: string; ctaPrimary: string; ctaSecondary: string; aboutText: string; ctaCollaborate: string; photography: string; about: string };
@@ -47,6 +47,7 @@ export const COPY: Record<
     nav: { home: "Inicio", work: "Proyectos", portfolio: "Portfolio", gallery: "Fotografía", about: "Sobre mí", contact: "Contacto" },
     work: {
       title: "Proyectos",
+      featuredTitle: "Trabajos destacados",
       subtitle: "Selección de proyectos como director, DP y productor.",
       searchPlaceholder: "Buscar proyectos...",
       all: "Todos",
@@ -107,6 +108,7 @@ export const COPY: Record<
     nav: { home: "Home", work: "Projects", portfolio: "Portfolio", gallery: "Photography", about: "About", contact: "Contact" },
     work: {
       title: "Projects",
+      featuredTitle: "Featured work",
       subtitle: "Selection of projects as director, DP and producer.",
       searchPlaceholder: "Search projects...",
       all: "All",

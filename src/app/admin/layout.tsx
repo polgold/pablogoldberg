@@ -30,10 +30,22 @@ export default async function AdminLayout({
               Nuevo proyecto
             </Link>
             <Link
+              href="/admin/featured-order"
+              className="text-zinc-400 hover:text-white"
+            >
+              Orden destacados
+            </Link>
+            <Link
               href="/admin/portfolio-photos"
               className="text-zinc-400 hover:text-white"
             >
               Portfolio Photos
+            </Link>
+            <Link
+              href="/admin/vimeo-hidden"
+              className="text-zinc-400 hover:text-white"
+            >
+              Videos ocultos
             </Link>
             <Link
               href="/admin/pages"

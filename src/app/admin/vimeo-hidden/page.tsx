@@ -34,10 +34,12 @@ export default async function VimeoHiddenPage() {
         <Link href="/admin" className="text-zinc-400 hover:text-white">
           ← Proyectos
         </Link>
-        <h1 className="text-2xl font-semibold text-white">Videos Vimeo ocultos</h1>
+        <h1 className="text-2xl font-semibold text-white">Videos ocultos / Hidden videos</h1>
       </div>
       <p className="mb-4 text-sm text-zinc-400">
-        Misma lista que en /work. Oculta o muestra videos. Agregá por ID para que aparezca en /work aunque no esté en los 60.
+        ES: Misma lista que en /work. Ocultá o mostrá videos. Agregá por ID para que aparezca en /work aunque no esté en los 60.
+        <br />
+        EN: Same list as /work. Hide or show videos. Add by ID to show in /work even if not in the top 60.
       </p>
       <VimeoHiddenClient
         initialItems={items}

@@ -74,6 +74,48 @@ export async function getProject(id: string): Promise<ProjectRow | null> {
   return normalizeProjectRow(data) as ProjectRow;
 }
 
+export type FeaturedProjectForOrder = { id: string; title: string; slug: string; order: number | null; coverUrl: string | null };
+
+/** Lista proyectos destacados para el admin de orden (drag). */
+export async function listFeaturedProjectsForOrder(): Promise<FeaturedProjectForOrder[]> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id, title, slug, order, cover_image_path")
+    .eq("is_featured", true)
+    .eq("published", true)
+    .order("order", { ascending: true, nullsFirst: false })
+    .order("year", { ascending: false, nullsFirst: false });
+  if (error) return [];
+  const slug = (r: { slug?: string }) => String(r?.slug ?? "").trim();
+  return (data ?? []).map((r) => {
+    const raw = String(r.cover_image_path ?? "").trim().replace(/^\//, "");
+    const fullPath = raw ? (raw.includes("/") ? raw : `${slug(r)}/${raw}`).replace(/\/+/g, "/") : null;
+    const path = fullPath ? toLargePathPrefix(fullPath) : null;
+    return {
+      id: r.id,
+      title: String(r.title ?? ""),
+      slug: slug(r),
+      order: r.order ?? null,
+      coverUrl: path ? getProjectAssetUrl(path) : null,
+    };
+  });
+}
+
+/** Actualiza el orden de proyectos (para destacados). */
+export async function updateProjectsOrder(updates: { id: string; order: number }[]): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  for (const { id, order } of updates) {
+    const { error } = await supabase.from("projects").update({ order }).eq("id", id);
+    if (error) return { error: error.message };
+  }
+  return {};
+}
+
 /** Path completo en Storage: si no tiene "/", va en slug/ (raíz). toLargePathPrefix da slug/large/archivo. */
 function projectStoragePath(slug: string, path: string | null | undefined): string {
   if (!path || !slug) return path ?? "";
