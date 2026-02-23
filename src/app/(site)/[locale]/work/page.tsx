@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { getProjectsFromJson } from "@/lib/content";
+import { getProjectsFromJson, getFeaturedWorkProjects, getProjects } from "@/lib/content";
+import { getProjectPosterUrl } from "@/lib/poster";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { ProjectCard } from "@/components/projects/ProjectCard";
+import { FeaturedWork } from "@/components/projects/FeaturedWork";
 
-// Same source of truth as home; avoid stale EN list
+// Featured + full list from JSON + Supabase; avoid stale
 export const revalidate = 0;
 
 export async function generateMetadata({
@@ -35,37 +37,95 @@ export default async function WorkPage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  // Single source of truth: JSON per locale (/es and /en same logic)
-  const projects = await getProjectsFromJson(loc);
-  const projectsWithCover = projects.map((p) => ({
+  // Destacados (igual que home): JSON + Supabase, máx 6
+  const [jsonProjects, supabaseFeatured, supabaseProjects] = await Promise.all([
+    getProjectsFromJson(loc),
+    getFeaturedWorkProjects(6, loc),
+    getProjects(loc),
+  ]);
+  const fromJson = jsonProjects
+    .filter((p) => p.featured)
+    .slice(0, 6)
+    .map((p) => ({
+      project: { slug: p.slug, title: p.title, description: p.description },
+      coverUrl: p.coverImagePath
+        ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
+        : null,
+    }));
+  const seenFeatured = new Set(fromJson.map((x) => x.project.slug));
+  const fromSupabaseFeatured = await Promise.all(
+    supabaseFeatured
+      .filter((p) => !seenFeatured.has(p.slug))
+      .slice(0, 6 - fromJson.length)
+      .map(async (p) => {
+        seenFeatured.add(p.slug);
+        return {
+          project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
+          coverUrl: await getProjectPosterUrl(p),
+        };
+      })
+  );
+  const featuredWithCover = [...fromJson, ...fromSupabaseFeatured].slice(0, 6);
+
+  // Listado completo: JSON primero, luego Supabase (dedupe por slug)
+  const allFromJson = jsonProjects.map((p) => ({
     project: { slug: p.slug, title: p.title, description: p.description },
     coverUrl: p.coverImagePath
       ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
       : null,
   }));
+  const seenAll = new Set(allFromJson.map((x) => x.project.slug));
+  const allFromSupabase = await Promise.all(
+    supabaseProjects
+      .filter((p) => !seenAll.has(p.slug))
+      .map(async (p) => {
+        seenAll.add(p.slug);
+        return {
+          project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
+          coverUrl: await getProjectPosterUrl(p),
+        };
+      })
+  );
+  const allProjectsWithCover = [...allFromJson, ...allFromSupabase];
+
+  const tWork = COPY[loc].work;
+  const tHome = COPY[loc].home;
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 md:px-8">
-        <h1 className="text-xl font-semibold text-white md:text-2xl">{COPY[loc].work.title}</h1>
-        <ul className="mt-8 grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
-          {projectsWithCover.map(({ project, coverUrl }) => (
-            <ProjectCard
-              key={project.slug}
-              project={project}
-              coverUrl={coverUrl}
-              locale={locale}
-            />
-          ))}
-        </ul>
-        <div className="mt-12 flex justify-center">
-          <Link
-            href={`/${locale}/work/archive`}
-            className="inline-flex items-center justify-center rounded-sm border border-white/30 px-6 py-3 text-sm font-medium text-white transition-colors hover:border-brand hover:text-brand focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2 focus:ring-offset-black"
-          >
-            {COPY[loc].work.viewAllWork}
-          </Link>
-        </div>
+        {/* 1) Trabajo destacado (igual que en home) */}
+        <FeaturedWork
+          projects={featuredWithCover}
+          locale={locale}
+          title={tHome.featured}
+          viewAllLabel={tWork.viewAllWork}
+        />
+
+        {/* 2) Listado completo de proyectos */}
+        <section className="mt-12 border-t border-white/5 pt-10" aria-labelledby="work-all-heading">
+          <h2 id="work-all-heading" className="text-xl font-semibold text-white md:text-2xl">
+            {tWork.title}
+          </h2>
+          <ul className="mt-8 grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
+            {allProjectsWithCover.map(({ project, coverUrl }) => (
+              <ProjectCard
+                key={project.slug}
+                project={project}
+                coverUrl={coverUrl}
+                locale={locale}
+              />
+            ))}
+          </ul>
+          <div className="mt-12 flex justify-center">
+            <Link
+              href={`/${locale}/work/archive`}
+              className="inline-flex items-center justify-center rounded-sm border border-white/30 px-6 py-3 text-sm font-medium text-white transition-colors hover:border-brand hover:text-brand focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2 focus:ring-offset-black"
+            >
+              {tWork.viewAllWork}
+            </Link>
+          </div>
+        </section>
       </div>
     </div>
   );
