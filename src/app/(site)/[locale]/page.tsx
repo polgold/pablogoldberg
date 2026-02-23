@@ -44,13 +44,13 @@ export default async function HomePage({
   // Featured Work: JSON + Supabase (proyectos del admin marcados como destacados)
   const [jsonProjects, supabaseFeatured, photographyImages, vimeoVideos] = await Promise.all([
     getProjectsFromJson(loc),
-    getFeaturedWorkProjects(6, loc),
+    getFeaturedWorkProjects(8, loc),
     getPhotographyImagesForHome(8, loc),
     heroVimeoEnv ? Promise.resolve([]) : getVimeoPortfolioVideos(),
   ]);
   const fromJson = jsonProjects
     .filter((p) => p.featured)
-    .slice(0, 6)
+    .slice(0, 8)
     .map((p) => ({
       project: { slug: p.slug, title: p.title, description: p.description },
       coverUrl: p.coverImagePath
@@ -61,7 +61,7 @@ export default async function HomePage({
   const fromSupabase = await Promise.all(
     supabaseFeatured
       .filter((p) => !seen.has(p.slug))
-      .slice(0, 6 - fromJson.length)
+      .slice(0, 8 - fromJson.length)
       .map(async (p) => {
         seen.add(p.slug);
         return {
@@ -70,7 +70,7 @@ export default async function HomePage({
         };
       })
   );
-  const featuredWithCover = [...fromJson, ...fromSupabase].slice(0, 6);
+  const featuredWithCover = [...fromJson, ...fromSupabase].slice(0, 8);
 
   const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
   const t = COPY[loc].home;

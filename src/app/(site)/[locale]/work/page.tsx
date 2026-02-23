@@ -61,13 +61,13 @@ export default async function WorkPage({
   // Destacados + feed Vimeo
   const [jsonProjects, supabaseFeatured, vimeoVideos] = await Promise.all([
     getProjectsFromJson(loc),
-    getFeaturedWorkProjects(6, loc),
+    getFeaturedWorkProjects(8, loc),
     getVimeoPortfolioVideos(),
   ]);
   const vimeoItems: WorkItem[] = vimeoVideos.map(vimeoToWorkItem);
   const fromJson = jsonProjects
     .filter((p) => p.featured)
-    .slice(0, 6)
+    .slice(0, 8)
     .map((p) => ({
       project: { slug: p.slug, title: p.title, description: p.description },
       coverUrl: p.coverImagePath
@@ -78,7 +78,7 @@ export default async function WorkPage({
   const fromSupabaseFeatured = await Promise.all(
     supabaseFeatured
       .filter((p) => !seenFeatured.has(p.slug))
-      .slice(0, 6 - fromJson.length)
+      .slice(0, 8 - fromJson.length)
       .map(async (p) => {
         seenFeatured.add(p.slug);
         return {
@@ -87,7 +87,7 @@ export default async function WorkPage({
         };
       })
   );
-  const featuredWithCover = [...fromJson, ...fromSupabaseFeatured].slice(0, 6);
+  const featuredWithCover = [...fromJson, ...fromSupabaseFeatured].slice(0, 8);
 
   const tWork = COPY[loc].work;
 

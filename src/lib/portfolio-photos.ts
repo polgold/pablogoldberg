@@ -193,12 +193,13 @@ export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[
       .eq("gallery_id", g.id)
       .eq("is_visible", true)
       .order("order", { ascending: true });
+    const list = (photos ?? []) as PortfolioPhoto[];
     out.push({
       id: g.id,
       title: g.name,
       slug: g.slug,
       sort_order: g.order ?? 0,
-      photos: (photos ?? []) as PortfolioPhoto[],
+      photos: list.filter((p) => p.is_visible === true),
     });
   }
   return out;
