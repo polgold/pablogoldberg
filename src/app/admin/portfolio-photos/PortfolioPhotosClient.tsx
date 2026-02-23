@@ -83,21 +83,24 @@ export function PortfolioPhotosClient({
     [showToast]
   );
 
+  const isStorageOnly = useCallback((id: string) => id.startsWith("storage-"), []);
+
   const moveItem = useCallback(
     (fromIndex: number, toIndex: number) => {
       if (toIndex < 0 || toIndex >= photos.length) return;
       const next = [...photos];
       const [removed] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, removed);
-      const updates = next.map((p, i) => ({ id: p.id, order: i }));
+      const updates = next.map((p, i) => ({ id: p.id, order: i })).filter((u) => !isStorageOnly(u.id));
       setPhotos(next.map((p, i) => ({ ...p, order: i })));
+      if (updates.length === 0) return;
       setReorderLoading(true);
       reorderPortfolioPhotos(updates).then(({ error }) => {
         setReorderLoading(false);
         if (error) showToast(error);
       });
     },
-    [photos, showToast]
+    [photos, showToast, isStorageOnly]
   );
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
@@ -476,57 +479,68 @@ export function PortfolioPhotosClient({
           </p>
         ) : (
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {photos.map((photo, index) => (
-              <li
-                key={photo.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, photo.id)}
-                onDragOver={(e) => handleDragOver(e, photo.id)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, photo.id)}
-                onDragEnd={handleDragEnd}
-                className={`group relative flex flex-col overflow-hidden rounded border bg-zinc-900 transition-opacity ${
-                  draggedId === photo.id ? "opacity-50" : ""
-                } ${dragOverId === photo.id ? "ring-2 ring-amber-500" : "border-zinc-800"}`}
-              >
-                <div className="relative aspect-square bg-zinc-800">
-                  <Image
-                    src={photo.public_url}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                    unoptimized={photo.public_url.includes("supabase")}
-                  />
-                  {!photo.is_visible && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-                      <span className="text-sm font-medium text-zinc-400">Oculta</span>
-                    </div>
-                  )}
-                  <div
-                    className="absolute left-1 top-1 cursor-grab rounded bg-black/60 px-1.5 py-0.5 text-xs text-zinc-300 opacity-0 transition-opacity group-hover:opacity-100"
-                    title="Arrastrar para reordenar"
-                  >
-                    ⋮⋮
+            {photos.map((photo, index) => {
+              const storageOnly = isStorageOnly(photo.id);
+              return (
+                <li
+                  key={photo.id}
+                  draggable={!storageOnly}
+                  onDragStart={storageOnly ? undefined : (e) => handleDragStart(e, photo.id)}
+                  onDragOver={storageOnly ? undefined : (e) => handleDragOver(e, photo.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={storageOnly ? undefined : (e) => handleDrop(e, photo.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`group relative flex flex-col overflow-hidden rounded border bg-zinc-900 transition-opacity ${
+                    draggedId === photo.id ? "opacity-50" : ""
+                  } ${dragOverId === photo.id ? "ring-2 ring-amber-500" : "border-zinc-800"}`}
+                >
+                  <div className="relative aspect-square bg-zinc-800">
+                    <Image
+                      src={photo.public_url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                      unoptimized={photo.public_url.includes("supabase")}
+                    />
+                    {!photo.is_visible && !storageOnly && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                        <span className="text-sm font-medium text-zinc-400">Oculta</span>
+                      </div>
+                    )}
+                    {!storageOnly && (
+                      <div
+                        className="absolute left-1 top-1 cursor-grab rounded bg-black/60 px-1.5 py-0.5 text-xs text-zinc-300 opacity-0 transition-opacity group-hover:opacity-100"
+                        title="Arrastrar para reordenar"
+                      >
+                        ⋮⋮
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="flex items-center justify-between border-t border-zinc-800 p-2">
-                  <span className="truncate text-xs text-zinc-500">#{index + 1}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleToggle(photo.id)}
-                    disabled={loadingId === photo.id}
-                    className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                      photo.is_visible
-                        ? "bg-green-900/50 text-green-400 hover:bg-green-800/50"
-                        : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
-                    } ${loadingId === photo.id ? "opacity-50" : ""}`}
-                  >
-                    {loadingId === photo.id ? "…" : photo.is_visible ? "Ocultar" : "Mostrar"}
-                  </button>
-                </div>
-              </li>
-            ))}
+                  <div className="flex items-center justify-between border-t border-zinc-800 p-2">
+                    <span className="truncate text-xs text-zinc-500">#{index + 1}</span>
+                    {storageOnly ? (
+                      <span className="text-xs text-zinc-500" title="Solo en Storage; se sincroniza al recargar">
+                        Storage
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleToggle(photo.id)}
+                        disabled={loadingId === photo.id}
+                        className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                          photo.is_visible
+                            ? "bg-green-900/50 text-green-400 hover:bg-green-800/50"
+                            : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                        } ${loadingId === photo.id ? "opacity-50" : ""}`}
+                      >
+                        {loadingId === photo.id ? "…" : photo.is_visible ? "Ocultar" : "Mostrar"}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

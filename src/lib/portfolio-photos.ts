@@ -2,11 +2,12 @@ import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toThumbPathPrefix, toLargePathPrefix } from "./imageVariantPath";
+import { listGalleryFromStorage } from "./admin-storage-gallery";
 
 /** Bucket único para fotos de portfolio: projects. Path = slug/filename (ej. retratos/IMG_x.png). */
 export const PHOTOS_BUCKET = PROJECTS_BUCKET;
 
-const IMAGE_EXT = /\.(jpe?g|png|webp|gif)$/i;
+const IMAGE_EXT = /\.(jpe?g|png|webp|avif|gif)$/i;
 
 export type PortfolioGallery = {
   id: string;
@@ -40,23 +41,34 @@ function getFilesFromList(data: unknown): { name: string }[] {
 }
 
 /**
- * Lista archivos de imagen en Storage en bucket projects, prefijo slug/ (ej. retratos/).
- * Convención: path = slug/filename.
+ * Lista archivos de imagen en Storage: slug/thumb/* (y slug/Thumb/* por mayúsculas).
+ * Convención: path = slug/thumb/filename → public_url para thumb; large = slug/large/filename.
  */
 async function listStorageFilesBySlug(slug: string): Promise<{ path: string; url: string }[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
 
-  const { data, error } = await supabase.storage
-    .from(PHOTOS_BUCKET)
-    .list(slug, { limit: 1000 });
-  if (error) return [];
+  const out: { path: string; url: string }[] = [];
+  const seen = new Set<string>();
 
-  const files = getFilesFromList(data);
-  return files.map((f) => {
-    const path = `${slug}/${f.name}`.replace(/\/+/g, "/");
-    return { path, url: getPublicImageUrl(path, PHOTOS_BUCKET) };
-  });
+  for (const sub of ["thumb", "Thumb"]) {
+    const folder = `${slug}/${sub}`;
+    const { data, error } = await supabase.storage
+      .from(PHOTOS_BUCKET)
+      .list(folder, { limit: 1000 });
+    if (error || !data?.length) continue;
+
+    const files = getFilesFromList(data);
+    for (const f of files) {
+      const path = `${slug}/${sub}/${f.name}`.replace(/\/+/g, "/");
+      const key = path.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ path, url: getPublicImageUrl(path, PHOTOS_BUCKET) });
+    }
+  }
+
+  return out.sort((a, b) => a.path.localeCompare(b.path));
 }
 
 /** Default gallery ID for legacy (slug portfolio). */
@@ -191,12 +203,13 @@ export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[
 
 /**
  * Admin: returns all photos for the given gallery (visible + hidden), ordered.
- * Lista desde Storage con slug de la galería y sincroniza a DB; luego devuelve filas de DB.
+ * Sincroniza Storage → DB; si la DB sigue vacía, devuelve fotos listadas desde Storage como fallback.
  */
 export async function getAdminPortfolioPhotos(galleryId?: string | null): Promise<PortfolioPhoto[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
 
+  let slug: string | null = null;
   if (galleryId) {
     const { data: gallery } = await supabase
       .from("portfolio_galleries")
@@ -204,6 +217,7 @@ export async function getAdminPortfolioPhotos(galleryId?: string | null): Promis
       .eq("id", galleryId)
       .maybeSingle();
     if (gallery?.slug) {
+      slug = gallery.slug;
       await syncStorageToDbForGallery(supabase, galleryId, gallery.slug);
     }
   }
@@ -212,5 +226,23 @@ export async function getAdminPortfolioPhotos(galleryId?: string | null): Promis
   if (galleryId != null) q = q.eq("gallery_id", galleryId);
   const { data, error } = await q;
   if (error) return [];
-  return (data ?? []) as PortfolioPhoto[];
+
+  const dbPhotos = (data ?? []) as PortfolioPhoto[];
+  if (dbPhotos.length > 0) return dbPhotos;
+
+  // Fallback: mostrar fotos que están en Storage pero aún no en DB
+  if (galleryId && slug) {
+    const fromStorage = await listGalleryFromStorage(slug);
+    return fromStorage.map((img, i) => ({
+      id: `storage-${encodeURIComponent(img.thumbPath)}`,
+      storage_path: img.thumbPath,
+      public_url: img.thumbUrl,
+      is_visible: true,
+      order: i,
+      created_at: "",
+      gallery_id: galleryId,
+    })) as PortfolioPhoto[];
+  }
+
+  return dbPhotos;
 }
