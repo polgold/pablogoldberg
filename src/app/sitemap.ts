@@ -1,15 +1,23 @@
 import { MetadataRoute } from "next";
-import { getProjectSlugs } from "@/lib/content";
+import { getProjectSlugs, getProjectsFromJson } from "@/lib/content";
 import { LOCALES } from "@/lib/i18n";
 import { SITE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  let slugs: string[] = [];
+  let dbSlugs: string[] = [];
   try {
-    slugs = await getProjectSlugs();
+    dbSlugs = await getProjectSlugs();
   } catch {
-    slugs = [];
+    dbSlugs = [];
   }
+  let jsonSlugs: string[] = [];
+  try {
+    const jsonProjects = await getProjectsFromJson("es");
+    jsonSlugs = jsonProjects.map((p) => p.slug);
+  } catch {
+    jsonSlugs = [];
+  }
+  const slugs = [...new Set([...dbSlugs, ...jsonSlugs])];
   const entries: MetadataRoute.Sitemap = [];
 
   // Root (redirects to default locale)

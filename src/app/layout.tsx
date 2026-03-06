@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SITE_URL, PERSON_SAME_AS, SUN_FACTORY_URL } from "@/lib/site";
+import { SITE_URL, PERSON_SAME_AS, SUN_FACTORY_URL, ACCERTS_URL } from "@/lib/site";
 
 const defaultDescription =
-  "Director and filmmaker. Buenos Aires. Commercials, music videos, documentaries.";
+  "Director, Producer, Cinematographer. Buenos Aires. Commercials, music videos, documentaries.";
 
 export const metadata: Metadata = {
   title: { default: "Pablo Goldberg | Director", template: "%s | Pablo Goldberg" },
@@ -13,22 +13,31 @@ export const metadata: Metadata = {
       { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/icon.png", type: "image/png", sizes: "32x32" },
     ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
+  keywords: [
+    "filmmaker", "director", "producer", "cinematographer", "portrait photographer", "product photography",
+    "Buenos Aires", "commercials", "music videos", "documentaries", "Pablo Goldberg",
+    "director de cine", "productor", "director de fotografía", "fotógrafo de retratos", "fotografía de producto",
+    "publicidad", "videoclips", "documentales", "cine",
+    "Cannes", "Marché du Film", "Sitges", "Barcelona", "Sevilla", "festival de cine",
+    "film festival", "Bestefar Movie", "Accerts Productions", "Accerts",
+  ],
   robots: { index: true, follow: true },
   openGraph: {
     title: "Pablo Goldberg | Director",
     description: defaultDescription,
     type: "website",
+    locale: "es_AR",
     siteName: "Pablo Goldberg",
     url: SITE_URL,
-    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Pablo Goldberg" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Pablo Goldberg | Director",
     description: defaultDescription,
-    images: ["/og-default.png"],
   },
+  manifest: "/manifest.json",
   metadataBase: new URL(SITE_URL),
   viewport: { width: "device-width", initialScale: 1, maximumScale: 5 },
 };
@@ -38,22 +47,38 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "Sun Factory",
   url: SUN_FACTORY_URL,
-  description: "Film production company. Argentina.",
+  description: "Film production company. Buenos Aires, Argentina.",
+  location: {
+    "@type": "Place",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Buenos Aires",
+      addressCountry: "AR",
+    },
+  },
+  knowsAbout: ["Film production", "Commercials", "Music videos", "Documentaries", "Branded content"],
 };
 
 const personJsonLd = {
   "@context": "https://schema.org",
   "@type": "Person",
   name: "Pablo Goldberg",
-  jobTitle: "Film Director",
+  jobTitle: ["Film Director", "Producer", "Cinematographer", "Portrait Photographer"],
   description: defaultDescription,
   url: SITE_URL,
   sameAs: [...PERSON_SAME_AS],
-  worksFor: {
-    "@type": "Organization",
-    name: "Sun Factory",
-    url: SUN_FACTORY_URL,
-  },
+  knowsAbout: [
+    "Film directing", "Cinematography", "Film production", "Portrait photography", "Product photography",
+    "Commercials", "Music videos", "Documentaries", "Branded content", "Advertising photography",
+  ],
+  affiliation: [
+    { "@type": "Organization", name: "Marché du Film — Festival de Cannes", url: "https://www.marchedufilm.com" },
+    { "@type": "Organization", name: "Bestefar Movie", url: "https://www.bestefarmovie.com" },
+  ],
+  worksFor: [
+    { "@type": "Organization", name: "Sun Factory", url: SUN_FACTORY_URL },
+    { "@type": "Organization", name: "Accerts Productions", url: ACCERTS_URL },
+  ],
 };
 
 export default function RootLayout({

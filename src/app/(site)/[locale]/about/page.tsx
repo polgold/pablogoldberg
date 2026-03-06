@@ -2,7 +2,7 @@ import Image from "next/image";
 import { getPageBySlug } from "@/lib/content";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { getHreflangUrls } from "@/lib/site";
+import { getHreflangUrls, getCanonicalUrl, SITE_URL, PERSON_SAME_AS, SUN_FACTORY_URL, ACCERTS_URL } from "@/lib/site";
 import { SafeHtml } from "@/components/SafeHtml";
 import { ScrollReveal } from "@/components/ScrollReveal";
 
@@ -51,8 +51,28 @@ export default async function AboutPage({
   const title = page?.title || t.about.defaultTitle;
   const content = page?.content?.trim() || (loc === "es" ? BIO_ES : BIO_EN);
 
+  const aboutJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: "Pablo Goldberg",
+      jobTitle: ["Film Director", "Producer", "Cinematographer", "Portrait Photographer"],
+      url: SITE_URL,
+      sameAs: [...PERSON_SAME_AS],
+      worksFor: [
+        { "@type": "Organization", name: "Sun Factory", url: SUN_FACTORY_URL },
+        { "@type": "Organization", name: "Accerts Productions", url: ACCERTS_URL },
+      ],
+    },
+  };
+
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }}
+      />
       <div className="mx-auto max-w-[1200px] px-4 pb-24 pt-10 md:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-0 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:items-start">
           <ScrollReveal>
@@ -123,6 +143,7 @@ export async function generateMetadata({
       ? "Pablo Goldberg — Director, creativo, fotógrafo y editor. Sun Factory. Buenos Aires."
       : "Pablo Goldberg — Director, creative, photographer and editor. Sun Factory. Buenos Aires.";
   const urls = getHreflangUrls("/about");
+  const pageUrl = getCanonicalUrl(`/${locale}/about`);
   return {
     title,
     description,
@@ -131,6 +152,13 @@ export async function generateMetadata({
       languages: { es: urls.es, en: urls.en, "x-default": urls.es },
     },
     openGraph: {
+      title: `${title} | Pablo Goldberg`,
+      description,
+      url: pageUrl,
+      siteName: "Pablo Goldberg",
+    },
+    twitter: {
+      card: "summary_large_image" as const,
       title: `${title} | Pablo Goldberg`,
       description,
     },

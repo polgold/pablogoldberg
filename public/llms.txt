@@ -5,10 +5,10 @@ name: Pablo Goldberg
 type: Film director portfolio
 location: Buenos Aires, Argentina
 languages: Spanish (es), English (en)
-focus: Commercials, music videos, documentaries, branded content. Director, director of photography, producer.
+focus: Commercials, music videos, documentaries, branded content, portrait photography, product photography. Director, filmmaker, cinematographer, director of photography, producer, photographer.
 
 [about]
-Pablo Goldberg is a film director and cinematographer based in Buenos Aires. Owner of Sun Factory, a film production company in Argentina. Graduated in Visual Arts & Design, Panamerican School of Design & Advertising, 1997. Over 20 years directing and shooting short films, documentaries, commercials, music videos, feature films, television, live events, and advertising photography.
+Pablo Goldberg is a film director, cinematographer, producer and photographer based in Buenos Aires. Director at Sun Factory, a film production company in Argentina. Producer and cinematographer at Accerts Productions (https://www.accerts.com). Graduated in Visual Arts & Design, Panamerican School of Design & Advertising, 1997. Over 20 years directing and shooting short films, documentaries, commercials, music videos, feature films, television, live events, advertising photography, portrait photography and product photography.
 
 [content]
 Canonical URLs (default locale: es):
@@ -21,6 +21,24 @@ Project detail: https://pablogoldberg.com/es/work/<slug> (or /en/work/<slug>).
 
 [media]
 Video: Vimeo, YouTube (embeds). Images: Supabase Storage (project covers and galleries), local assets in /images.
+
+[festivals & industry]
+Actively participates in international film festivals and markets:
+- Festival de Cannes / Marché du Film (Cannes, France)
+- Bestefar Movie — https://www.bestefarmovie.com
+- Sitges International Fantastic Film Festival (Sitges, Barcelona, Spain)
+- Festival de Cine Europeo de Sevilla (Sevilla, Spain)
+
+[contact]
+website: https://pablogoldberg.com/es/contact
+email: hola@pablogoldberg.com
+whatsapp: https://wa.me/5491136511204
+instagram: https://www.instagram.com/polgold
+vimeo: https://vimeo.com/sunfactory
+imdb: https://www.imdb.com/name/nm12692535/
+production companies:
+- Sun Factory — https://www.sunfactory.com.ar (Director)
+- Accerts Productions — https://www.accerts.com (Producer, Cinematographer)
 
 [crawl]
 Allow: /

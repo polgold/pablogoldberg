@@ -23,6 +23,9 @@ export function getHreflangUrls(pathWithoutLocale: string): { es: string; en: st
 /** Sun Factory — productora (Organization schema + Footer). */
 export const SUN_FACTORY_URL = "https://www.sunfactory.com.ar";
 
+/** Accerts Productions. */
+export const ACCERTS_URL = "https://www.accerts.com";
+
 /** Enlaces sameAs para schema Person (debe coincidir con Footer). */
 export const PERSON_SAME_AS = [
   "https://www.imdb.com/name/nm12692535/",

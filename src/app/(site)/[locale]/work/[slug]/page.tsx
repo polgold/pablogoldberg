@@ -9,7 +9,7 @@ import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal, toThumbPathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { SITE_URL, getCanonicalUrl, getHreflangUrls } from "@/lib/site";
+import { SITE_URL, getCanonicalUrl, getHreflangUrls, SUN_FACTORY_URL } from "@/lib/site";
 import { SafeHtml } from "@/components/SafeHtml";
 import { VideoEmbed } from "@/components/VideoEmbed";
 import { GalleryWithLightbox } from "@/components/GalleryWithLightbox";
@@ -52,7 +52,7 @@ function getOgVideos(primary: { type: "vimeo" | "youtube"; id: string }): Array<
 export const revalidate = 60;
 export const dynamic = "force-dynamic";
 
-const DEFAULT_OG_IMAGE = "/og-default.png";
+const DEFAULT_OG_IMAGE = "/opengraph-image";
 const FALLBACK_DESC_ES = "Proyecto de Pablo Goldberg. Director.";
 const FALLBACK_DESC_EN = "Project by Pablo Goldberg. Director.";
 
@@ -163,7 +163,38 @@ export default async function ProjectPageRoute({ params }: PageProps) {
       coverUrl: p.coverImagePath ? getPublicImageUrl(toThumbPathOrOriginal(p.coverImagePath), PROJECTS_BUCKET) : null,
     }));
     const t = COPY[loc].workDetail;
+    const jsonPageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
+    const jsonDesc = jsonProject.description?.slice(0, 160) || (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
+    const jsonPrimaryVideo = parseVideoUrl(jsonProject.videoUrl) ?? null;
+    const jsonProjectJsonLd = jsonPrimaryVideo
+      ? {
+          "@context": "https://schema.org",
+          "@type": "VideoObject",
+          name: jsonProject.title,
+          description: jsonDesc,
+          url: jsonPageUrl,
+          thumbnailUrl: coverUrl ? absoluteImageUrl(coverUrl) : undefined,
+          embedUrl:
+            jsonPrimaryVideo.provider === "vimeo"
+              ? `https://player.vimeo.com/video/${jsonPrimaryVideo.id}`
+              : `https://www.youtube.com/embed/${jsonPrimaryVideo.id}`,
+          productionCompany: { "@type": "Organization", name: "Sun Factory", url: SUN_FACTORY_URL },
+        }
+      : {
+          "@context": "https://schema.org",
+          "@type": "CreativeWork",
+          name: jsonProject.title,
+          description: jsonDesc,
+          url: jsonPageUrl,
+          image: coverUrl ? absoluteImageUrl(coverUrl) : undefined,
+          productionCompany: { "@type": "Organization", name: "Sun Factory", url: SUN_FACTORY_URL },
+        };
     return (
+      <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonProjectJsonLd) }}
+      />
       <ProjectPageLayout
         project={jsonProject}
         coverUrl={coverUrl}
@@ -177,6 +208,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         viewAllLabel={t.viewAll}
         locale={locale}
       />
+      </>
     );
   }
 

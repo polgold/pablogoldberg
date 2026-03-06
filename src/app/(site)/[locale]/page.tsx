@@ -13,6 +13,7 @@ import { HomeReel } from "@/components/HomeReel";
 import { HomeAbout } from "@/components/HomeAbout";
 import { HomePhotographyGrid } from "@/components/HomePhotographyGrid";
 import { FeaturedWork } from "@/components/projects/FeaturedWork";
+import { linkifyCompanies } from "@/lib/linkifyCompanies";
 
 // Featured work is content-driven; reflect changes immediately after deploy
 export const revalidate = 0;
@@ -82,7 +83,7 @@ export default async function HomePage({
       <HomeHero
         locale={locale}
         h1={t.heroH1}
-        sub={t.heroSub}
+        sub={linkifyCompanies(t.heroSub)}
         ctaPrimary={t.ctaPrimary}
         ctaSecondary={t.ctaSecondary}
       />
@@ -107,7 +108,7 @@ export default async function HomePage({
       />
 
       {/* SECTION 5 — ABOUT */}
-      <HomeAbout locale={locale} aboutText={t.aboutText} />
+      <HomeAbout locale={locale} aboutText={linkifyCompanies(t.aboutText)} />
 
       {/* SECTION 6 — CTA */}
       <section className="border-b border-white/5 bg-black px-6 py-20 md:py-24">

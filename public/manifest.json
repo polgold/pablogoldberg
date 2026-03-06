@@ -1,0 +1,13 @@
+{
+  "name": "Pablo Goldberg — Director",
+  "short_name": "Pablo Goldberg",
+  "description": "Director, Producer, Cinematographer. Buenos Aires.",
+  "start_url": "/es",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#F0C84A",
+  "icons": [
+    { "src": "/icon.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

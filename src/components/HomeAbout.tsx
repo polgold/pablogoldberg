@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { type ReactNode } from "react";
 
 interface HomeAboutProps {
   locale: string;
-  aboutText: string;
+  aboutText: ReactNode;
 }
 
 export function HomeAbout({ locale, aboutText }: HomeAboutProps) {

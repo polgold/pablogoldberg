@@ -1,6 +1,6 @@
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { getHreflangUrls } from "@/lib/site";
+import { getHreflangUrls, getCanonicalUrl } from "@/lib/site";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { ContactForm } from "./ContactForm";
 
@@ -45,6 +45,7 @@ export async function generateMetadata({
   const title = t.defaultTitle;
   const description = t.metaDescription;
   const urls = getHreflangUrls("/contact");
+  const pageUrl = getCanonicalUrl(`/${locale}/contact`);
   return {
     title,
     description,
@@ -53,6 +54,13 @@ export async function generateMetadata({
       languages: { es: urls.es, en: urls.en, "x-default": urls.es },
     },
     openGraph: {
+      title: `${title} | Pablo Goldberg`,
+      description,
+      url: pageUrl,
+      siteName: "Pablo Goldberg",
+    },
+    twitter: {
+      card: "summary_large_image" as const,
       title: `${title} | Pablo Goldberg`,
       description,
     },

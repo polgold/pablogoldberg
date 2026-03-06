@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { type ReactNode } from "react";
 
 interface HomeHeroProps {
   locale: string;
   h1: string;
-  sub: string;
+  sub: ReactNode;
   ctaPrimary: string;
   ctaSecondary: string;
 }
