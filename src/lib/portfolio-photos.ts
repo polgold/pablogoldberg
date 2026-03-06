@@ -192,6 +192,7 @@ export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[
       .from("portfolio_photos")
       .select("id, storage_path, public_url, is_visible, order, created_at, gallery_id")
       .eq("gallery_id", g.id)
+      .eq("is_visible", true)
       .order("order", { ascending: true });
     if (pe) continue;
     const list = (photos ?? []) as PortfolioPhoto[];
