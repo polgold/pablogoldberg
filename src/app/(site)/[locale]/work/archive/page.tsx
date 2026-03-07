@@ -1,7 +1,7 @@
 import { getProjects } from "@/lib/content";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
-import { getHreflangUrls } from "@/lib/site";
+import { getHreflangUrls, toAbsoluteImageUrl } from "@/lib/site";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toThumbPathOrOriginal } from "@/lib/imageVariantPath";
@@ -41,9 +41,10 @@ function getYouTubeUrl(project: ProjectItem): string | null {
 }
 
 function projectToWorkItem(project: ProjectItem, locale: string): WorkItem {
-  const cardThumb = project.coverImagePath
+  const rawThumb = project.coverImagePath
     ? getPublicImageUrl(toThumbPathOrOriginal(project.coverImagePath), PROJECTS_BUCKET)
     : project.featuredImage ?? undefined;
+  const cardThumb = rawThumb ? toAbsoluteImageUrl(rawThumb) : undefined;
   const youtubeUrl = getYouTubeUrl(project);
   if (youtubeUrl) {
     return {

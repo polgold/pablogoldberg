@@ -9,6 +9,7 @@ import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal, toThumbPathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
+import { isLocalStorageEnabled } from "@/lib/local-storage";
 import { SITE_URL, getCanonicalUrl, getHreflangUrls, SUN_FACTORY_URL, toAbsoluteImageUrl } from "@/lib/site";
 import { SafeHtml } from "@/components/SafeHtml";
 import { VideoEmbed } from "@/components/VideoEmbed";
@@ -158,17 +159,22 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         };
       });
     }
-    const coverUrl = jsonProject.coverImagePath
-      ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(jsonProject.coverImagePath), PROJECTS_BUCKET))
+    const useLocalStorage = isLocalStorageEnabled();
+    const coverRaw = jsonProject.coverImagePath
+      ? getPublicImageUrl(toLargePathOrOriginal(jsonProject.coverImagePath), PROJECTS_BUCKET)
       : null;
+    const coverUrl = coverRaw ? (useLocalStorage ? coverRaw : toAbsoluteImageUrl(coverRaw)) : null;
     const primaryVideo = parseVideoUrl(jsonProject.videoUrl) ?? null;
-    const allProjects = allJsonProjects.map((p) => ({
-      slug: p.slug,
-      title: p.title,
-      coverUrl: p.coverImagePath
-        ? toAbsoluteImageUrl(getPublicImageUrl(toThumbPathOrOriginal(p.coverImagePath), PROJECTS_BUCKET))
-        : null,
-    }));
+    const allProjects = allJsonProjects.map((p) => {
+      const raw = p.coverImagePath
+        ? getPublicImageUrl(toThumbPathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
+        : null;
+      return {
+        slug: p.slug,
+        title: p.title,
+        coverUrl: raw ? (useLocalStorage ? raw : toAbsoluteImageUrl(raw)) : null,
+      };
+    });
     const t = COPY[loc].workDetail;
     const jsonPageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
     const jsonDesc = jsonProject.description?.slice(0, 160) || (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
@@ -277,7 +283,12 @@ export default async function ProjectPageRoute({ params }: PageProps) {
   const heroPosterRaw =
     project.featuredImage ??
     (primaryVideo ? null : (await getProjectPosterUrl(project)));
-  const heroPoster = heroPosterRaw ? toAbsoluteImageUrl(heroPosterRaw) : null;
+  const useLocalStorageDb = isLocalStorageEnabled();
+  const heroPoster = heroPosterRaw
+    ? useLocalStorageDb && (heroPosterRaw.includes("/api/proxy-image") || heroPosterRaw.includes("/uploads/"))
+      ? heroPosterRaw
+      : toAbsoluteImageUrl(heroPosterRaw)
+    : null;
   const t = COPY[loc].workDetail;
 
   return (

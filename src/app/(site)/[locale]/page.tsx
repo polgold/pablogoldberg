@@ -7,6 +7,7 @@ import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
+import { isLocalStorageEnabled } from "@/lib/local-storage";
 import { getHreflangUrls, toAbsoluteImageUrl } from "@/lib/site";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeReel } from "@/components/HomeReel";
@@ -40,24 +41,31 @@ export default async function HomePage({
 }) {
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
-  const heroVimeoEnv = process.env.HERO_VIMEO_ID?.trim();
+  const heroVimeoEnv =
+    process.env.HERO_VIMEO_ID?.trim() ||
+    process.env.NEXT_PUBLIC_HERO_VIMEO_ID?.trim() ||
+    "";
 
   // Featured Work: JSON + Supabase (proyectos del admin marcados como destacados)
   const [jsonProjects, supabaseFeatured, photographyImages, vimeoVideos] = await Promise.all([
     getProjectsFromJson(loc),
     getFeaturedWorkProjects(8, loc),
     getPhotographyImagesForHome(8, loc),
-    heroVimeoEnv ? Promise.resolve([]) : getVimeoPortfolioVideos(),
+    getVimeoPortfolioVideos(),
   ]);
+  const useLocalStorage = isLocalStorageEnabled();
   const fromJson = jsonProjects
     .filter((p) => p.featured)
     .slice(0, 8)
-    .map((p) => ({
-      project: { slug: p.slug, title: p.title, description: p.description },
-      coverUrl: p.coverImagePath
-        ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET))
-        : null,
-    }));
+    .map((p) => {
+      const rawUrl = p.coverImagePath
+        ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
+        : null;
+      return {
+        project: { slug: p.slug, title: p.title, description: p.description },
+        coverUrl: rawUrl ? (useLocalStorage ? rawUrl : toAbsoluteImageUrl(rawUrl)) : null,
+      };
+    });
   const seen = new Set(fromJson.map((x) => x.project.slug));
   const fromSupabase = await Promise.all(
     supabaseFeatured
@@ -68,7 +76,7 @@ export default async function HomePage({
         const url = await getProjectPosterUrl(p);
         return {
           project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
-          coverUrl: url ? toAbsoluteImageUrl(url) : null,
+          coverUrl: url ? (useLocalStorage ? url : toAbsoluteImageUrl(url)) : null,
         };
       })
   );

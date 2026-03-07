@@ -6,6 +6,7 @@ import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
+import { isLocalStorageEnabled } from "@/lib/local-storage";
 import { getHreflangUrls, toAbsoluteImageUrl } from "@/lib/site";
 import { FeaturedWork } from "@/components/projects/FeaturedWork";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
@@ -65,15 +66,19 @@ export default async function WorkPage({
     getVimeoPortfolioVideos(),
   ]);
   const vimeoItems: WorkItem[] = vimeoVideos.map(vimeoToWorkItem);
+  const useLocalStorage = isLocalStorageEnabled();
   const fromJson = jsonProjects
     .filter((p) => p.featured)
     .slice(0, 8)
-    .map((p) => ({
-      project: { slug: p.slug, title: p.title, description: p.description },
-      coverUrl: p.coverImagePath
-        ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET))
-        : null,
-    }));
+    .map((p) => {
+      const rawUrl = p.coverImagePath
+        ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
+        : null;
+      return {
+        project: { slug: p.slug, title: p.title, description: p.description },
+        coverUrl: rawUrl ? (useLocalStorage ? rawUrl : toAbsoluteImageUrl(rawUrl)) : null,
+      };
+    });
   const seenFeatured = new Set(fromJson.map((x) => x.project.slug));
   const fromSupabaseFeatured = await Promise.all(
     supabaseFeatured
@@ -84,7 +89,7 @@ export default async function WorkPage({
         const url = await getProjectPosterUrl(p);
         return {
           project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
-          coverUrl: url ? toAbsoluteImageUrl(url) : null,
+          coverUrl: url ? (useLocalStorage ? url : toAbsoluteImageUrl(url)) : null,
         };
       })
   );

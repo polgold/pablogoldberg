@@ -6,6 +6,9 @@ import Image from "next/image";
 /** Item mínimo para card (JSON Project o proyecto desde Supabase/admin). */
 export type ProjectCardItem = { slug: string; title: string; description?: string };
 
+const isLocalOrProxy = (url: string) =>
+  url.includes("/api/proxy-image") || url.includes("/uploads/");
+
 /** Card para grid: cover, título, descripción corta, link a /work/[slug]. */
 export function ProjectCard({
   project,
@@ -18,6 +21,7 @@ export function ProjectCard({
 }) {
   const shortDesc = (project.description ?? "").slice(0, 160).trim();
   const href = `/${locale}/work/${project.slug}`;
+  const useNativeImg = coverUrl ? isLocalOrProxy(coverUrl) : false;
 
   return (
     <li className="group bg-black">
@@ -27,24 +31,41 @@ export function ProjectCard({
       >
         {coverUrl ? (
           <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-black/60">
-            {/* unoptimized para /uploads/ evita fallos del optimizador en hosting */}
-            <Image
-              src={coverUrl}
-              alt=""
-              fill
-              className="object-cover opacity-30 blur-xl scale-110"
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              aria-hidden
-              unoptimized={coverUrl.includes("/api/proxy-image") || coverUrl.includes("/uploads/")}
-            />
-            <Image
-              src={coverUrl}
-              alt=""
-              fill
-              className="relative z-10 object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              unoptimized={coverUrl.includes("/api/proxy-image") || coverUrl.includes("/uploads/")}
-            />
+            {useNativeImg ? (
+              <>
+                <img
+                  src={coverUrl}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover opacity-30 blur-xl scale-110"
+                  aria-hidden
+                  loading="lazy"
+                />
+                <img
+                  src={coverUrl}
+                  alt=""
+                  className="absolute inset-0 z-10 h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                  loading="lazy"
+                />
+              </>
+            ) : (
+              <>
+                <Image
+                  src={coverUrl}
+                  alt=""
+                  fill
+                  className="object-cover opacity-30 blur-xl scale-110"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  aria-hidden
+                />
+                <Image
+                  src={coverUrl}
+                  alt=""
+                  fill
+                  className="relative z-10 object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                />
+              </>
+            )}
           </div>
         ) : (
           <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">

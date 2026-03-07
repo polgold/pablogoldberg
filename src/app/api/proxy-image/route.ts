@@ -30,7 +30,26 @@ export async function GET(request: NextRequest) {
       const fs = await import("fs");
       const path = await import("path");
       const cleanPath = decodeURIComponent(pathParam).replace(/^\//, "").trim();
-      const fullPath = resolveLocalPath(cleanPath);
+      let fullPath = resolveLocalPath(cleanPath);
+      if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+        if (!cleanPath.includes("/large/") && !cleanPath.includes("/thumb/")) {
+          const lastSlash = cleanPath.lastIndexOf("/");
+          const dir = lastSlash === -1 ? "" : cleanPath.slice(0, lastSlash);
+          const filename = lastSlash === -1 ? cleanPath : cleanPath.slice(lastSlash + 1);
+          const fallbackPath = dir ? `${dir}/large/${filename}` : `large/${filename}`;
+          const fallbackFull = resolveLocalPath(fallbackPath);
+          if (fs.existsSync(fallbackFull) && fs.statSync(fallbackFull).isFile()) fullPath = fallbackFull;
+        } else {
+          const withoutSegment = cleanPath
+            .replace(/\/large\//, "/")
+            .replace(/\/thumb\//, "/")
+            .replace(/\/thumbs\//, "/");
+          if (withoutSegment !== cleanPath) {
+            const fallbackFull = resolveLocalPath(withoutSegment);
+            if (fs.existsSync(fallbackFull) && fs.statSync(fallbackFull).isFile()) fullPath = fallbackFull;
+          }
+        }
+      }
       if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
       }

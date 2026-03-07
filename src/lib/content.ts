@@ -449,17 +449,28 @@ export async function getPhotographyImagesForHome(
   if (urls.length === 0) {
     const { getRandomPhotosForHome } = await import("./portfolio-photos");
     const photos = await getRandomPhotosForHome(limit);
-    return photos.map((p) => ({
-      thumbUrl: toAbsoluteImageUrl(p.thumbUrl),
-      largeUrl: toAbsoluteImageUrl(p.largeUrl),
-      fallbackThumbUrl: p.fallbackThumbUrl ? toAbsoluteImageUrl(p.fallbackThumbUrl) : undefined,
-      fallbackLargeUrl: p.fallbackLargeUrl ? toAbsoluteImageUrl(p.fallbackLargeUrl) : undefined,
-    }));
+    if (photos.length > 0) {
+      return photos.map((p) => ({
+        thumbUrl: toAbsoluteImageUrl(p.thumbUrl),
+        largeUrl: toAbsoluteImageUrl(p.largeUrl),
+        fallbackThumbUrl: p.fallbackThumbUrl ? toAbsoluteImageUrl(p.fallbackThumbUrl) : undefined,
+        fallbackLargeUrl: p.fallbackLargeUrl ? toAbsoluteImageUrl(p.fallbackLargeUrl) : undefined,
+      }));
+    }
+    const { isLocalStorageEnabled } = await import("./local-storage");
+    if (isLocalStorageEnabled()) {
+      const localPaths = ["portfolio/thumb/photo1.jpg", "portfolio/thumb/photo2.jpg", "portfolio/thumb/photo3.jpg"];
+      return localPaths.slice(0, limit).map((u) => ({
+        thumbUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u)}`),
+        largeUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u.replace("/thumb/", "/large/"))}`),
+      }));
+    }
   }
   const shuffled = [...urls].sort(() => Math.random() - 0.5);
   const slice = shuffled.slice(0, limit);
   return slice.map((u) => {
     if (u.startsWith("http")) return { thumbUrl: toAbsoluteImageUrl(u), largeUrl: toAbsoluteImageUrl(u) };
+    if (u.startsWith("/api/")) return { thumbUrl: toAbsoluteImageUrl(u), largeUrl: toAbsoluteImageUrl(u) };
     const largePath = u.replace(/\/thumbs?\//, "/large/");
     return {
       thumbUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u)}`),

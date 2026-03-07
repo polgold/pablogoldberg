@@ -57,15 +57,24 @@ export function ProjectPage({
         {/* Cover — hero banner: max 40vh/50vh, cap 560px, full width */}
         {coverUrl && (
           <div className="relative mb-10 w-full overflow-hidden rounded-2xl border border-white/10 bg-black h-[min(40vh,560px)] md:h-[min(50vh,560px)]">
-            <Image
-              src={coverUrl}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              priority
-              unoptimized={coverUrl.includes("/api/proxy-image") || coverUrl.includes("/uploads/")}
-            />
+            {coverUrl.includes("/api/proxy-image") || coverUrl.includes("/uploads/") ? (
+              <img
+                src={coverUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="eager"
+                decoding="async"
+              />
+            ) : (
+              <Image
+                src={coverUrl}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                priority
+              />
+            )}
           </div>
         )}
 

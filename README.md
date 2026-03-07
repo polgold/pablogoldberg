@@ -23,6 +23,8 @@ cp .env.example .env
 
 **SEO:** opcional `NEXT_PUBLIC_SITE_URL` (ej. `https://pablogoldberg.com`) para canonicals, OG y sitemap; si no está definida se usa `https://pablogoldberg.com`.
 
+**Vimeo (reel en home y listado en /work):** `VIMEO_ACCESS_TOKEN` (token en developer.vimeo.com) y opcionalmente `HERO_VIMEO_ID` o `NEXT_PUBLIC_HERO_VIMEO_ID` (ID del video del reel). Si el video en Vimeo tiene “Solo dominios permitidos”, añadí tu dominio y `localhost` para desarrollo.
+
 **Producción:** asegura tener `DATABASE_URL` y `PAYLOAD_SECRET` configurados para que `/admin` y el sitio funcionen correctamente.
 
 ## Instalación

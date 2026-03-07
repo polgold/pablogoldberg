@@ -110,34 +110,54 @@ export function HomePhotographyGrid({
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
-          {displayed.map((photo, i) => (
-            <Link
-              key={`${photo.thumbUrl}-${i}`}
-              href={`/${locale}/photography`}
-              className="relative block aspect-square bg-black"
-            >
-              <span
-                key={photo.thumbUrl}
-                className="absolute inset-0 animate-photography-fade"
+          {displayed.map((photo, i) => {
+            const useNativeImg =
+              photo.thumbUrl.includes("supabase") ||
+              photo.thumbUrl.includes("/api/proxy-image") ||
+              photo.thumbUrl.includes("/uploads/");
+            return (
+              <Link
+                key={`${photo.thumbUrl}-${i}`}
+                href={`/${locale}/photography`}
+                className="relative block aspect-square bg-black"
               >
-                <Image
-                  src={photo.thumbUrl}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  loading="lazy"
-                  unoptimized={photo.thumbUrl.includes("supabase") || photo.thumbUrl.includes("/api/proxy-image") || photo.thumbUrl.includes("/uploads/")}
-                  onError={(e) => {
-                    const img = e.currentTarget as HTMLImageElement;
-                    if (photo.fallbackThumbUrl && img.src !== photo.fallbackThumbUrl) {
-                      img.src = photo.fallbackThumbUrl;
-                    }
-                  }}
-                />
-              </span>
-            </Link>
-          ))}
+                <span
+                  key={photo.thumbUrl}
+                  className="absolute inset-0 animate-photography-fade"
+                >
+                  {useNativeImg ? (
+                    <img
+                      src={photo.thumbUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (photo.fallbackThumbUrl && img.src !== photo.fallbackThumbUrl) {
+                          img.src = photo.fallbackThumbUrl;
+                        }
+                      }}
+                    />
+                  ) : (
+                    <Image
+                      src={photo.thumbUrl}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget as HTMLImageElement;
+                        if (photo.fallbackThumbUrl && img.src !== photo.fallbackThumbUrl) {
+                          img.src = photo.fallbackThumbUrl;
+                        }
+                      }}
+                    />
+                  )}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -12,6 +12,41 @@
       ],
       "storageFolder": "bestefar",
       "featured": true
+    },
+    {
+      "slug": "procens-inside",
+      "title": "PROCENS INSIDE",
+      "description": "Documental sobre la economía circular en Balcarce",
+      "coverImagePath": "procens-inside/cover.jpg",
+      "featured": true
+    },
+    {
+      "slug": "sirenas-rock",
+      "title": "SIRENAS ROCK",
+      "description": "",
+      "coverImagePath": "sirenas-rock/cover.jpg",
+      "featured": true
+    },
+    {
+      "slug": "baguales",
+      "title": "BAGUALES",
+      "description": "Corto Documental sobre la peregrinación a Luján de un grupo de gauchos de los Baguales de Roque Perez, Buenos Aires.",
+      "coverImagePath": "baguales/cover.jpg",
+      "featured": true
+    },
+    {
+      "slug": "age-luthier",
+      "title": "AGE LUTHIER",
+      "description": "Un adelanto de la serie de mini documentales de Forsaken Pixels (en proceso)",
+      "coverImagePath": "age-luthier/cover.jpg",
+      "featured": true
+    },
+    {
+      "slug": "home-sick",
+      "title": "HOME(SICK)",
+      "description": "",
+      "coverImagePath": "home-sick/cover.jpg",
+      "featured": true
     }
   ]
 }

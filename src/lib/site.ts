@@ -13,12 +13,13 @@ export function getCanonicalUrl(pathname: string): string {
 
 /**
  * Convierte una URL de imagen relativa (ej. /uploads/projects/...) en absoluta.
- * Necesario para que Next/Image y el optimizador carguen bien en producción (mismo origen).
+ * En desarrollo deja la URL relativa para que las imágenes se pidan a localhost.
  */
 export function toAbsoluteImageUrl(url: string): string {
   if (!url?.trim()) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   const path = url.startsWith("/") ? url : `/${url}`;
+  if (process.env.NODE_ENV === "development") return path;
   return `${SITE_URL}${path}`;
 }
 
