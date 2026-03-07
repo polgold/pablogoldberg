@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAdminProject } from "../../admin-actions";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { ProjectForm } from "../ProjectForm";
 import { updateAdminProject, deleteAdminProject } from "../../admin-actions";
 import { GalleryEditor } from "../GalleryEditor";
@@ -15,17 +15,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const project = await getAdminProject(id);
   if (!project) notFound();
 
-  const supabase = createSupabaseServerClient();
+  const supabase = createAdminSupabaseClient();
   let gallery: { id: string; path: string; thumb_path: string; is_cover: boolean; sort_order: number; hidden: boolean }[] = [];
   let videos: { id: string; platform: string; video_id: string; url: string | null; sort_order: number }[] = [];
-  if (supabase) {
-    const [gRes, vRes] = await Promise.all([
+  const [gRes, vRes] = await Promise.all([
       supabase.from("project_gallery_images").select("*").eq("project_id", id).order("sort_order"),
       supabase.from("project_videos").select("*").eq("project_id", id).order("sort_order"),
-    ]);
-    gallery = (gRes.data ?? []) as typeof gallery;
-    videos = (vRes.data ?? []) as typeof videos;
-  }
+  ]);
+  gallery = (gRes.data ?? []) as typeof gallery;
+  videos = (vRes.data ?? []) as typeof videos;
 
   return (
     <div className="space-y-10">

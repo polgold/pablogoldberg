@@ -105,6 +105,53 @@ tar -czvf uploads-backup-$(date +%Y%m%d).tar.gz /path/to/UPLOAD_DIR
 
 ---
 
+---
+
+## Seguridad y RLS (Row Level Security)
+
+### Dónde se usa la Service Role Key
+
+La `SUPABASE_SERVICE_ROLE_KEY` **solo se usa en el servidor**, nunca en el navegador:
+
+| Ubicación | Cliente | Uso |
+|-----------|---------|-----|
+| `src/lib/supabase/server.ts` | `createAdminSupabaseClient()` | Todas las operaciones admin (create/update/delete) |
+| `src/lib/supabase/server.ts` | `createSupabaseServerClient()` | Lecturas del sitio público (admin-content) |
+| `src/app/admin/admin-actions.ts` | `createAdminSupabaseClient()` | Server actions: proyectos, galería, videos, films |
+
+### Operaciones server-side (service role)
+
+Todas las escrituras pasan por **server actions** que usan `createAdminSupabaseClient()`:
+
+- **Crear proyecto** → `createAdminProject` (admin-actions.ts)
+- **Actualizar proyecto** → `updateAdminProject` (admin-actions.ts)
+- **Eliminar proyecto** → `deleteAdminProject` (admin-actions.ts)
+- **Subir imágenes galería** → `uploadProjectGalleryImages` (admin-actions.ts)
+- **Portada, reordenar, ocultar, eliminar imagen** → `setGalleryCover`, `reorderGalleryImages`, `toggleGalleryImageHidden`, `deleteGalleryImage`
+- **Agregar/eliminar video de proyecto** → `addProjectVideo`, `removeProjectVideo`
+- **Crear/actualizar/eliminar film** → `createFilm`, `updateFilm`, `deleteFilm`
+
+### Políticas RLS activas
+
+RLS permanece **habilitado** en todas las tablas:
+
+- **admin_projects**: `SELECT` público (`using (true)`), `INSERT/UPDATE/DELETE` solo `service_role`
+- **project_gallery_images**: igual
+- **project_videos**: igual
+- **films**: igual
+
+### El navegador NO escribe directamente
+
+- El admin UI usa **solo** server actions (ProjectForm, GalleryEditor, ProjectVideosEditor, FilmForm).
+- El cliente `createAdminBrowserClient` (anon key) se usa **únicamente** para auth (login, logout).
+- **Ningún componente cliente** hace `.insert()`, `.update()` o `.delete()` contra Supabase.
+
+### Si falta SUPABASE_SERVICE_ROLE_KEY
+
+`createAdminSupabaseClient()` lanza un error explícito indicando que hay que configurar la variable. No hay fallback silencioso a anon.
+
+---
+
 ## Configuración en Hostinger
 
 1. **Variables de entorno:** `UPLOAD_DIR`, `NEXT_PUBLIC_USE_IMAGE_PROXY=true`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_EMAILS`

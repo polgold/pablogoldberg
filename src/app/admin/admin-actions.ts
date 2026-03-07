@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { getProjectsUploadDir } from "@/lib/persistent-storage";
 import { parseVideoUrl } from "@/lib/parseVideoUrl";
 import path from "path";
@@ -42,8 +42,7 @@ function uniqueFilename(original: string): string {
 
 export async function listAdminProjects() {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return [];
+  const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("admin_projects")
     .select("*")
@@ -55,8 +54,7 @@ export async function listAdminProjects() {
 
 export async function getAdminProject(id: string) {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return null;
+  const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase.from("admin_projects").select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;
   return data;
@@ -65,8 +63,7 @@ export async function getAdminProject(id: string) {
 export async function createAdminProject(formData: FormData): Promise<{ id?: string; error?: string }> {
   try {
     await ensureAdmin();
-    const supabase = createSupabaseServerClient();
-    if (!supabase) return { error: "Supabase no configurado" };
+    const supabase = createAdminSupabaseClient();
 
     const titleEs = String(formData.get("title_es") ?? "").trim();
     if (!titleEs) return { error: "Título (ES) requerido" };
@@ -139,8 +136,7 @@ export async function createAdminProject(formData: FormData): Promise<{ id?: str
 export async function updateAdminProject(id: string, formData: FormData): Promise<{ error?: string }> {
   try {
     await ensureAdmin();
-    const supabase = createSupabaseServerClient();
-    if (!supabase) return { error: "Supabase no configurado" };
+    const supabase = createAdminSupabaseClient();
 
     const titleEs = String(formData.get("title_es") ?? "").trim();
     if (!titleEs) return { error: "Título (ES) requerido" };
@@ -205,8 +201,7 @@ export async function updateAdminProject(id: string, formData: FormData): Promis
 
 export async function deleteAdminProject(id: string): Promise<{ error?: string }> {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  const supabase = createAdminSupabaseClient();
   const { error } = await supabase.from("admin_projects").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/admin");
@@ -237,8 +232,7 @@ export async function uploadProjectGalleryImages(
 ): Promise<{ uploaded?: number; error?: string }> {
   try {
     await ensureAdmin();
-    const supabase = createSupabaseServerClient();
-    if (!supabase) return { error: "Supabase no configurado" };
+    const supabase = createAdminSupabaseClient();
 
     const files = Array.from(formData.entries())
       .filter(([, v]) => v instanceof File && (v as File).size > 0)
@@ -296,8 +290,7 @@ export async function uploadProjectGalleryImages(
 
 export async function setGalleryCover(projectId: string, imageId: string): Promise<{ error?: string }> {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  const supabase = createAdminSupabaseClient();
   await supabase.from("project_gallery_images").update({ is_cover: false }).eq("project_id", projectId);
   const { data: img } = await supabase
     .from("project_gallery_images")
@@ -315,8 +308,7 @@ export async function setGalleryCover(projectId: string, imageId: string): Promi
 
 export async function reorderGalleryImages(updates: { id: string; order: number }[]): Promise<{ error?: string }> {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  const supabase = createAdminSupabaseClient();
   for (const { id, order } of updates) {
     await supabase.from("project_gallery_images").update({ sort_order: order }).eq("id", id);
   }
@@ -325,8 +317,7 @@ export async function reorderGalleryImages(updates: { id: string; order: number 
 
 export async function toggleGalleryImageHidden(id: string): Promise<{ error?: string }> {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  const supabase = createAdminSupabaseClient();
   const { data } = await supabase.from("project_gallery_images").select("hidden").eq("id", id).maybeSingle();
   if (!data) return { error: "Imagen no encontrada" };
   const { error } = await supabase
@@ -339,8 +330,7 @@ export async function toggleGalleryImageHidden(id: string): Promise<{ error?: st
 
 export async function deleteGalleryImage(id: string): Promise<{ error?: string }> {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  const supabase = createAdminSupabaseClient();
   const { error } = await supabase.from("project_gallery_images").delete().eq("id", id);
   if (error) return { error: error.message };
   return {};
@@ -356,8 +346,7 @@ export async function addProjectVideo(
   await ensureAdmin();
   const parsed = parseVideoUrl(url);
   if (!parsed) return { error: "URL de Vimeo o YouTube inválida" };
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  const supabase = createAdminSupabaseClient();
   const { data: maxRow } = await supabase
     .from("project_videos")
     .select("sort_order")
@@ -381,8 +370,7 @@ export async function addProjectVideo(
 
 export async function removeProjectVideo(id: string): Promise<{ error?: string }> {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  const supabase = createAdminSupabaseClient();
   const { error } = await supabase.from("project_videos").delete().eq("id", id);
   if (error) return { error: error.message };
   return {};
@@ -392,8 +380,7 @@ export async function removeProjectVideo(id: string): Promise<{ error?: string }
 
 export async function listFilms() {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return [];
+  const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("films")
     .select("*")
@@ -405,8 +392,7 @@ export async function listFilms() {
 
 export async function getFilm(id: string) {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return null;
+  const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase.from("films").select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;
   return data;
@@ -415,8 +401,7 @@ export async function getFilm(id: string) {
 export async function createFilm(formData: FormData): Promise<{ id?: string; error?: string }> {
   try {
     await ensureAdmin();
-    const supabase = createSupabaseServerClient();
-    if (!supabase) return { error: "Supabase no configurado" };
+    const supabase = createAdminSupabaseClient();
 
     const title = String(formData.get("title") ?? "").trim();
     if (!title) return { error: "Título requerido" };
@@ -456,8 +441,7 @@ export async function createFilm(formData: FormData): Promise<{ id?: string; err
 export async function updateFilm(id: string, formData: FormData): Promise<{ error?: string }> {
   try {
     await ensureAdmin();
-    const supabase = createSupabaseServerClient();
-    if (!supabase) return { error: "Supabase no configurado" };
+    const supabase = createAdminSupabaseClient();
 
     const title = String(formData.get("title") ?? "").trim();
     if (!title) return { error: "Título requerido" };
@@ -496,8 +480,7 @@ export async function updateFilm(id: string, formData: FormData): Promise<{ erro
 
 export async function deleteFilm(id: string): Promise<{ error?: string }> {
   await ensureAdmin();
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return { error: "Supabase no configurado" };
+  const supabase = createAdminSupabaseClient();
   const { error } = await supabase.from("films").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/admin/films");
