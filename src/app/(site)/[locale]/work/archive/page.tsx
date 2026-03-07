@@ -1,10 +1,9 @@
-import { getProjects } from "@/lib/content";
+import { getProjects, getProjectsFromJson } from "@/lib/content";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
+import { getWorkImageUrl } from "@/lib/work-images";
+import { getFilmCoverPath } from "@/lib/work-galleries";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls, toAbsoluteImageUrl } from "@/lib/site";
-import { getPublicImageUrl, toLocalProxyUrlIfEnabled } from "@/lib/supabase/storage";
-import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
-import { toThumbPathOrOriginal } from "@/lib/imageVariantPath";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
 import type { WorkItem } from "@/types/work";
 import type { ProjectItem } from "@/types/content";
@@ -41,10 +40,15 @@ function getYouTubeUrl(project: ProjectItem): string | null {
 }
 
 function projectToWorkItem(project: ProjectItem, locale: string): WorkItem {
-  const rawThumb = project.coverImagePath
-    ? getPublicImageUrl(toThumbPathOrOriginal(project.coverImagePath), PROJECTS_BUCKET)
-    : (project.featuredImage ? toLocalProxyUrlIfEnabled(project.featuredImage) : undefined);
-  const cardThumb = rawThumb ? (rawThumb.startsWith("/api/") || rawThumb.startsWith("/uploads/") ? rawThumb : toAbsoluteImageUrl(rawThumb)) : undefined;
+  const workCover = getFilmCoverPath(project.slug);
+  const rawThumb = workCover
+    ? getWorkImageUrl(workCover)
+    : project.featuredImage?.startsWith("http")
+      ? project.featuredImage
+      : project.featuredImage
+        ? `${project.featuredImage}`
+        : undefined;
+  const cardThumb = rawThumb ? (rawThumb.startsWith("/") ? rawThumb : rawThumb.startsWith("http") ? rawThumb : toAbsoluteImageUrl(rawThumb)) : undefined;
   const youtubeUrl = getYouTubeUrl(project);
   if (youtubeUrl) {
     return {
@@ -93,13 +97,39 @@ export default async function WorkArchivePage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const [vimeoVideos, archive] = await Promise.all([
+  const [vimeoVideos, supabaseArchive, jsonProjects] = await Promise.all([
     getVimeoPortfolioVideos(),
     getProjects(loc),
+    getProjectsFromJson(loc),
   ]);
   const vimeoItems: WorkItem[] = vimeoVideos.map(vimeoToWorkItem);
-  const projectItems: WorkItem[] = archive.map((p) => projectToWorkItem(p, locale));
-  const items: WorkItem[] = [...vimeoItems, ...projectItems];
+  const supabaseItems: WorkItem[] = supabaseArchive.map((p) => projectToWorkItem(p, locale));
+  const jsonItems: WorkItem[] = jsonProjects.map((p) => {
+    const cover = getFilmCoverPath(p.slug);
+    return {
+      slug: p.slug,
+      title: p.title,
+      year: undefined,
+      featuredImage: cover ? getWorkImageUrl(cover) : undefined,
+      href: `/${locale}/work/${p.slug}`,
+      external: false,
+      source: "project" as const,
+    };
+  });
+  const seenSlugs = new Set<string>();
+  const items: WorkItem[] = [
+    ...vimeoItems,
+    ...jsonItems.filter((i) => {
+      if (seenSlugs.has(i.slug)) return false;
+      seenSlugs.add(i.slug);
+      return true;
+    }),
+    ...supabaseItems.filter((i) => {
+      if (seenSlugs.has(i.slug)) return false;
+      seenSlugs.add(i.slug);
+      return true;
+    }),
+  ];
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">

@@ -1,129 +1,47 @@
+/**
+ * Proxy de imágenes: sirve desde /public/uploads/work/.
+ * Path: ?path=photography/beasts/thumb/beasts01.jpg
+ * Solo para compatibilidad; preferir URLs directas /uploads/work/...
+ */
 import { NextRequest, NextResponse } from "next/server";
-import { isLocalStorageEnabled } from "@/lib/local-storage";
+import path from "path";
+import fs from "fs";
 
-const SUPABASE_BASE = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
-const BUCKET = "projects";
+const WORK_DIR = path.join(process.cwd(), "public", "uploads", "work");
 
-/** Path seguro: solo slug, thumbs/large/thumb, y nombres de archivo. Sin ".." */
 function safePath(p: string): boolean {
   const decoded = decodeURIComponent(p).trim();
   if (!decoded || decoded.includes("..")) return false;
   const parts = decoded.split("/").filter(Boolean);
   if (parts.length < 2) return false;
-  const slug = parts[0];
-  if (!/^[a-z0-9-]+$/.test(slug)) return false;
-  return true;
+  return parts.every((seg) => /^[a-z0-9_.-]+$/i.test(seg));
 }
 
-/**
- * Proxy de imágenes: ?path=bestefar/thumbs/photo.jpg
- * Si USE_LOCAL_STORAGE=true, sirve desde public/uploads/projects/<path>.
- * Si no, descarga desde Supabase Storage (bucket projects).
- */
 export async function GET(request: NextRequest) {
   const pathParam = request.nextUrl.searchParams.get("path");
-  const urlParam = request.nextUrl.searchParams.get("url");
-
-  if (pathParam && safePath(pathParam)) {
-    if (isLocalStorageEnabled()) {
-      const { resolveLocalPath } = await import("@/lib/local-storage-server");
-      const fs = await import("fs");
-      const path = await import("path");
-      const cleanPath = decodeURIComponent(pathParam).replace(/^\//, "").trim();
-      let fullPath = resolveLocalPath(cleanPath);
-      const tryPath = (p: string) => fs.existsSync(p) && fs.statSync(p).isFile();
-      if (!tryPath(fullPath)) {
-        if (!cleanPath.includes("/large/") && !cleanPath.includes("/thumb/")) {
-          const lastSlash = cleanPath.lastIndexOf("/");
-          const dir = lastSlash === -1 ? "" : cleanPath.slice(0, lastSlash);
-          const filename = lastSlash === -1 ? cleanPath : cleanPath.slice(lastSlash + 1);
-          const fallbackPath = dir ? `${dir}/large/${filename}` : `large/${filename}`;
-          const fallbackFull = resolveLocalPath(fallbackPath);
-          if (tryPath(fallbackFull)) fullPath = fallbackFull;
-        } else {
-          const withoutSegment = cleanPath
-            .replace(/\/large\//, "/")
-            .replace(/\/thumb\//, "/")
-            .replace(/\/thumbs\//, "/");
-          if (withoutSegment !== cleanPath) {
-            const fallbackFull = resolveLocalPath(withoutSegment);
-            if (tryPath(fallbackFull)) fullPath = fallbackFull;
-          }
-        }
-      }
-      if (!tryPath(fullPath)) {
-        const base = path.join(process.cwd(), "public", "uploads", "projects");
-        const cwdPublic = path.join(base, cleanPath);
-        if (tryPath(cwdPublic)) fullPath = cwdPublic;
-        if (!tryPath(fullPath) && !cleanPath.includes("/large/") && !cleanPath.includes("/thumb/")) {
-          const lastSlash = cleanPath.lastIndexOf("/");
-          const dir = lastSlash === -1 ? "" : cleanPath.slice(0, lastSlash);
-          const filename = lastSlash === -1 ? cleanPath : cleanPath.slice(lastSlash + 1);
-          const withLarge = dir ? `${dir}/large/${filename}` : `large/${filename}`;
-          if (tryPath(path.join(base, withLarge))) fullPath = path.join(base, withLarge);
-        }
-      }
-      if (!tryPath(fullPath)) {
-        return NextResponse.json({ error: "Not found" }, { status: 404 });
-      }
-      const ext = path.extname(fullPath).toLowerCase();
-      const contentType =
-        ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : ext === ".gif" ? "image/gif" : "image/jpeg";
-      const body = fs.readFileSync(fullPath);
-      return new NextResponse(body, {
-        status: 200,
-        headers: {
-          "Content-Type": contentType,
-          "Cache-Control": "public, max-age=86400, s-maxage=86400",
-        },
-      });
-    }
+  if (!pathParam || !safePath(pathParam)) {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 
-  let targetUrl: string;
+  const cleanPath = decodeURIComponent(pathParam).replace(/^\//, "").trim();
+  let fullPath = path.join(WORK_DIR, cleanPath);
 
-  if (pathParam) {
-    if (!safePath(pathParam)) return NextResponse.json({ error: "Invalid path" }, { status: 400 });
-    const path = pathParam.replace(/^\//, "").split("/").map((s) => encodeURIComponent(decodeURIComponent(s))).join("/");
-    targetUrl = `${SUPABASE_BASE}/storage/v1/object/public/${BUCKET}/${path}`;
-  } else if (urlParam) {
-    try {
-      targetUrl = decodeURIComponent(urlParam);
-    } catch {
-      return NextResponse.json({ error: "Invalid url" }, { status: 400 });
-    }
-    const prefix = `${SUPABASE_BASE}/storage/v1/object/public/`;
-    if (!SUPABASE_BASE || !targetUrl.startsWith(prefix)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } else {
-    return NextResponse.json({ error: "Missing path or url" }, { status: 400 });
+  if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+    const largePath = cleanPath.replace(/\/thumb\//, "/large/").replace(/\/thumbs\//, "/large/");
+    const altPath = path.join(WORK_DIR, largePath);
+    if (fs.existsSync(altPath) && fs.statSync(altPath).isFile()) fullPath = altPath;
+    else return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  try {
-    const res = await fetch(targetUrl, {
-      method: "GET",
-      headers: { Accept: "image/*" },
-      cache: "force-cache",
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Upstream ${res.status}` },
-        { status: res.status === 404 ? 404 : 502 }
-      );
-    }
-    const contentType = res.headers.get("content-type") ?? "image/jpeg";
-    const body = await res.arrayBuffer();
-    return new NextResponse(body, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400, s-maxage=86400",
-      },
-    });
-  } catch (e) {
-    console.error("[proxy-image]", e);
-    return NextResponse.json({ error: "Proxy error" }, { status: 502 });
-  }
+  const ext = path.extname(fullPath).toLowerCase();
+  const contentType =
+    ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : ext === ".gif" ? "image/gif" : "image/jpeg";
+  const body = fs.readFileSync(fullPath);
+  return new NextResponse(body, {
+    status: 200,
+    headers: {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=86400, s-maxage=86400",
+    },
+  });
 }

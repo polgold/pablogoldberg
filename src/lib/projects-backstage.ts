@@ -1,12 +1,13 @@
 /**
- * Backstage: hasta 12 imágenes desde Storage en ${storageFolder}/backstage.
- * Dedupe por nombre, orden por name ASC, determinístico.
+ * Backstage: hasta 12 imágenes desde /public/uploads/work/film/{slug}/thumb y large.
+ * Sin Supabase. Lee del filesystem.
  */
-import { createSupabaseServerClient } from "./supabase/server";
-import { getPublicImageUrl } from "./supabase/storage";
-import { PROJECTS_BUCKET } from "./supabase/storage";
-import { toThumbPath, toLargePath } from "./imageVariantPath";
+import "server-only";
+import path from "path";
+import fs from "fs";
+import { getWorkImageUrl } from "./work-images";
 
+const WORK_DIR = path.join(process.cwd(), "public", "uploads", "work");
 const IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 
 function isImageName(name: string): boolean {
@@ -16,42 +17,45 @@ function isImageName(name: string): boolean {
 
 export type BackstageImage = { thumbUrl: string; largeUrl: string; originalUrl: string; alt: string };
 
+const SLUG_TO_FILM_FOLDER: Record<string, string> = {
+  "procens-inside": "procens",
+  "sirenas-rock": "sirenas",
+  "age-luthier": "forsaken-pixels",
+};
+
 /**
- * Lista imágenes en ${storageFolder}/backstage, orden por name ASC, dedupe por name, máx 12.
- * thumbUrl/largeUrl usan toThumbPath/toLargePath; originalUrl como fallback si no existen thumbs.
+ * Lista imágenes en film/{slug}/thumb y large. Máx 12, orden por nombre.
  */
 export async function getBackstageImages(
   storageFolder: string,
   limit = 12
 ): Promise<BackstageImage[]> {
   if (!storageFolder?.trim()) return [];
-  const supabase = createSupabaseServerClient();
-  if (!supabase) return [];
+  const folderSlug = SLUG_TO_FILM_FOLDER[storageFolder] ?? storageFolder.replace(/\/$/, "");
+  const thumbDir = path.join(WORK_DIR, "film", folderSlug, "thumb");
+  const largeDir = path.join(WORK_DIR, "film", folderSlug, "large");
 
-  const folder = `${storageFolder.replace(/\/$/, "")}/backstage`;
-  const { data: files, error } = await supabase.storage
-    .from(PROJECTS_BUCKET)
-    .list(folder, { limit: 200 });
+  const thumbNames = fs.existsSync(thumbDir)
+    ? fs.readdirSync(thumbDir).filter((n) => !n.startsWith(".") && isImageName(n)).sort((a, b) => a.localeCompare(b))
+    : [];
+  const largeNames = fs.existsSync(largeDir)
+    ? fs.readdirSync(largeDir).filter((n) => !n.startsWith(".") && isImageName(n)).sort((a, b) => a.localeCompare(b))
+    : [];
 
-  if (error || !files?.length) return [];
+  const allNames = [...new Set([...thumbNames, ...largeNames])].sort((a, b) => a.localeCompare(b)).slice(0, limit);
 
-  const byName = new Map<string, string>();
-  for (const f of files) {
-    if (!f.name || f.name.startsWith(".") || !isImageName(f.name)) continue;
-    const path = `${folder}/${f.name}`;
-    const key = f.name.toLowerCase();
-    if (!byName.has(key)) byName.set(key, path);
-  }
-  const paths = Array.from(byName.values()).sort((a, b) => a.localeCompare(b)).slice(0, limit);
-
-  return paths.map((path) => {
-    const thumbPath = toThumbPath(path);
-    const largePath = toLargePath(path);
+  return allNames.map((name) => {
+    const thumbPath = `film/${folderSlug}/thumb/${name}`;
+    const largePath = `film/${folderSlug}/large/${name}`;
+    const thumbExists = fs.existsSync(path.join(WORK_DIR, thumbPath));
+    const largeExists = fs.existsSync(path.join(WORK_DIR, largePath));
+    const actualThumb = thumbExists ? thumbPath : largePath;
+    const actualLarge = largeExists ? largePath : thumbPath;
     return {
-      thumbUrl: getPublicImageUrl(thumbPath, PROJECTS_BUCKET),
-      largeUrl: getPublicImageUrl(largePath, PROJECTS_BUCKET),
-      originalUrl: getPublicImageUrl(path, PROJECTS_BUCKET),
-      alt: path.split("/").pop()?.replace(/\.[^/.]+$/, "") || "Backstage",
+      thumbUrl: getWorkImageUrl(actualThumb),
+      largeUrl: getWorkImageUrl(actualLarge),
+      originalUrl: getWorkImageUrl(actualLarge),
+      alt: name.replace(/\.[^/.]+$/, "") || "Backstage",
     };
   });
 }

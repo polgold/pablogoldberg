@@ -27,6 +27,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "pablogoldberg.com", pathname: "/**" },
       { protocol: "http", hostname: "pablogoldberg.com", pathname: "/**" },

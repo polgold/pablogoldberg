@@ -1,6 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAnonClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
-import { toThumbPathPrefix, toLargePathPrefix } from "./imageVariantPath";
 import { listGalleryFromStorage } from "./admin-storage-gallery";
 import { isLocalStorageEnabled } from "./local-storage";
 import {
@@ -149,55 +148,40 @@ export async function getPublicPortfolioPhotos(galleryId?: string | null): Promi
   return (data ?? []) as PortfolioPhoto[];
 }
 
-/** Public: random photos for home mini grid. Slice 4–6, lazy-load ready. Incluye fallback por si thumb/large 404. */
+/** Public: random photos for home mini grid desde /public/uploads/work/photography. */
 export async function getRandomPhotosForHome(limit = 6): Promise<{ thumbUrl: string; largeUrl: string; fallbackThumbUrl?: string; fallbackLargeUrl?: string }[]> {
-  const galleries = await getPublicGalleriesWithPhotos();
+  const { scanPhotographyGalleries } = await import("./work-galleries");
+  const galleries = scanPhotographyGalleries();
   const allPhotos = galleries.flatMap((g) => g.photos);
   const shuffled = [...allPhotos].sort(() => Math.random() - 0.5);
   const slice = shuffled.slice(0, Math.min(limit, Math.max(4, shuffled.length)));
-  return slice.map((p) => {
-    const path = p.storage_path;
-    const thumbUrl = getPublicImageUrl(toThumbPathPrefix(path), PHOTOS_BUCKET);
-    const largeUrl = getPublicImageUrl(toLargePathPrefix(path), PHOTOS_BUCKET);
-    const fallback = getPublicImageUrl(path, PHOTOS_BUCKET);
-    return { thumbUrl, largeUrl, fallbackThumbUrl: fallback, fallbackLargeUrl: fallback };
-  });
+  return slice.map((p) => ({
+    thumbUrl: p.thumbUrl,
+    largeUrl: p.largeUrl,
+    fallbackThumbUrl: p.thumbUrl,
+    fallbackLargeUrl: p.largeUrl,
+  }));
 }
 
 /**
- * Public: galerías y fotos visibles para /photography. Respeta "Oculta" (is_visible=false) del admin.
- * Usa cliente anónimo para que RLS en DB aplique is_visible (el service_role lo bypasea).
+ * Public: galerías desde /public/uploads/work/photography/.
+ * Sin Supabase Storage.
  */
 export async function getPublicGalleriesWithPhotos(): Promise<GalleryWithPhotos[]> {
-  const supabase = createSupabaseAnonClient();
-  if (!supabase) return [];
-
-  const { data: galleries, error: ge } = await supabase
-    .from("portfolio_galleries")
-    .select("id, name, slug, order")
-    .eq("is_visible", true)
-    .order("order", { ascending: true });
-  if (ge || !galleries?.length) return [];
-
-  const out: GalleryWithPhotos[] = [];
-  for (const g of galleries) {
-    const { data: photos, error: pe } = await supabase
-      .from("portfolio_photos")
-      .select("id, storage_path, public_url, is_visible, order, created_at, gallery_id")
-      .eq("gallery_id", g.id)
-      .eq("is_visible", true)
-      .order("order", { ascending: true });
-    if (pe) continue;
-    const list = (photos ?? []) as PortfolioPhoto[];
-    out.push({
-      id: g.id,
-      title: g.name,
-      slug: g.slug,
-      sort_order: g.order ?? 0,
-      photos: list.filter((p) => p.is_visible === true),
-    });
-  }
-  return out;
+  const { scanPhotographyGalleries } = await import("./work-galleries");
+  const workGalleries = scanPhotographyGalleries();
+  return workGalleries.map((g, i) => ({
+    id: g.slug,
+    title: g.title,
+    slug: g.slug,
+    sort_order: i,
+    photos: g.photos.map((p) => ({
+      thumbUrl: p.thumbUrl,
+      largeUrl: p.largeUrl,
+      fallbackThumbUrl: p.thumbUrl,
+      fallbackLargeUrl: p.largeUrl,
+    })),
+  }));
 }
 
 /**

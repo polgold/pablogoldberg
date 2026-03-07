@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { getWorkImageUrl, toLargeFromThumb } from "@/lib/work-images";
 
-/** Paths en Storage (ej. bestefar/thumbs/foto.jpg). Se sirven por /api/proxy-image?path=... */
+/** Paths relativos a uploads/work (ej. film/bestefar/thumb/foto.jpg). Se sirven desde /uploads/work/ */
 function thumbSrc(path: string): string {
-  return `/api/proxy-image?path=${encodeURIComponent(path)}`;
+  return getWorkImageUrl(path);
 }
 function largeSrc(path: string): string {
-  const large = path.replace(/\/thumbs?\//, "/large/");
-  return `/api/proxy-image?path=${encodeURIComponent(large)}`;
+  return getWorkImageUrl(toLargeFromThumb(path));
 }
 
 export function GalleryWithLightbox({ paths }: { paths: string[] }) {

@@ -3,10 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { PhotosGridWithLightbox } from "@/components/PhotosGridWithLightbox";
-import { getPublicImageUrl } from "@/lib/supabase/storage";
-import { toThumbPathPrefix, toLargePathPrefix } from "@/lib/imageVariantPath";
-import { toAbsoluteImageUrl } from "@/lib/site";
-import { PHOTOS_BUCKET, type GalleryWithPhotos } from "@/lib/portfolio-photos-shared";
+import type { GalleryWithPhotos } from "@/lib/portfolio-photos-shared";
 import type { Locale } from "@/lib/content";
 
 const QUERY_KEY = "g";
@@ -73,8 +70,8 @@ export function GalleryFilterClient({
           <h1 className="text-xl font-semibold text-white md:text-2xl">{title}</h1>
           <p className="mt-6 text-sm text-white/40">
             {locale === "es"
-              ? "Sin imágenes visibles. En el admin /admin/portfolio-photos elegí una galería y subí fotos."
-              : "No visible photos. In admin /admin/portfolio-photos choose a gallery and upload photos."}
+              ? "Sin imágenes. Añadí fotos en /public/uploads/work/photography/{categoria}/thumb/ y large/."
+              : "No photos. Add images to /public/uploads/work/photography/{category}/thumb/ and large/."}
           </p>
         </div>
       </div>
@@ -118,15 +115,7 @@ export function GalleryFilterClient({
           </div>
 
           <div className="mt-8">
-            <PhotosGridWithLightbox
-              items={photosToShow.map((p) => {
-                const path = p.storage_path;
-                const thumbUrl = toAbsoluteImageUrl(getPublicImageUrl(toThumbPathPrefix(path), PHOTOS_BUCKET));
-                const largeUrl = toAbsoluteImageUrl(getPublicImageUrl(toLargePathPrefix(path), PHOTOS_BUCKET));
-                const fallback = toAbsoluteImageUrl(getPublicImageUrl(path, PHOTOS_BUCKET));
-                return { thumbUrl, largeUrl, fallbackThumbUrl: fallback, fallbackLargeUrl: fallback };
-              })}
-            />
+            <PhotosGridWithLightbox items={photosToShow} />
           </div>
         </div>
       </div>

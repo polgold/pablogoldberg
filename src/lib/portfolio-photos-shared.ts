@@ -1,8 +1,17 @@
 /**
- * Tipos y constantes de portfolio/photography. Sin dependencias Node (importable desde cliente).
+ * Tipos compartidos para galerías de fotografía.
+ * Compatible con carga desde filesystem (work-galleries) o legacy DB.
  */
 
+/** @deprecated Usar work-images para URLs. Mantenido por compatibilidad con imports. */
 export const PHOTOS_BUCKET = "projects";
+
+export type GalleryPhotoItem = {
+  thumbUrl: string;
+  largeUrl: string;
+  fallbackThumbUrl?: string;
+  fallbackLargeUrl?: string;
+};
 
 export type PortfolioGallery = {
   id: string;
@@ -28,5 +37,5 @@ export type GalleryWithPhotos = {
   title: string;
   slug: string;
   sort_order: number;
-  photos: PortfolioPhoto[];
+  photos: GalleryPhotoItem[];
 };

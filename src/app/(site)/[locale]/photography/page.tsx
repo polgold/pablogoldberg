@@ -1,11 +1,10 @@
 import { Suspense } from "react";
-import { getPublicGalleriesWithPhotos } from "@/lib/portfolio-photos";
+import { scanPhotographyGalleries } from "@/lib/work-galleries";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { getHreflangUrls, getCanonicalUrl } from "@/lib/site";
 import { GalleryFilterClient } from "./PhotographyFilterClient";
 
-// Respeta "Oculta" del admin; no cachear para que los cambios se vean al refrescar
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
@@ -49,7 +48,19 @@ export default async function PhotographyPage({
 }) {
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
-  const galleries = await getPublicGalleriesWithPhotos();
+  const workGalleries = scanPhotographyGalleries();
+  const galleries = workGalleries.map((g, i) => ({
+    id: g.slug,
+    title: g.title,
+    slug: g.slug,
+    sort_order: i,
+    photos: g.photos.map((p) => ({
+      thumbUrl: p.thumbUrl,
+      largeUrl: p.largeUrl,
+      fallbackThumbUrl: p.thumbUrl,
+      fallbackLargeUrl: p.largeUrl,
+    })),
+  }));
   const t = COPY[loc].gallery;
 
   return (

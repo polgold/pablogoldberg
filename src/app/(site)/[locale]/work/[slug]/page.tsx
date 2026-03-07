@@ -1,16 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getProjectBySlug, getProjectBySlugFromJson, getProjectsFromJson, getAdjacentArchiveProjects, getProjectGalleryFromStorage, parseVideoUrl } from "@/lib/content";
+import { getProjectBySlug, getProjectBySlugFromJson, getProjectsFromJson, getAdjacentArchiveProjects, parseVideoUrl } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
 import { getBackstageImages } from "@/lib/projects-backstage";
-import { getPublicImageUrl, toLocalProxyUrlIfEnabled } from "@/lib/supabase/storage";
-import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
-import { toLargePathOrOriginal, toThumbPathOrOriginal } from "@/lib/imageVariantPath";
+import { getWorkImageUrl } from "@/lib/work-images";
+import { getFilmCoverPath, getFilmGalleryBySlug } from "@/lib/work-galleries";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { isLocalStorageEnabled } from "@/lib/local-storage";
-import { SITE_URL, getCanonicalUrl, getHreflangUrls, SUN_FACTORY_URL, toAbsoluteImageUrl } from "@/lib/site";
+import { SITE_URL, getCanonicalUrl, getHreflangUrls, SUN_FACTORY_URL } from "@/lib/site";
 import { SafeHtml } from "@/components/SafeHtml";
 import { VideoEmbed } from "@/components/VideoEmbed";
 import { GalleryWithLightbox } from "@/components/GalleryWithLightbox";
@@ -86,13 +84,17 @@ export async function generateMetadata({ params }: PageProps) {
       : ("description" in project ? String((project as { description?: string }).description ?? "").slice(0, 160) : "") ||
         (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
-  const coverPath = "coverImagePath" in project ? (project as { coverImagePath?: string }).coverImagePath : undefined;
+  const projectSlug = "slug" in project ? project.slug : "";
+  const workCoverPath = projectSlug ? getFilmCoverPath(projectSlug) : null;
+  const featuredImage = "featuredImage" in project ? project.featuredImage : undefined;
   const ogImage =
-    "featuredImage" in project && project.featuredImage
-      ? toAbsoluteImageUrl(toLocalProxyUrlIfEnabled(project.featuredImage))
-      : coverPath
-        ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(coverPath), PROJECTS_BUCKET))
-        : `${SITE_URL}${DEFAULT_OG_IMAGE}`;
+    featuredImage && String(featuredImage).startsWith("http")
+      ? featuredImage
+      : workCoverPath
+        ? `${SITE_URL}${getWorkImageUrl(workCoverPath)}`
+        : featuredImage
+          ? `${SITE_URL}${String(featuredImage).replace(/^\//, "")}`
+          : `${SITE_URL}${DEFAULT_OG_IMAGE}`;
   const primaryVideo =
     "primaryVideo" in project && project.primaryVideo
       ? (project as { primaryVideo: { type: "vimeo" | "youtube"; id: string; embedUrl?: string } }).primaryVideo
@@ -132,47 +134,22 @@ export default async function ProjectPageRoute({ params }: PageProps) {
   const { locale, slug } = await params;
   const loc = getLocaleFromParam(locale);
 
-  // Nuevo sistema: proyecto desde JSON → layout fijo con 12 backstage
+  // Nuevo sistema: proyecto desde JSON → imágenes desde /public/uploads/work/film/
   const jsonProject = await getProjectBySlugFromJson(loc, slug);
   if (jsonProject) {
-    const [allJsonProjects, backstageImagesInitial] = await Promise.all([
+    const [allJsonProjects, backstageImages] = await Promise.all([
       getProjectsFromJson(loc),
       getBackstageImages(jsonProject.storageFolder, 12),
     ]);
-    let backstageImages = backstageImagesInitial.map((img) => ({
-      ...img,
-      thumbUrl: toAbsoluteImageUrl(img.thumbUrl),
-      largeUrl: toAbsoluteImageUrl(img.largeUrl),
-      originalUrl: toAbsoluteImageUrl(img.originalUrl),
-    }));
-    if (backstageImages.length === 0) {
-      const thumbsPaths = await getProjectGalleryFromStorage(jsonProject.slug);
-      const take = thumbsPaths.slice(0, 12);
-      backstageImages = take.map((path) => {
-        const thumbUrl = getPublicImageUrl(path, PROJECTS_BUCKET);
-        const largeUrl = getPublicImageUrl(path.replace(/\/thumbs?\//, "/large/"), PROJECTS_BUCKET);
-        return {
-          thumbUrl: toAbsoluteImageUrl(thumbUrl),
-          largeUrl: toAbsoluteImageUrl(largeUrl),
-          originalUrl: toAbsoluteImageUrl(thumbUrl),
-          alt: path.split("/").pop()?.replace(/\.[^/.]+$/, "") || "Backstage",
-        };
-      });
-    }
-    const useLocalStorage = isLocalStorageEnabled();
-    const coverRaw = jsonProject.coverImagePath
-      ? getPublicImageUrl(toLargePathOrOriginal(jsonProject.coverImagePath), PROJECTS_BUCKET)
-      : null;
-    const coverUrl = coverRaw ? (useLocalStorage ? coverRaw : toAbsoluteImageUrl(coverRaw)) : null;
+    const workCoverPath = getFilmCoverPath(jsonProject.slug);
+    const coverUrl = workCoverPath ? getWorkImageUrl(workCoverPath) : null;
     const primaryVideo = parseVideoUrl(jsonProject.videoUrl) ?? null;
     const allProjects = allJsonProjects.map((p) => {
-      const raw = p.coverImagePath
-        ? getPublicImageUrl(toThumbPathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
-        : null;
+      const pCover = getFilmCoverPath(p.slug);
       return {
         slug: p.slug,
         title: p.title,
-        coverUrl: raw ? (useLocalStorage ? raw : toAbsoluteImageUrl(raw)) : null,
+        coverUrl: pCover ? getWorkImageUrl(pCover) : null,
       };
     });
     const t = COPY[loc].workDetail;
@@ -186,7 +163,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
           name: jsonProject.title,
           description: jsonDesc,
           url: jsonPageUrl,
-          thumbnailUrl: coverUrl ? toAbsoluteImageUrl(coverUrl) : undefined,
+          thumbnailUrl: coverUrl ? (coverUrl.startsWith("/") ? `${SITE_URL}${coverUrl}` : coverUrl) : undefined,
           embedUrl:
             jsonPrimaryVideo.provider === "vimeo"
               ? `https://player.vimeo.com/video/${jsonPrimaryVideo.id}`
@@ -199,7 +176,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
           name: jsonProject.title,
           description: jsonDesc,
           url: jsonPageUrl,
-          image: coverUrl ? toAbsoluteImageUrl(coverUrl) : undefined,
+          image: coverUrl ? (coverUrl.startsWith("/") ? `${SITE_URL}${coverUrl}` : coverUrl) : undefined,
           productionCompany: { "@type": "Organization", name: "Sun Factory", url: SUN_FACTORY_URL },
         };
     return (
@@ -225,7 +202,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
     );
   }
 
-  // Fallback: proyecto desde Supabase (sin romper rutas existentes)
+  // Fallback: proyecto desde Supabase (metadata; imágenes desde work si existe)
   const project = await getProjectBySlug(slug, loc);
   if (!project) notFound();
 
@@ -236,9 +213,14 @@ export default async function ProjectPageRoute({ params }: PageProps) {
     getProjectSummaryPlain(project, loc) ||
     `${project.title}${project.year ? ` (${project.year})` : ""}. Director.`;
 
-  const projectOgImage = project.featuredImage
-    ? toAbsoluteImageUrl(toLocalProxyUrlIfEnabled(project.featuredImage))
-    : undefined;
+  const workCoverForSupabase = getFilmCoverPath(project.slug);
+  const projectOgImage = workCoverForSupabase
+    ? `${SITE_URL}${getWorkImageUrl(workCoverForSupabase)}`
+    : project.featuredImage?.startsWith("http")
+      ? project.featuredImage
+      : project.featuredImage
+        ? `${SITE_URL}${project.featuredImage.replace(/^\//, "")}`
+        : undefined;
   const projectJsonLd =
     primaryVideo ?
       {
@@ -264,34 +246,19 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         image: projectOgImage,
       };
 
-  const fromDb = project.galleryImages ?? [];
-  const fromStorage = await getProjectGalleryFromStorage(project.slug);
-  const seen = new Set<string>();
-  const gallery: string[] = [];
-  const pathKey = (p: string) => p.replace(/\/thumb\//, "/thumbs/");
-  for (const p of fromDb) {
-    if (!p) continue;
-    const key = pathKey(p);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    gallery.push(p);
-  }
-  for (const p of fromStorage) {
-    if (!p) continue;
-    const key = pathKey(p);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    gallery.push(p);
-  }
-  const heroPosterRaw =
-    (project.featuredImage ? toLocalProxyUrlIfEnabled(project.featuredImage) : null) ??
-    (primaryVideo ? null : (await getProjectPosterUrl(project)));
-  const useLocalStorageDb = isLocalStorageEnabled();
-  const heroPoster = heroPosterRaw
-    ? useLocalStorageDb && (heroPosterRaw.includes("/api/proxy-image") || heroPosterRaw.includes("/uploads/"))
-      ? heroPosterRaw
-      : toAbsoluteImageUrl(heroPosterRaw)
-    : null;
+  const filmGallery = getFilmGalleryBySlug(project.slug);
+  const gallery: string[] = filmGallery
+    ? filmGallery.photos.map((p) => p.thumbPath)
+    : (project.galleryImages ?? []).filter(Boolean);
+  const workCover = getFilmCoverPath(project.slug);
+  const heroPosterRaw = workCover
+    ? getWorkImageUrl(workCover)
+    : project.featuredImage?.startsWith("http")
+      ? project.featuredImage
+      : primaryVideo
+        ? null
+        : (await getProjectPosterUrl(project));
+  const heroPoster = heroPosterRaw ?? null;
   const t = COPY[loc].workDetail;
 
   return (
