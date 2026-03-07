@@ -100,29 +100,39 @@ export default async function WorkPage({
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 md:px-8">
-        {/* 1) Trabajos destacados (solo los 6 destacados) */}
+        {/* 1) Galería de Vimeo (videos del portfolio) — requiere VIMEO_ACCESS_TOKEN en el servidor */}
+        <section className="mb-12" aria-labelledby="work-vimeo-heading">
+          <h2 id="work-vimeo-heading" className="text-xl font-semibold text-white md:text-2xl">
+            {tWork.title}
+          </h2>
+          {vimeoItems.length === 0 ? (
+            <p className="mt-4 text-sm text-white/60">
+              {locale === "es"
+                ? "Para mostrar los videos configurá VIMEO_ACCESS_TOKEN en las variables de entorno del servidor (developer.vimeo.com)."
+                : "To show videos, set VIMEO_ACCESS_TOKEN in the server environment (developer.vimeo.com)."}
+            </p>
+          ) : (
+            <>
+              <WorkPageClient items={vimeoItems} locale={locale} />
+              <div className="mt-12 flex justify-center">
+                <Link
+                  href={`/${locale}/work/archive`}
+                  className="inline-flex items-center justify-center rounded-sm border border-white/30 px-6 py-3 text-sm font-medium text-white transition-colors hover:border-brand hover:text-brand focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2 focus:ring-offset-black"
+                >
+                  {tWork.viewAllWork}
+                </Link>
+              </div>
+            </>
+          )}
+        </section>
+
+        {/* 2) Trabajos destacados */}
         <FeaturedWork
           projects={featuredWithCover}
           locale={locale}
           title={tWork.featuredTitle}
           viewAllLabel={tWork.viewAllWork}
         />
-
-        {/* 2) Feed de Vimeo (videos del portfolio) */}
-        <section className="mt-12 border-t border-white/5 pt-10" aria-labelledby="work-vimeo-heading">
-          <h2 id="work-vimeo-heading" className="text-xl font-semibold text-white md:text-2xl">
-            {tWork.title}
-          </h2>
-          <WorkPageClient items={vimeoItems} locale={locale} />
-          <div className="mt-12 flex justify-center">
-            <Link
-              href={`/${locale}/work/archive`}
-              className="inline-flex items-center justify-center rounded-sm border border-white/30 px-6 py-3 text-sm font-medium text-white transition-colors hover:border-brand hover:text-brand focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2 focus:ring-offset-black"
-            >
-              {tWork.viewAllWork}
-            </Link>
-          </div>
-        </section>
       </div>
     </div>
   );

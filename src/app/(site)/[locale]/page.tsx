@@ -1,19 +1,11 @@
 import Link from "next/link";
-import { getProjectsFromJson, getFeaturedWorkProjects, getPhotographyImagesForHome } from "@/lib/content";
-import { getProjectPosterUrl } from "@/lib/poster";
-import { getPublicImageUrl } from "@/lib/supabase/storage";
-import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
-import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { isLocalStorageEnabled } from "@/lib/local-storage";
-import { getHreflangUrls, toAbsoluteImageUrl } from "@/lib/site";
+import { getHreflangUrls } from "@/lib/site";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeReel } from "@/components/HomeReel";
 import { HomeAbout } from "@/components/HomeAbout";
-import { HomePhotographyGrid } from "@/components/HomePhotographyGrid";
-import { FeaturedWork } from "@/components/projects/FeaturedWork";
 import { linkifyCompanies } from "@/lib/linkifyCompanies";
 
 // Featured work is content-driven; reflect changes immediately after deploy
@@ -46,51 +38,9 @@ export default async function HomePage({
     process.env.NEXT_PUBLIC_HERO_VIMEO_ID?.trim() ||
     "";
 
-  // Featured Work: JSON + Supabase (proyectos del admin marcados como destacados)
-  const [jsonProjects, supabaseFeatured, photographyImages, vimeoVideos] = await Promise.all([
-    getProjectsFromJson(loc),
-    getFeaturedWorkProjects(8, loc),
-    getPhotographyImagesForHome(8, loc),
-    getVimeoPortfolioVideos(),
-  ]);
-  const useLocalStorage = isLocalStorageEnabled();
-  const toCoverUrl = (raw: string) =>
-    raw.startsWith("/api/proxy-image") || raw.startsWith("/uploads/")
-      ? raw
-      : useLocalStorage
-        ? raw
-        : toAbsoluteImageUrl(raw);
-  const fromJson = jsonProjects
-    .filter((p) => p.featured)
-    .slice(0, 8)
-    .map((p) => {
-      const rawUrl = p.coverImagePath
-        ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
-        : null;
-      return {
-        project: { slug: p.slug, title: p.title, description: p.description },
-        coverUrl: rawUrl ? toCoverUrl(rawUrl) : null,
-      };
-    });
-  const seen = new Set(fromJson.map((x) => x.project.slug));
-  const fromSupabase = await Promise.all(
-    supabaseFeatured
-      .filter((p) => !seen.has(p.slug))
-      .slice(0, 8 - fromJson.length)
-      .map(async (p) => {
-        seen.add(p.slug);
-        const url = await getProjectPosterUrl(p);
-        return {
-          project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
-          coverUrl: url ? toCoverUrl(url) : null,
-        };
-      })
-  );
-  const featuredWithCover = [...fromJson, ...fromSupabase].slice(0, 8);
-
+  const [vimeoVideos] = await Promise.all([getVimeoPortfolioVideos()]);
   const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
   const t = COPY[loc].home;
-  const tWork = COPY[loc].work;
 
   return (
     <div className="min-h-screen bg-black">
@@ -106,21 +56,11 @@ export default async function HomePage({
       {/* SECTION 2 — REEL */}
       <HomeReel vimeoId={heroVimeoId} title={t.reel} />
 
-      {/* SECTION 3 — TRABAJOS DESTACADOS / FEATURED WORK */}
-      <FeaturedWork
-        projects={featuredWithCover}
-        locale={locale}
-        title={tWork.featuredTitle}
-        viewAllLabel={t.viewAll}
-      />
+      {/* SECTION 3 — TRABAJOS DESTACADOS: oculto hasta rearmar orígenes de portadas */}
+      {/* <FeaturedWork ... /> */}
 
-      {/* SECTION 4 — PHOTOGRAPHY */}
-      <HomePhotographyGrid
-        photos={photographyImages}
-        locale={locale}
-        title={t.photography}
-        viewAllLabel={t.viewAll}
-      />
+      {/* SECTION 4 — PHOTOGRAPHY (preview rotativo): oculto hasta rearmar */}
+      {/* <HomePhotographyGrid ... /> */}
 
       {/* SECTION 5 — ABOUT */}
       <HomeAbout locale={locale} aboutText={linkifyCompanies(t.aboutText)} />
