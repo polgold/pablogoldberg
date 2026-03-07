@@ -64,7 +64,7 @@ export function ProjectPage({
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 1024px"
               priority
-              unoptimized={coverUrl.includes("/uploads/")}
+              unoptimized={coverUrl.includes("/api/proxy-image") || coverUrl.includes("/uploads/")}
             />
           </div>
         )}
@@ -114,7 +114,7 @@ export function ProjectPage({
                         width={180}
                         height={101}
                         className="aspect-video w-full object-cover"
-                        unoptimized={p.coverUrl.includes("/uploads/")}
+                        unoptimized={p.coverUrl.includes("/api/proxy-image") || p.coverUrl.includes("/uploads/")}
                       />
                     ) : (
                       <div className="aspect-video w-full bg-white/5 flex items-center justify-center text-xs text-white/40">

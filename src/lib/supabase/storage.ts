@@ -1,9 +1,9 @@
 /**
  * Helper para URLs de imágenes en Supabase Storage o almacenamiento local (Hostinger).
- * Si USE_LOCAL_STORAGE=true, las URLs apuntan a /uploads/projects/<path>.
+ * Si USE_LOCAL_STORAGE=true, las imágenes se sirven por /api/proxy-image (lee de public/uploads/projects).
  */
 
-import { getLocalProjectsUrl, isLocalStorageEnabled } from "@/lib/local-storage";
+import { isLocalStorageEnabled } from "@/lib/local-storage";
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? "public";
 
@@ -12,12 +12,13 @@ export const PROJECTS_BUCKET = "projects";
 
 /**
  * Devuelve la URL pública de un objeto en el bucket.
- * Si USE_LOCAL_STORAGE=true y bucket es projects, devuelve URL local.
+ * Si USE_LOCAL_STORAGE=true y bucket es projects, devuelve URL del proxy (sirve desde disco).
  */
 export function getPublicImageUrl(path: string, bucket?: string): string {
   if (!path) return "";
   if (isLocalStorageEnabled() && (bucket === PROJECTS_BUCKET || !bucket)) {
-    return getLocalProjectsUrl(path);
+    const clean = path.replace(/^\//, "").replace(/\\/g, "/").replace(/\/+/g, "/");
+    return `/api/proxy-image?path=${encodeURIComponent(clean)}`;
   }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   if (!url) return path;

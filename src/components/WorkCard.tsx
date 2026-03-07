@@ -26,7 +26,7 @@ export function WorkCard({ item, href, external, onVimeoClick, badge, actions }:
           fill
           className="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          unoptimized={item.featuredImage.includes("/uploads/")}
+          unoptimized={item.featuredImage.includes("/api/proxy-image") || item.featuredImage.includes("/uploads/")}
         />
       ) : (
         <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">

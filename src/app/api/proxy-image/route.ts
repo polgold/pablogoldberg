@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       const { resolveLocalPath } = await import("@/lib/local-storage-server");
       const fs = await import("fs");
       const path = await import("path");
-      const cleanPath = pathParam.replace(/^\//, "").trim();
+      const cleanPath = decodeURIComponent(pathParam).replace(/^\//, "").trim();
       const fullPath = resolveLocalPath(cleanPath);
       if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
