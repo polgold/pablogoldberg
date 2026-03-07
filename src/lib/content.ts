@@ -439,6 +439,18 @@ export async function getPhotographyImagesForHome(
   limit = 8,
   locale: Locale = DEFAULT_LOCALE
 ): Promise<{ thumbUrl: string; largeUrl: string }[]> {
+  const { isLocalStorageEnabled } = await import("./local-storage");
+  if (isLocalStorageEnabled()) {
+    const { listLocalImageFiles } = await import("./local-storage-server");
+    const thumbNames = listLocalImageFiles("portfolio/thumb");
+    const localPaths = thumbNames.slice(0, limit).map((name) => `portfolio/thumb/${name}`);
+    if (localPaths.length > 0) {
+      return localPaths.map((u) => ({
+        thumbUrl: `/api/proxy-image?path=${encodeURIComponent(u)}`,
+        largeUrl: `/api/proxy-image?path=${encodeURIComponent(u.replace("/thumb/", "/large/"))}`,
+      }));
+    }
+  }
   const all = await getPublishedProjects(locale);
   const photoProjects = all.filter((p) => isPhotography(p.pieceType));
   const urls: string[] = [];
@@ -457,29 +469,17 @@ export async function getPhotographyImagesForHome(
         fallbackLargeUrl: p.fallbackLargeUrl ? toAbsoluteImageUrl(p.fallbackLargeUrl) : undefined,
       }));
     }
-    const { isLocalStorageEnabled } = await import("./local-storage");
-    if (isLocalStorageEnabled()) {
-      const { listLocalImageFiles } = await import("./local-storage-server");
-      const thumbNames = listLocalImageFiles("portfolio/thumb");
-      const localPaths = thumbNames
-        .slice(0, limit)
-        .map((name) => `portfolio/thumb/${name}`);
-      if (localPaths.length === 0) return [];
-      return localPaths.map((u) => ({
-        thumbUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u)}`),
-        largeUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u.replace("/thumb/", "/large/"))}`),
-      }));
-    }
+    return [];
   }
   const shuffled = [...urls].sort(() => Math.random() - 0.5);
   const slice = shuffled.slice(0, limit);
   return slice.map((u) => {
     if (u.startsWith("http")) return { thumbUrl: toAbsoluteImageUrl(u), largeUrl: toAbsoluteImageUrl(u) };
-    if (u.startsWith("/api/")) return { thumbUrl: toAbsoluteImageUrl(u), largeUrl: toAbsoluteImageUrl(u) };
+    if (u.startsWith("/api/")) return { thumbUrl: u, largeUrl: u };
     const largePath = u.replace(/\/thumbs?\//, "/large/");
     return {
-      thumbUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u)}`),
-      largeUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(largePath)}`),
+      thumbUrl: `/api/proxy-image?path=${encodeURIComponent(u)}`,
+      largeUrl: `/api/proxy-image?path=${encodeURIComponent(largePath)}`,
     };
   });
 }

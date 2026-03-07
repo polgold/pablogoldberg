@@ -11,6 +11,24 @@ const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? "public";
 export const PROJECTS_BUCKET = "projects";
 
 /**
+ * Si USE_LOCAL_STORAGE=true y la URL es de Supabase (bucket projects), devuelve la URL del proxy.
+ * Así las imágenes guardadas en DB como URL Supabase se sirven desde disco.
+ */
+export function toLocalProxyUrlIfEnabled(url: string): string {
+  if (!url || !isLocalStorageEnabled()) return url;
+  try {
+    const supabaseBase = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+    if (!supabaseBase || !url.startsWith(supabaseBase)) return url;
+    const match = url.match(/\/storage\/v1\/object\/public\/projects\/(.+)$/);
+    if (!match) return url;
+    const path = decodeURIComponent(match[1].replace(/\/+/g, "/"));
+    return `/api/proxy-image?path=${encodeURIComponent(path)}`;
+  } catch {
+    return url;
+  }
+}
+
+/**
  * Devuelve la URL pública de un objeto en el bucket.
  * Si USE_LOCAL_STORAGE=true y bucket es projects, devuelve URL del proxy (sirve desde disco).
  */

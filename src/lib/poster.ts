@@ -2,7 +2,7 @@
  * Obtiene la URL del poster/thumbnail para un proyecto.
  * Orden: coverImagePath → video thumbnail (YT/Vimeo) → primera imagen de galería (proxy) → null
  */
-import { getPublicImageUrl } from "./supabase/storage";
+import { getPublicImageUrl, toLocalProxyUrlIfEnabled } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toThumbPathOrOriginal } from "./imageVariantPath";
 import type { ProjectItem } from "@/types/content";
@@ -42,7 +42,7 @@ export async function getProjectPosterUrl(project: ProjectItem): Promise<string 
     return getPublicImageUrl(toThumbPathOrOriginal(project.coverImagePath), PROJECTS_BUCKET);
   }
   if (project.featuredImage) {
-    return project.featuredImage;
+    return toLocalProxyUrlIfEnabled(project.featuredImage);
   }
 
   // 2) video thumbnail (YouTube o Vimeo)

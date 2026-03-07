@@ -4,7 +4,7 @@ import Image from "next/image";
 import { getProjectBySlug, getProjectBySlugFromJson, getProjectsFromJson, getAdjacentArchiveProjects, getProjectGalleryFromStorage, parseVideoUrl } from "@/lib/content";
 import { getProjectPosterUrl } from "@/lib/poster";
 import { getBackstageImages } from "@/lib/projects-backstage";
-import { getPublicImageUrl } from "@/lib/supabase/storage";
+import { getPublicImageUrl, toLocalProxyUrlIfEnabled } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal, toThumbPathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam } from "@/lib/i18n";
@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: PageProps) {
   const coverPath = "coverImagePath" in project ? (project as { coverImagePath?: string }).coverImagePath : undefined;
   const ogImage =
     "featuredImage" in project && project.featuredImage
-      ? toAbsoluteImageUrl(project.featuredImage)
+      ? toAbsoluteImageUrl(toLocalProxyUrlIfEnabled(project.featuredImage))
       : coverPath
         ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(coverPath), PROJECTS_BUCKET))
         : `${SITE_URL}${DEFAULT_OG_IMAGE}`;
@@ -236,6 +236,9 @@ export default async function ProjectPageRoute({ params }: PageProps) {
     getProjectSummaryPlain(project, loc) ||
     `${project.title}${project.year ? ` (${project.year})` : ""}. Director.`;
 
+  const projectOgImage = project.featuredImage
+    ? toAbsoluteImageUrl(toLocalProxyUrlIfEnabled(project.featuredImage))
+    : undefined;
   const projectJsonLd =
     primaryVideo ?
       {
@@ -244,7 +247,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         name: project.title,
         description: desc,
         url: pageUrl,
-        thumbnailUrl: project.featuredImage ? toAbsoluteImageUrl(project.featuredImage) : undefined,
+        thumbnailUrl: projectOgImage,
         embedUrl:
           (primaryVideo as { embedUrl?: string }).embedUrl ??
           ("type" in primaryVideo && primaryVideo.type === "vimeo"
@@ -258,7 +261,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         name: project.title,
         description: desc,
         url: pageUrl,
-        image: project.featuredImage ? toAbsoluteImageUrl(project.featuredImage) : undefined,
+        image: projectOgImage,
       };
 
   const fromDb = project.galleryImages ?? [];
@@ -281,7 +284,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
     gallery.push(p);
   }
   const heroPosterRaw =
-    project.featuredImage ??
+    (project.featuredImage ? toLocalProxyUrlIfEnabled(project.featuredImage) : null) ??
     (primaryVideo ? null : (await getProjectPosterUrl(project)));
   const useLocalStorageDb = isLocalStorageEnabled();
   const heroPoster = heroPosterRaw

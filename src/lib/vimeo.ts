@@ -181,35 +181,43 @@ async function fetchVimeoPortfolioVideosUntilEnough(
 /**
  * Lista hasta 40 videos visibles: custom por ID + portfolio, sin ocultos.
  * Sigue paginando en Vimeo hasta tener 40 visibles (para compensar ocultos).
+ * Nunca lanza: ante error devuelve [] para no romper home/work.
  */
 export async function getVimeoPortfolioVideos(): Promise<VimeoVideo[]> {
-  const token = getToken();
-  if (!token) return [];
+  try {
+    const token = getToken();
+    if (!token) return [];
 
-  const [hiddenIds, customIds] = await Promise.all([
-    import("./hidden-vimeo").then((m) => m.getHiddenVimeoIds()),
-    import("./hidden-vimeo").then((m) => m.getCustomVimeoIds()),
-  ]);
+    const [hiddenIds, customIds] = await Promise.all([
+      import("./hidden-vimeo").then((m) => m.getHiddenVimeoIds()).catch(() => new Set<string>()),
+      import("./hidden-vimeo").then((m) => m.getCustomVimeoIds()).catch(() => new Set<string>()),
+    ]);
 
-  const opts = { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 300 } as const };
+    const opts = { headers: { Authorization: `Bearer ${token}` }, next: { revalidate: 300 } as const };
 
-  const customVideos: VimeoVideo[] = [];
-  for (const id of customIds) {
-    const v = await fetchVimeoVideoById(id);
-    if (v) customVideos.push(v);
+    const customVideos: VimeoVideo[] = [];
+    for (const id of customIds) {
+      const v = await fetchVimeoVideoById(id);
+      if (v) customVideos.push(v);
+    }
+    const norm = (s: string) => String(s ?? "").replace(/\D/g, "");
+    const customVisible = customVideos.filter((v) => !hiddenIds.has(norm(v.id)));
+    const targetFromRaw = Math.max(0, TARGET_VISIBLE - customVisible.length);
+
+    const rawList =
+      targetFromRaw > 0
+        ? await fetchVimeoPortfolioVideosUntilEnough(hiddenIds, targetFromRaw, opts)
+        : [];
+
+    const rawFiltered = rawList.filter((r) => !customIds.has(r.id));
+    const merged = [...customVideos, ...rawFiltered];
+    return merged.filter((v) => !hiddenIds.has(norm(v.id))).slice(0, TARGET_VISIBLE);
+  } catch (e) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[vimeo] getVimeoPortfolioVideos error:", e);
+    }
+    return [];
   }
-  const norm = (s: string) => String(s ?? "").replace(/\D/g, "");
-  const customVisible = customVideos.filter((v) => !hiddenIds.has(norm(v.id)));
-  const targetFromRaw = Math.max(0, TARGET_VISIBLE - customVisible.length);
-
-  const rawList =
-    targetFromRaw > 0
-      ? await fetchVimeoPortfolioVideosUntilEnough(hiddenIds, targetFromRaw, opts)
-      : [];
-
-  const rawFiltered = rawList.filter((r) => !customIds.has(r.id));
-  const merged = [...customVideos, ...rawFiltered];
-  return merged.filter((v) => !hiddenIds.has(norm(v.id))).slice(0, TARGET_VISIBLE);
 }
 
 /**
