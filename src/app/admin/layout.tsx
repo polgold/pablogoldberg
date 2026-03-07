@@ -19,38 +19,17 @@ export default async function AdminLayout({
           <Link href="/admin" className="font-medium text-white hover:underline">
             Admin
           </Link>
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex flex-wrap gap-4 text-sm">
             <Link href="/admin" className="text-zinc-400 hover:text-white">
               Proyectos
             </Link>
-            <Link
-              href="/admin/projects/new"
-              className="text-zinc-400 hover:text-white"
-            >
+            <Link href="/admin/projects/new" className="text-zinc-400 hover:text-white">
               Nuevo proyecto
             </Link>
-            <Link
-              href="/admin/featured-order"
-              className="text-zinc-400 hover:text-white"
-            >
-              Orden destacados
+            <Link href="/admin/films" className="text-zinc-400 hover:text-white">
+              Films
             </Link>
-            <Link
-              href="/admin/portfolio-photos"
-              className="text-zinc-400 hover:text-white"
-            >
-              Portfolio Photos
-            </Link>
-            <Link
-              href="/admin/vimeo-hidden"
-              className="text-zinc-400 hover:text-white"
-            >
-              Videos ocultos
-            </Link>
-            <Link
-              href="/admin/pages"
-              className="text-zinc-400 hover:text-white"
-            >
+            <Link href="/admin/pages" className="text-zinc-400 hover:text-white">
               Páginas
             </Link>
             <form action={logout} className="inline">

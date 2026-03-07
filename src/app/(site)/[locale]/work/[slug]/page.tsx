@@ -73,16 +73,20 @@ function getProjectSummaryPlain(project: { slug: string; summary?: string; excer
 export async function generateMetadata({ params }: PageProps) {
   const { locale, slug } = await params;
   const loc = getLocaleFromParam(locale);
-  // Intentar primero proyecto JSON (nuevo sistema)
-  const jsonProject = await getProjectBySlugFromJson(loc, slug);
-  const project = jsonProject ?? (await getProjectBySlug(slug, loc));
+  // Admin-driven primero, luego JSON, luego Supabase legacy
+  const adminProject = await import("@/lib/admin-content").then((m) => m.getAdminProjectBySlug(slug));
+  const jsonProject = adminProject ? null : await getProjectBySlugFromJson(loc, slug);
+  const project = adminProject
+    ? { title: loc === "en" && adminProject.title_en ? adminProject.title_en : adminProject.title_es, slug: adminProject.slug, description: loc === "en" && adminProject.description_en ? adminProject.description_en : adminProject.description_es, featuredImage: adminProject.cover_image_path ? `/api/proxy-image?path=${encodeURIComponent(adminProject.cover_image_path)}` : undefined, primaryVideo: adminProject.hero_video_platform && adminProject.hero_video_id ? { type: adminProject.hero_video_platform, id: adminProject.hero_video_id } : undefined }
+    : jsonProject ?? (await getProjectBySlug(slug, loc));
   const meta = COPY[loc].metadata;
   if (!project) return { title: meta.project };
-  const desc =
+  const rawDesc =
     "excerpt" in project
       ? getProjectSummaryPlain(project, loc)
-      : ("description" in project ? String((project as { description?: string }).description ?? "").slice(0, 160) : "") ||
+      : ("description" in project ? String((project as { description?: string }).description ?? "") : "") ||
         (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
+  const desc = rawDesc.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
   const projectSlug = "slug" in project ? project.slug : "";
   const workCoverPath = projectSlug ? getFilmCoverPath(projectSlug) : null;
@@ -134,7 +138,14 @@ export default async function ProjectPageRoute({ params }: PageProps) {
   const { locale, slug } = await params;
   const loc = getLocaleFromParam(locale);
 
-  // Nuevo sistema: proyecto desde JSON → imágenes desde /public/uploads/work/film/
+  // Admin-driven: proyecto desde admin_projects (prioridad)
+  const adminProject = await import("@/lib/admin-content").then((m) => m.getAdminProjectBySlug(slug));
+  if (adminProject) {
+    const { AdminProjectPage } = await import("./AdminProjectPage");
+    return <AdminProjectPage slug={slug} locale={locale} />;
+  }
+
+  // Legacy: proyecto desde JSON → imágenes desde /public/uploads/work/film/
   const jsonProject = await getProjectBySlugFromJson(loc, slug);
   if (jsonProject) {
     const [allJsonProjects, backstageImages] = await Promise.all([

@@ -13,11 +13,13 @@ export interface WorkGridProps {
   showFilters?: boolean;
   /** When set, Vimeo items open in this lightbox instead of external link. */
   onVimeoClick?: (vimeoId: string) => void;
+  /** When set, YouTube items open in this lightbox instead of external link. */
+  onYouTubeClick?: (youtubeId: string) => void;
   /** Optional extra per card (badge + actions) for admin. */
   renderCardExtra?: (item: WorkItem) => { badge?: React.ReactNode; actions?: React.ReactNode };
 }
 
-export function WorkGrid({ items, locale, linkCards = true, showFilters = true, onVimeoClick, renderCardExtra }: WorkGridProps) {
+export function WorkGrid({ items, locale, linkCards = true, showFilters = true, onVimeoClick, onYouTubeClick, renderCardExtra }: WorkGridProps) {
   const [yearFilter, setYearFilter] = useState("");
   const [sortBy, setSortBy] = useState<"manual" | "year_desc" | "year_asc" | "title_asc">("manual");
   const years = useMemo(() => {
@@ -101,6 +103,7 @@ export function WorkGrid({ items, locale, linkCards = true, showFilters = true, 
                 href={linkCards ? item.href : undefined}
                 external={linkCards ? item.external : undefined}
                 onVimeoClick={linkCards ? onVimeoClick : undefined}
+                onYouTubeClick={linkCards ? onYouTubeClick : undefined}
                 badge={extra?.badge}
                 actions={extra?.actions}
               />

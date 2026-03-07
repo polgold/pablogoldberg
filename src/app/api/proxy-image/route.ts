@@ -1,13 +1,12 @@
 /**
- * Proxy de imágenes: sirve desde /public/uploads/work/.
- * Path: ?path=photography/beasts/thumb/beasts01.jpg
- * Solo para compatibilidad; preferir URLs directas /uploads/work/...
+ * Proxy de imágenes: sirve desde almacenamiento persistente (UPLOAD_DIR).
+ * Path: ?path=projects/slug/large/file.jpg o projects/slug/thumb/file.jpg
+ * UPLOAD_DIR debe estar FUERA del path de deploy en Hostinger.
  */
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import fs from "fs";
-
-const WORK_DIR = path.join(process.cwd(), "public", "uploads", "work");
+import { getPersistentUploadDir } from "@/lib/persistent-storage";
 
 function safePath(p: string): boolean {
   const decoded = decodeURIComponent(p).trim();
@@ -24,11 +23,14 @@ export async function GET(request: NextRequest) {
   }
 
   const cleanPath = decodeURIComponent(pathParam).replace(/^\//, "").trim();
-  let fullPath = path.join(WORK_DIR, cleanPath);
+
+  // Persistent storage: path is relative to UPLOAD_DIR (e.g. projects/slug/large/file.jpg)
+  const baseDir = getPersistentUploadDir();
+  let fullPath = path.join(baseDir, cleanPath);
 
   if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
     const largePath = cleanPath.replace(/\/thumb\//, "/large/").replace(/\/thumbs\//, "/large/");
-    const altPath = path.join(WORK_DIR, largePath);
+    const altPath = path.join(baseDir, largePath);
     if (fs.existsSync(altPath) && fs.statSync(altPath).isFile()) fullPath = altPath;
     else return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -41,7 +43,8 @@ export async function GET(request: NextRequest) {
     status: 200,
     headers: {
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=86400, s-maxage=86400",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

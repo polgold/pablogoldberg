@@ -10,46 +10,56 @@ interface WorkPageClientProps {
   locale: string;
 }
 
-export function WorkPageClient({ items, locale }: WorkPageClientProps) {
-  const [vimeoLightboxId, setVimeoLightboxId] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-  const closeLightbox = useCallback(() => setVimeoLightboxId(null), []);
+type VideoItem = WorkItem & { vimeoId?: string; youtubeId?: string };
 
-  const vimeoItems = useMemo(
-    () => items.filter((i): i is WorkItem & { vimeoId: string } => Boolean(i.vimeoId)),
+export function WorkPageClient({ items, locale }: WorkPageClientProps) {
+  const [videoLightbox, setVideoLightbox] = useState<{ type: "vimeo" | "youtube"; id: string } | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const closeLightbox = useCallback(() => setVideoLightbox(null), []);
+
+  const videoItems = useMemo(
+    () => items.filter((i): i is VideoItem => Boolean(i.vimeoId || i.youtubeId)),
     [items]
   );
-  const currentIndex = vimeoLightboxId
-    ? vimeoItems.findIndex((i) => i.vimeoId === vimeoLightboxId)
+  const currentIndex = videoLightbox
+    ? videoItems.findIndex(
+        (i) =>
+          (videoLightbox.type === "vimeo" && i.vimeoId === videoLightbox.id) ||
+          (videoLightbox.type === "youtube" && i.youtubeId === videoLightbox.id)
+      )
     : -1;
-  const currentItem = currentIndex >= 0 ? vimeoItems[currentIndex] ?? null : null;
+  const currentItem = currentIndex >= 0 ? videoItems[currentIndex] ?? null : null;
   const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex >= 0 && currentIndex < vimeoItems.length - 1;
+  const hasNext = currentIndex >= 0 && currentIndex < videoItems.length - 1;
 
   const goPrev = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (hasPrev && vimeoItems[currentIndex - 1]) {
-        setVimeoLightboxId(vimeoItems[currentIndex - 1].vimeoId);
+      const prevItem = videoItems[currentIndex - 1];
+      if (hasPrev && prevItem) {
+        if (prevItem.vimeoId) setVideoLightbox({ type: "vimeo", id: prevItem.vimeoId });
+        else if (prevItem.youtubeId) setVideoLightbox({ type: "youtube", id: prevItem.youtubeId });
       }
     },
-    [hasPrev, currentIndex, vimeoItems]
+    [hasPrev, currentIndex, videoItems]
   );
   const goNext = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (hasNext && vimeoItems[currentIndex + 1]) {
-        setVimeoLightboxId(vimeoItems[currentIndex + 1].vimeoId);
+      const nextItem = videoItems[currentIndex + 1];
+      if (hasNext && nextItem) {
+        if (nextItem.vimeoId) setVideoLightbox({ type: "vimeo", id: nextItem.vimeoId });
+        else if (nextItem.youtubeId) setVideoLightbox({ type: "youtube", id: nextItem.youtubeId });
       }
     },
-    [hasNext, currentIndex, vimeoItems]
+    [hasNext, currentIndex, videoItems]
   );
 
   useEffect(() => setMounted(true), []);
 
   const lightbox =
     mounted &&
-    vimeoLightboxId &&
+    videoLightbox &&
     typeof document !== "undefined" &&
     createPortal(
       <div
@@ -88,18 +98,29 @@ export function WorkPageClient({ items, locale }: WorkPageClientProps) {
           className="flex flex-col items-center gap-3 max-w-4xl w-full mx-14 md:mx-20"
           onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="relative w-full"
-            style={{ aspectRatio: "16/9", minHeight: "200px" }}
-          >
-            <iframe
-              key={vimeoLightboxId}
-              title="Video"
-              src={`https://player.vimeo.com/video/${vimeoLightboxId}?autoplay=1`}
-              className="absolute inset-0 h-full w-full rounded border-0"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-            />
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: "16/9", minHeight: "200px" }}
+        >
+            {videoLightbox.type === "vimeo" ? (
+              <iframe
+                key={videoLightbox.id}
+                title="Video"
+                src={`https://player.vimeo.com/video/${videoLightbox.id}?autoplay=1`}
+                className="absolute inset-0 h-full w-full rounded border-0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <iframe
+                key={videoLightbox.id}
+                title="Video"
+                src={`https://www.youtube.com/embed/${videoLightbox.id}?autoplay=1`}
+                className="absolute inset-0 h-full w-full rounded border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            )}
           </div>
           {currentItem?.title && (
             <div
@@ -128,13 +149,17 @@ export function WorkPageClient({ items, locale }: WorkPageClientProps) {
       document.body
     );
 
+  const onVimeoClick = useCallback((id: string) => setVideoLightbox({ type: "vimeo", id }), []);
+  const onYouTubeClick = useCallback((id: string) => setVideoLightbox({ type: "youtube", id }), []);
+
   return (
     <>
       <WorkGrid
         items={items}
         locale={locale}
         linkCards
-        onVimeoClick={setVimeoLightboxId}
+        onVimeoClick={onVimeoClick}
+        onYouTubeClick={onYouTubeClick}
       />
       {lightbox}
     </>

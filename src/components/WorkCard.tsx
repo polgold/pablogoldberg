@@ -8,15 +8,17 @@ export interface WorkCardProps {
   /** If provided, card is a link (public work). Otherwise a div (admin). */
   href?: string;
   external?: boolean;
-  /** When item has vimeoId, opens video in lightbox instead of navigating. */
+  /** When item has vimeoId, opens Vimeo in lightbox instead of navigating. */
   onVimeoClick?: (vimeoId: string) => void;
+  /** When item has youtubeId, opens YouTube in lightbox instead of navigating. */
+  onYouTubeClick?: (youtubeId: string) => void;
   /** Rendered above the gradient overlay (e.g. Hidden badge). */
   badge?: React.ReactNode;
   /** Rendered in the overlay area (e.g. Hide/Unhide button). */
   actions?: React.ReactNode;
 }
 
-export function WorkCard({ item, href, external, onVimeoClick, badge, actions }: WorkCardProps) {
+export function WorkCard({ item, href, external, onVimeoClick, onYouTubeClick, badge, actions }: WorkCardProps) {
   const content = (
     <>
       {item.featuredImage ? (
@@ -53,6 +55,17 @@ export function WorkCard({ item, href, external, onVimeoClick, badge, actions }:
       <button
         type="button"
         onClick={() => onVimeoClick(item.vimeoId!)}
+        className={`group w-full text-left ${className}`}
+      >
+        {content}
+      </button>
+    );
+  }
+  if (item.youtubeId && onYouTubeClick) {
+    return (
+      <button
+        type="button"
+        onClick={() => onYouTubeClick(item.youtubeId!)}
         className={`group w-full text-left ${className}`}
       >
         {content}

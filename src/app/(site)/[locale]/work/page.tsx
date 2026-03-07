@@ -1,26 +1,36 @@
 import Link from "next/link";
-import { getVimeoPortfolioVideos } from "@/lib/vimeo";
+import { getAdminProjects, getFilms, getProjectImageUrl, getVideoThumbnailUrl } from "@/lib/admin-content";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
 import type { WorkItem } from "@/types/work";
-import type { VimeoVideo } from "@/lib/vimeo";
+import type { AdminProject, Film } from "@/lib/admin-content";
 
-function yearFromReleaseTime(releaseTime: string): string {
-  if (!releaseTime || releaseTime.length < 4) return "";
-  return releaseTime.slice(0, 4);
+function projectToWorkItem(p: AdminProject, _locale: string): WorkItem {
+  const loc = _locale === "en" ? "en" : "es";
+  const title = loc === "en" && p.title_en ? p.title_en : p.title_es;
+  const coverUrl = p.cover_image_path ? getProjectImageUrl(p.cover_image_path) : null;
+  return {
+    slug: p.slug,
+    title,
+    featuredImage: coverUrl,
+    href: `/${_locale}/work/${p.slug}`,
+    external: false,
+    source: "project",
+  };
 }
 
-function vimeoToWorkItem(v: VimeoVideo): WorkItem {
+function filmToWorkItem(f: Film, locale: string): WorkItem {
+  const thumb = getVideoThumbnailUrl(f.platform, f.video_id, f.custom_thumbnail);
   return {
-    slug: `vimeo-${v.id}`,
-    title: v.name,
-    year: yearFromReleaseTime(v.releaseTime) || undefined,
-    featuredImage: v.thumbnail || undefined,
-    href: v.link,
+    slug: `film-${f.id}`,
+    title: f.title,
+    featuredImage: thumb,
+    href: f.platform === "vimeo" ? `https://vimeo.com/${f.video_id}` : `https://www.youtube.com/watch?v=${f.video_id}`,
     external: true,
-    source: "vimeo",
-    vimeoId: v.id,
+    source: "film",
+    vimeoId: f.platform === "vimeo" ? f.video_id : undefined,
+    youtubeId: f.platform === "youtube" ? f.video_id : undefined,
   };
 }
 
@@ -51,29 +61,33 @@ export default async function WorkPage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const [vimeoVideos] = await Promise.all([getVimeoPortfolioVideos()]);
+  const [projects, films] = await Promise.all([
+    getAdminProjects(),
+    getFilms(),
+  ]);
 
-  const vimeoItems: WorkItem[] = vimeoVideos.map(vimeoToWorkItem);
+  const projectItems: WorkItem[] = projects.map((p) => projectToWorkItem(p, locale));
+  const filmItems: WorkItem[] = films.map((f) => filmToWorkItem(f, locale));
+  const items = [...projectItems, ...filmItems];
 
   const tWork = COPY[loc].work;
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">
       <div className="mx-auto max-w-[1600px] px-4 py-10 sm:px-6 md:px-8">
-        {/* 1) Galería de Vimeo (videos del portfolio) */}
-        <section className="mb-12" aria-labelledby="work-vimeo-heading">
-          <h2 id="work-vimeo-heading" className="text-xl font-semibold text-white md:text-2xl">
+        <section className="mb-12" aria-labelledby="work-heading">
+          <h2 id="work-heading" className="text-xl font-semibold text-white md:text-2xl">
             {tWork.title}
           </h2>
-          {vimeoItems.length === 0 ? (
+          {items.length === 0 ? (
             <p className="mt-4 text-sm text-white/60">
               {locale === "es"
-                ? "Para mostrar los videos configurá VIMEO_ACCESS_TOKEN en las variables de entorno del servidor (developer.vimeo.com)."
-                : "To show videos, set VIMEO_ACCESS_TOKEN in the server environment (developer.vimeo.com)."}
+                ? "Agregá proyectos y films desde el panel de administración."
+                : "Add projects and films from the admin panel."}
             </p>
           ) : (
             <>
-              <WorkPageClient items={vimeoItems} locale={locale} />
+              <WorkPageClient items={items} locale={locale} />
               <div className="mt-12 flex justify-center">
                 <Link
                   href={`/${locale}/work/archive`}
@@ -85,9 +99,6 @@ export default async function WorkPage({
             </>
           )}
         </section>
-
-        {/* 2) Featured Work: desactivado temporalmente hasta rearmar sistema de portadas */}
-        {/* <FeaturedWork projects={featuredWithCover} ... /> */}
       </div>
     </div>
   );

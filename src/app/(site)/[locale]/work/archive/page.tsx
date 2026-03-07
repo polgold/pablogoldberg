@@ -1,76 +1,39 @@
-import { getProjects, getProjectsFromJson } from "@/lib/content";
-import { getVimeoPortfolioVideos } from "@/lib/vimeo";
-import { getWorkImageUrl } from "@/lib/work-images";
-import { getFilmCoverPath } from "@/lib/work-galleries";
+import { getAdminProjects, getFilms, getProjectImageUrl, getVideoThumbnailUrl } from "@/lib/admin-content";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
-import { getHreflangUrls, toAbsoluteImageUrl } from "@/lib/site";
+import { getHreflangUrls } from "@/lib/site";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
 import type { WorkItem } from "@/types/work";
-import type { ProjectItem } from "@/types/content";
-import type { VimeoVideo } from "@/lib/vimeo";
+import type { AdminProject, Film } from "@/lib/admin-content";
 
-export const revalidate = 300;
-
-function yearFromReleaseTime(releaseTime: string): string {
-  if (!releaseTime || releaseTime.length < 4) return "";
-  return releaseTime.slice(0, 4);
-}
-
-function vimeoToWorkItem(v: VimeoVideo): WorkItem {
+function projectToWorkItem(p: AdminProject, locale: string): WorkItem {
+  const loc = locale === "en" ? "en" : "es";
+  const title = loc === "en" && p.title_en ? p.title_en : p.title_es;
+  const coverUrl = p.cover_image_path ? getProjectImageUrl(p.cover_image_path) : null;
   return {
-    slug: `vimeo-${v.id}`,
-    title: v.name,
-    year: yearFromReleaseTime(v.releaseTime) || undefined,
-    featuredImage: v.thumbnail || undefined,
-    href: v.link,
-    external: true,
-    source: "vimeo",
-    vimeoId: v.id,
-  };
-}
-
-function getYouTubeUrl(project: ProjectItem): string | null {
-  if (project.primaryVideo?.type === "youtube" && project.primaryVideo.id) {
-    return `https://www.youtube.com/watch?v=${project.primaryVideo.id}`;
-  }
-  const fromExternal = String(project.externalLink ?? "").trim();
-  if (/youtu\.?be|youtube\.com/i.test(fromExternal)) return fromExternal;
-  const contentMatch = project.content.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[^\s"'<]+/i);
-  return contentMatch ? contentMatch[0] : null;
-}
-
-function projectToWorkItem(project: ProjectItem, locale: string): WorkItem {
-  const workCover = getFilmCoverPath(project.slug);
-  const rawThumb = workCover
-    ? getWorkImageUrl(workCover)
-    : project.featuredImage?.startsWith("http")
-      ? project.featuredImage
-      : project.featuredImage
-        ? `${project.featuredImage}`
-        : undefined;
-  const cardThumb = rawThumb ? (rawThumb.startsWith("/") ? rawThumb : rawThumb.startsWith("http") ? rawThumb : toAbsoluteImageUrl(rawThumb)) : undefined;
-  const youtubeUrl = getYouTubeUrl(project);
-  if (youtubeUrl) {
-    return {
-      slug: `youtube-${project.slug}`,
-      title: project.title,
-      year: project.year || undefined,
-      featuredImage: cardThumb,
-      href: youtubeUrl,
-      external: true,
-      source: "youtube",
-    };
-  }
-  return {
-    slug: project.slug,
-    title: project.title,
-    year: project.year || undefined,
-    featuredImage: cardThumb,
-    href: `/${locale}/work/${project.slug}`,
+    slug: p.slug,
+    title,
+    featuredImage: coverUrl,
+    href: `/${locale}/work/${p.slug}`,
     external: false,
     source: "project",
   };
 }
+
+function filmToWorkItem(f: Film): WorkItem {
+  const thumb = getVideoThumbnailUrl(f.platform, f.video_id, f.custom_thumbnail);
+  return {
+    slug: `film-${f.id}`,
+    title: f.title,
+    featuredImage: thumb,
+    href: f.platform === "vimeo" ? `https://vimeo.com/${f.video_id}` : `https://www.youtube.com/watch?v=${f.video_id}`,
+    external: true,
+    source: "film",
+    vimeoId: f.platform === "vimeo" ? f.video_id : undefined,
+    youtubeId: f.platform === "youtube" ? f.video_id : undefined,
+  };
+}
+
+export const revalidate = 0;
 
 export async function generateMetadata({
   params,
@@ -97,39 +60,10 @@ export default async function WorkArchivePage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const [vimeoVideos, supabaseArchive, jsonProjects] = await Promise.all([
-    getVimeoPortfolioVideos(),
-    getProjects(loc),
-    getProjectsFromJson(loc),
-  ]);
-  const vimeoItems: WorkItem[] = vimeoVideos.map(vimeoToWorkItem);
-  const supabaseItems: WorkItem[] = supabaseArchive.map((p) => projectToWorkItem(p, locale));
-  const jsonItems: WorkItem[] = jsonProjects.map((p) => {
-    const cover = getFilmCoverPath(p.slug);
-    return {
-      slug: p.slug,
-      title: p.title,
-      year: undefined,
-      featuredImage: cover ? getWorkImageUrl(cover) : undefined,
-      href: `/${locale}/work/${p.slug}`,
-      external: false,
-      source: "project" as const,
-    };
-  });
-  const seenSlugs = new Set<string>();
-  const items: WorkItem[] = [
-    ...vimeoItems,
-    ...jsonItems.filter((i) => {
-      if (seenSlugs.has(i.slug)) return false;
-      seenSlugs.add(i.slug);
-      return true;
-    }),
-    ...supabaseItems.filter((i) => {
-      if (seenSlugs.has(i.slug)) return false;
-      seenSlugs.add(i.slug);
-      return true;
-    }),
-  ];
+  const [projects, films] = await Promise.all([getAdminProjects(), getFilms()]);
+  const projectItems = projects.map((p) => projectToWorkItem(p, locale));
+  const filmItems = films.map((f) => filmToWorkItem(f));
+  const items = [...projectItems, ...filmItems];
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">

@@ -11,7 +11,16 @@ function largeSrc(path: string): string {
   return getWorkImageUrl(toLargeFromThumb(path));
 }
 
-export function GalleryWithLightbox({ paths }: { paths: string[] }) {
+export type GalleryItem = string | { thumb: string; large: string };
+
+function getThumbUrl(item: GalleryItem): string {
+  return typeof item === "string" ? thumbSrc(item) : item.thumb;
+}
+function getLargeUrl(item: GalleryItem): string {
+  return typeof item === "string" ? largeSrc(item) : item.large;
+}
+
+export function GalleryWithLightbox({ paths }: { paths: GalleryItem[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const close = useCallback(() => setOpenIndex(null), []);
 
@@ -28,7 +37,7 @@ export function GalleryWithLightbox({ paths }: { paths: string[] }) {
             className="relative aspect-square w-full overflow-hidden rounded bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/30"
           >
             <img
-              src={thumbSrc(path)}
+              src={getThumbUrl(path)}
               alt=""
               className="h-full w-full object-cover"
               loading="lazy"
@@ -55,7 +64,7 @@ export function GalleryWithLightbox({ paths }: { paths: string[] }) {
             ×
           </button>
           <img
-            src={largeSrc(paths[openIndex])}
+            src={getLargeUrl(paths[openIndex])}
             alt=""
             className="max-h-full max-w-full object-contain"
             onClick={(e) => e.stopPropagation()}
