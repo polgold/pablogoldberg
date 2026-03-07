@@ -136,7 +136,7 @@ export function PhotosGridWithLightbox({ items }: PhotosGridWithLightboxProps) {
                 decoding="async"
                 className="object-cover transition-transform duration-200 hover:scale-[1.02]"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                unoptimized={item.thumbUrl.includes("supabase")}
+                unoptimized={item.thumbUrl.includes("supabase") || item.thumbUrl.includes("/uploads/")}
                 onError={(e) => {
                   const img = e.currentTarget as HTMLImageElement;
                   if (item.fallbackThumbUrl && img.src !== item.fallbackThumbUrl) {
@@ -198,7 +198,7 @@ export function PhotosGridWithLightbox({ items }: PhotosGridWithLightboxProps) {
               fill
               className="object-contain"
               sizes="90vw"
-              unoptimized={items[index].largeUrl.includes("supabase")}
+              unoptimized={items[index].largeUrl.includes("supabase") || items[index].largeUrl.includes("/uploads/")}
               onError={(e) => {
                 const img = e.currentTarget as HTMLImageElement;
                 const fallback = items[index]?.fallbackLargeUrl;

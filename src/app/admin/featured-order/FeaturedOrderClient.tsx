@@ -97,7 +97,7 @@ export function FeaturedOrderClient({ initialProjects }: { initialProjects: Feat
                   fill
                   className="object-cover"
                   sizes="(max-width: 640px) 50vw, 20vw"
-                  unoptimized={p.coverUrl.includes("supabase")}
+                  unoptimized={p.coverUrl.includes("supabase") || p.coverUrl.includes("/uploads/")}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-xs text-zinc-500">Sin portada</div>

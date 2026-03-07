@@ -27,7 +27,7 @@ export function ProjectCard({
       >
         {coverUrl ? (
           <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 bg-black/60">
-            {/* Blurred background so letterboxing looks intentional */}
+            {/* unoptimized para /uploads/ evita fallos del optimizador en hosting */}
             <Image
               src={coverUrl}
               alt=""
@@ -35,6 +35,7 @@ export function ProjectCard({
               className="object-cover opacity-30 blur-xl scale-110"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               aria-hidden
+              unoptimized={coverUrl.includes("/uploads/")}
             />
             <Image
               src={coverUrl}
@@ -42,6 +43,7 @@ export function ProjectCard({
               fill
               className="relative z-10 object-contain transition-transform duration-300 group-hover:scale-[1.02]"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              unoptimized={coverUrl.includes("/uploads/")}
             />
           </div>
         ) : (

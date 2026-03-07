@@ -307,7 +307,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
                 className="object-cover"
                 sizes="100vw"
                 priority
-                unoptimized={heroPoster.startsWith("/api/")}
+                unoptimized={heroPoster.startsWith("/api/") || heroPoster.includes("/uploads/")}
               />
             </div>
           ) : null}

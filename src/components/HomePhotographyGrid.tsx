@@ -127,7 +127,7 @@ export function HomePhotographyGrid({
                   className="object-cover"
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   loading="lazy"
-                  unoptimized={photo.thumbUrl.includes("supabase")}
+                  unoptimized={photo.thumbUrl.includes("supabase") || photo.thumbUrl.includes("/uploads/")}
                   onError={(e) => {
                     const img = e.currentTarget as HTMLImageElement;
                     if (photo.fallbackThumbUrl && img.src !== photo.fallbackThumbUrl) {
