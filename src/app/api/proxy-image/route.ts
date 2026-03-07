@@ -31,14 +31,15 @@ export async function GET(request: NextRequest) {
       const path = await import("path");
       const cleanPath = decodeURIComponent(pathParam).replace(/^\//, "").trim();
       let fullPath = resolveLocalPath(cleanPath);
-      if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+      const tryPath = (p: string) => fs.existsSync(p) && fs.statSync(p).isFile();
+      if (!tryPath(fullPath)) {
         if (!cleanPath.includes("/large/") && !cleanPath.includes("/thumb/")) {
           const lastSlash = cleanPath.lastIndexOf("/");
           const dir = lastSlash === -1 ? "" : cleanPath.slice(0, lastSlash);
           const filename = lastSlash === -1 ? cleanPath : cleanPath.slice(lastSlash + 1);
           const fallbackPath = dir ? `${dir}/large/${filename}` : `large/${filename}`;
           const fallbackFull = resolveLocalPath(fallbackPath);
-          if (fs.existsSync(fallbackFull) && fs.statSync(fallbackFull).isFile()) fullPath = fallbackFull;
+          if (tryPath(fallbackFull)) fullPath = fallbackFull;
         } else {
           const withoutSegment = cleanPath
             .replace(/\/large\//, "/")
@@ -46,11 +47,15 @@ export async function GET(request: NextRequest) {
             .replace(/\/thumbs\//, "/");
           if (withoutSegment !== cleanPath) {
             const fallbackFull = resolveLocalPath(withoutSegment);
-            if (fs.existsSync(fallbackFull) && fs.statSync(fallbackFull).isFile()) fullPath = fallbackFull;
+            if (tryPath(fallbackFull)) fullPath = fallbackFull;
           }
         }
       }
-      if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+      if (!tryPath(fullPath)) {
+        const cwdPublic = path.join(process.cwd(), "public", "uploads", "projects", cleanPath);
+        if (tryPath(cwdPublic)) fullPath = cwdPublic;
+      }
+      if (!tryPath(fullPath)) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
       }
       const ext = path.extname(fullPath).toLowerCase();

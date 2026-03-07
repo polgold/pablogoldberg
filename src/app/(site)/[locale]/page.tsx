@@ -54,6 +54,12 @@ export default async function HomePage({
     getVimeoPortfolioVideos(),
   ]);
   const useLocalStorage = isLocalStorageEnabled();
+  const toCoverUrl = (raw: string) =>
+    raw.startsWith("/api/proxy-image") || raw.startsWith("/uploads/")
+      ? raw
+      : useLocalStorage
+        ? raw
+        : toAbsoluteImageUrl(raw);
   const fromJson = jsonProjects
     .filter((p) => p.featured)
     .slice(0, 8)
@@ -63,7 +69,7 @@ export default async function HomePage({
         : null;
       return {
         project: { slug: p.slug, title: p.title, description: p.description },
-        coverUrl: rawUrl ? (useLocalStorage ? rawUrl : toAbsoluteImageUrl(rawUrl)) : null,
+        coverUrl: rawUrl ? toCoverUrl(rawUrl) : null,
       };
     });
   const seen = new Set(fromJson.map((x) => x.project.slug));
@@ -76,7 +82,7 @@ export default async function HomePage({
         const url = await getProjectPosterUrl(p);
         return {
           project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
-          coverUrl: url ? (useLocalStorage ? url : toAbsoluteImageUrl(url)) : null,
+          coverUrl: url ? toCoverUrl(url) : null,
         };
       })
   );
