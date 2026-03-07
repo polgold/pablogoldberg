@@ -459,8 +459,13 @@ export async function getPhotographyImagesForHome(
     }
     const { isLocalStorageEnabled } = await import("./local-storage");
     if (isLocalStorageEnabled()) {
-      const localPaths = ["portfolio/thumb/photo1.jpg", "portfolio/thumb/photo2.jpg", "portfolio/thumb/photo3.jpg"];
-      return localPaths.slice(0, limit).map((u) => ({
+      const { listLocalImageFiles } = await import("./local-storage-server");
+      const thumbNames = listLocalImageFiles("portfolio/thumb");
+      const localPaths = thumbNames
+        .slice(0, limit)
+        .map((name) => `portfolio/thumb/${name}`);
+      if (localPaths.length === 0) return [];
+      return localPaths.map((u) => ({
         thumbUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u)}`),
         largeUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u.replace("/thumb/", "/large/"))}`),
       }));

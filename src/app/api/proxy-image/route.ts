@@ -52,8 +52,16 @@ export async function GET(request: NextRequest) {
         }
       }
       if (!tryPath(fullPath)) {
-        const cwdPublic = path.join(process.cwd(), "public", "uploads", "projects", cleanPath);
+        const base = path.join(process.cwd(), "public", "uploads", "projects");
+        const cwdPublic = path.join(base, cleanPath);
         if (tryPath(cwdPublic)) fullPath = cwdPublic;
+        if (!tryPath(fullPath) && !cleanPath.includes("/large/") && !cleanPath.includes("/thumb/")) {
+          const lastSlash = cleanPath.lastIndexOf("/");
+          const dir = lastSlash === -1 ? "" : cleanPath.slice(0, lastSlash);
+          const filename = lastSlash === -1 ? cleanPath : cleanPath.slice(lastSlash + 1);
+          const withLarge = dir ? `${dir}/large/${filename}` : `large/${filename}`;
+          if (tryPath(path.join(base, withLarge))) fullPath = path.join(base, withLarge);
+        }
       }
       if (!tryPath(fullPath)) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
