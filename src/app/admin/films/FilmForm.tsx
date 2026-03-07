@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createFilm, updateFilm } from "../admin-actions";
 
 type Film = {
   id: string;
@@ -19,10 +20,10 @@ type Film = {
 type ActionResult = { id?: string; error?: string };
 
 export function FilmForm({
-  action,
+  filmId,
   film,
 }: {
-  action: (formData: FormData) => Promise<ActionResult>;
+  filmId: string | null;
   film: Film;
 }) {
   const router = useRouter();
@@ -33,12 +34,15 @@ export function FilmForm({
     setError("");
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const result = await action(formData);
+    const result = filmId
+      ? await updateFilm(filmId, formData)
+      : await createFilm(formData);
     if (result.error) {
       setError(result.error);
       return;
     }
-    if (result.id) router.push(`/admin/films/${result.id}`);
+    const createdId = !filmId && "id" in result ? (result as ActionResult).id : undefined;
+    if (createdId) router.push(`/admin/films/${createdId}`);
     else router.push("/admin/films");
     router.refresh();
   }

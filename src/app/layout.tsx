@@ -39,7 +39,12 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   metadataBase: new URL(SITE_URL),
-  viewport: { width: "device-width", initialScale: 1, maximumScale: 5 },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 const organizationJsonLd = {

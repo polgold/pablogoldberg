@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getAdminProject } from "../../admin-actions";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { ProjectForm } from "../ProjectForm";
-import { updateAdminProject, deleteAdminProject } from "../../admin-actions";
 import { GalleryEditor } from "../GalleryEditor";
 import { ProjectVideosEditor } from "../ProjectVideosEditor";
 import { DeleteProjectButton } from "../../DeleteProjectButton";
@@ -36,12 +35,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <h1 className="text-2xl font-semibold text-white">{project.title_es}</h1>
           <p className="text-zinc-500">/{project.slug}</p>
         </div>
-        <DeleteProjectButton projectId={id} projectTitle={project.title_es} deleteAction={deleteAdminProject} />
+        <DeleteProjectButton resourceType="project" resourceId={id} resourceTitle={project.title_es} />
       </div>
 
       <section>
         <h2 className="mb-4 text-lg font-medium text-white">Datos del proyecto</h2>
-        <ProjectForm action={(fd) => updateAdminProject(id, fd)} project={project} />
+        <ProjectForm projectId={id} project={project} />
       </section>
 
       <section>

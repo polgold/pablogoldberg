@@ -2,26 +2,28 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { deleteAdminProject, deleteFilm } from "./admin-actions";
 
 export function DeleteProjectButton({
-  projectId,
-  projectTitle,
-  deleteAction,
+  resourceType,
+  resourceId,
+  resourceTitle,
 }: {
-  projectId: string;
-  projectTitle: string;
-  deleteAction: (id: string) => Promise<{ error?: string }>;
+  resourceType: "project" | "film";
+  resourceId: string;
+  resourceTitle: string;
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
   async function handleClick() {
-    if (!confirm(`¿Eliminar "${projectTitle}"? No se puede deshacer.`)) return;
+    if (!confirm(`¿Eliminar "${resourceTitle}"? No se puede deshacer.`)) return;
     setDeleting(true);
     try {
-      const { error } = await deleteAction(projectId);
+      const deleteAction = resourceType === "project" ? deleteAdminProject : deleteFilm;
+      const { error } = await deleteAction(resourceId);
       if (error) throw new Error(error);
-      router.push("/admin");
+      router.push(resourceType === "project" ? "/admin" : "/admin/films");
       router.refresh();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error al eliminar");

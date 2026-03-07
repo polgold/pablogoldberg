@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { createAdminProject } from "../../admin-actions";
 import { ProjectForm } from "../ProjectForm";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +10,7 @@ export default function NewProjectPage() {
         ← Proyectos
       </Link>
       <h1 className="text-2xl font-semibold text-white">Nuevo proyecto</h1>
-      <ProjectForm action={createAdminProject} project={null} />
+      <ProjectForm projectId={null} project={null} />
     </div>
   );
 }

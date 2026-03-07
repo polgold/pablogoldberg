@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createAdminProject, updateAdminProject } from "../admin-actions";
 
 type Project = {
   id: string;
@@ -23,10 +24,10 @@ type Project = {
 type ActionResult = { id?: string; error?: string };
 
 export function ProjectForm({
-  action,
+  projectId,
   project,
 }: {
-  action: (formData: FormData) => Promise<ActionResult>;
+  projectId: string | null;
   project: Project;
 }) {
   const router = useRouter();
@@ -37,12 +38,15 @@ export function ProjectForm({
     setError("");
     const form = e.currentTarget;
     const formData = new FormData(form);
-    const result = await action(formData);
+    const result = projectId
+      ? await updateAdminProject(projectId, formData)
+      : await createAdminProject(formData);
     if (result.error) {
       setError(result.error);
       return;
     }
-    if (result.id) router.push(`/admin/projects/${result.id}`);
+    const createdId = !projectId && "id" in result ? (result as ActionResult).id : undefined;
+    if (createdId) router.push(`/admin/projects/${createdId}`);
     router.refresh();
   }
 
