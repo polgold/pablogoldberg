@@ -3,70 +3,15 @@ import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toLargePathOrOriginal, toThumbsPathPrefix } from "./imageVariantPath";
 import type { PageItem, ProjectItem, Project } from "@/types/content";
+import { parseVideoUrl } from "./parseVideoUrl";
 // Loader Projects (JSON): datos desde src/content/projects.{locale}.json — migrable a Supabase después
 import projectsEsJson from "@/content/projects.es.json";
 import projectsEnJson from "@/content/projects.en.json";
 
 export type Locale = "es" | "en";
+export { parseVideoUrl };
 
 const DEFAULT_LOCALE: Locale = "es";
-
-/** Parsea URL de video. Devuelve provider, id y embedUrl para iframe. Extracción robusta de ID (youtu.be, watch?v=, embed). */
-export function parseVideoUrl(url?: string): {
-  provider: "youtube" | "vimeo";
-  id: string;
-  embedUrl: string;
-} | null {
-  if (!url) return null;
-
-  const raw = url.trim();
-
-  // youtu.be short
-  const shortMatch = raw.match(/^https?:\/\/youtu\.be\/([^?&]+)/);
-  if (shortMatch) {
-    const id = shortMatch[1];
-    return {
-      provider: "youtube",
-      id,
-      embedUrl: `https://www.youtube.com/embed/${id}`,
-    };
-  }
-
-  // watch?v=
-  const watchMatch = raw.match(/[?&]v=([^&]+)/);
-  if (watchMatch) {
-    const id = watchMatch[1];
-    return {
-      provider: "youtube",
-      id,
-      embedUrl: `https://www.youtube.com/embed/${id}`,
-    };
-  }
-
-  // embed URL
-  const embedMatch = raw.match(/youtube\.com\/embed\/([^?&]+)/);
-  if (embedMatch) {
-    const id = embedMatch[1];
-    return {
-      provider: "youtube",
-      id,
-      embedUrl: `https://www.youtube.com/embed/${id}`,
-    };
-  }
-
-  // Vimeo
-  const vimeoMatch = raw.match(/vimeo\.com\/(\d+)/);
-  if (vimeoMatch) {
-    const id = vimeoMatch[1];
-    return {
-      provider: "vimeo",
-      id,
-      embedUrl: `https://player.vimeo.com/video/${id}`,
-    };
-  }
-
-  return null;
-}
 
 function rowToPageItem(row: {
   slug: string;
@@ -543,12 +488,13 @@ function isImagePath(name: string): boolean {
  */
 export async function getProjectGalleryFromStorage(slug: string): Promise<string[]> {
   if (!slug) return [];
-  const local = await import("@/lib/local-storage");
-  if (local.isLocalStorageEnabled()) {
+  const { isLocalStorageEnabled } = await import("./local-storage");
+  if (isLocalStorageEnabled()) {
+    const { listLocalImageFiles } = await import("./local-storage-server");
     const out: string[] = [];
     const seen = new Set<string>();
     for (const folder of [`${slug}/thumbs`, `${slug}/thumb`]) {
-      const names = local.listLocalImageFiles(folder);
+      const names = listLocalImageFiles(folder);
       for (const name of names) {
         const path = `${folder}/${name}`;
         const key = path.toLowerCase();

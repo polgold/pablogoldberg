@@ -6,11 +6,8 @@ import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/adm
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
 import { toLargePathPrefix } from "@/lib/imageVariantPath";
-import {
-  isLocalStorageEnabled,
-  writeLocalFile,
-  listLocalImageFiles,
-} from "@/lib/local-storage";
+import { isLocalStorageEnabled } from "@/lib/local-storage";
+import { writeLocalFile, listLocalImageFiles } from "@/lib/local-storage-server";
 import {
   getAdminPortfolioPhotos,
   listPortfolioGalleries,

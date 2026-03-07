@@ -6,7 +6,7 @@
 import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
-import { isLocalStorageEnabled, listLocalImageFiles } from "./local-storage";
+import { isLocalStorageEnabled } from "./local-storage";
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|avif|gif)$/i;
 
@@ -28,6 +28,7 @@ export async function listGalleryFromStorage(
   const slug = gallerySlug.trim();
 
   if (isLocalStorageEnabled()) {
+    const { listLocalImageFiles } = await import("./local-storage-server");
     const out: StorageGalleryImage[] = [];
     const seen = new Set<string>();
     for (const folder of [`${slug}/thumb`, `${slug}/Thumb`]) {

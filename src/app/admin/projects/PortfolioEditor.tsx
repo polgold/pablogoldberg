@@ -12,7 +12,7 @@ import {
   listProjectStorageFiles,
   type GalleryItem,
 } from "../actions";
-import { parseVideoUrl } from "@/lib/content";
+import { parseVideoUrl } from "@/lib/parseVideoUrl";
 import { VideoEmbed } from "@/components/VideoEmbed";
 
 const IMAGE_EXTS = new Set(["jpg", "jpeg", "png", "gif", "webp", "avif"]);

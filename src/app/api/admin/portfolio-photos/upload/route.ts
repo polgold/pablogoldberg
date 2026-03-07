@@ -3,7 +3,8 @@ import { revalidatePath } from "next/cache";
 import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl } from "@/lib/supabase/storage";
-import { isLocalStorageEnabled, writeLocalFile } from "@/lib/local-storage";
+import { isLocalStorageEnabled } from "@/lib/local-storage";
+import { writeLocalFile } from "@/lib/local-storage-server";
 
 function getExt(filename: string): string {
   const i = filename.lastIndexOf(".");

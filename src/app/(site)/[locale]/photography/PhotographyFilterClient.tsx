@@ -5,9 +5,8 @@ import { useCallback, useMemo } from "react";
 import { PhotosGridWithLightbox } from "@/components/PhotosGridWithLightbox";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { toThumbPathPrefix, toLargePathPrefix } from "@/lib/imageVariantPath";
-import { PHOTOS_BUCKET } from "@/lib/portfolio-photos";
+import { PHOTOS_BUCKET, type GalleryWithPhotos } from "@/lib/portfolio-photos-shared";
 import type { Locale } from "@/lib/content";
-import type { GalleryWithPhotos } from "@/lib/portfolio-photos";
 
 const QUERY_KEY = "g";
 

@@ -1,33 +1,18 @@
 import { createSupabaseServerClient, createSupabaseAnonClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
-import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toThumbPathPrefix, toLargePathPrefix } from "./imageVariantPath";
 import { listGalleryFromStorage } from "./admin-storage-gallery";
-import { isLocalStorageEnabled, listLocalImageFiles } from "./local-storage";
+import { isLocalStorageEnabled } from "./local-storage";
+import {
+  PHOTOS_BUCKET,
+  type PortfolioGallery,
+  type PortfolioPhoto,
+  type GalleryWithPhotos,
+} from "./portfolio-photos-shared";
 
-/** Bucket único para fotos de portfolio: projects. Path = slug/filename (ej. retratos/IMG_x.png). */
-export const PHOTOS_BUCKET = PROJECTS_BUCKET;
+export { PHOTOS_BUCKET, type PortfolioGallery, type PortfolioPhoto, type GalleryWithPhotos };
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|avif|gif)$/i;
-
-export type PortfolioGallery = {
-  id: string;
-  name: string;
-  slug: string;
-  order: number;
-  created_at: string;
-  is_visible?: boolean;
-};
-
-export type PortfolioPhoto = {
-  id: string;
-  storage_path: string;
-  public_url: string;
-  is_visible: boolean;
-  order: number;
-  created_at: string;
-  gallery_id: string | null;
-};
 
 function getFilesFromList(data: unknown): { name: string }[] {
   const raw = Array.isArray(data) ? data : [];
@@ -47,6 +32,7 @@ function getFilesFromList(data: unknown): { name: string }[] {
  */
 async function listStorageFilesBySlug(slug: string): Promise<{ path: string; url: string }[]> {
   if (isLocalStorageEnabled()) {
+    const { listLocalImageFiles } = await import("./local-storage-server");
     const out: { path: string; url: string }[] = [];
     const seen = new Set<string>();
     for (const sub of ["thumb", "Thumb"]) {
@@ -162,17 +148,6 @@ export async function getPublicPortfolioPhotos(galleryId?: string | null): Promi
   if (error) return [];
   return (data ?? []) as PortfolioPhoto[];
 }
-
-/**
- * Public: galerías visibles con sus fotos, para /gallery. Orden por sort_order, título = name (no slug).
- */
-export type GalleryWithPhotos = {
-  id: string;
-  title: string;
-  slug: string;
-  sort_order: number;
-  photos: PortfolioPhoto[];
-};
 
 /** Public: random photos for home mini grid. Slice 4–6, lazy-load ready. Incluye fallback por si thumb/large 404. */
 export async function getRandomPhotosForHome(limit = 6): Promise<{ thumbUrl: string; largeUrl: string; fallbackThumbUrl?: string; fallbackLargeUrl?: string }[]> {
