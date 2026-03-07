@@ -11,6 +11,17 @@ export function getCanonicalUrl(pathname: string): string {
   return `${SITE_URL}${path}`;
 }
 
+/**
+ * Convierte una URL de imagen relativa (ej. /uploads/projects/...) en absoluta.
+ * Necesario para que Next/Image y el optimizador carguen bien en producción (mismo origen).
+ */
+export function toAbsoluteImageUrl(url: string): string {
+  if (!url?.trim()) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const path = url.startsWith("/") ? url : `/${url}`;
+  return `${SITE_URL}${path}`;
+}
+
 /** URLs absolutas para hreflang es/en. pathWithoutLocale: "" | "/work" | "/about" | "/contact" | "/work/slug". */
 export function getHreflangUrls(pathWithoutLocale: string): { es: string; en: string } {
   const p = pathWithoutLocale.startsWith("/") ? pathWithoutLocale : `/${pathWithoutLocale}`;

@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "./supabase/server";
 import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toLargePathOrOriginal, toThumbsPathPrefix } from "./imageVariantPath";
+import { toAbsoluteImageUrl } from "./site";
 import type { PageItem, ProjectItem, Project } from "@/types/content";
 import { parseVideoUrl } from "./parseVideoUrl";
 // Loader Projects (JSON): datos desde src/content/projects.{locale}.json — migrable a Supabase después
@@ -447,16 +448,22 @@ export async function getPhotographyImagesForHome(
   }
   if (urls.length === 0) {
     const { getRandomPhotosForHome } = await import("./portfolio-photos");
-    return getRandomPhotosForHome(limit);
+    const photos = await getRandomPhotosForHome(limit);
+    return photos.map((p) => ({
+      thumbUrl: toAbsoluteImageUrl(p.thumbUrl),
+      largeUrl: toAbsoluteImageUrl(p.largeUrl),
+      fallbackThumbUrl: p.fallbackThumbUrl ? toAbsoluteImageUrl(p.fallbackThumbUrl) : undefined,
+      fallbackLargeUrl: p.fallbackLargeUrl ? toAbsoluteImageUrl(p.fallbackLargeUrl) : undefined,
+    }));
   }
   const shuffled = [...urls].sort(() => Math.random() - 0.5);
   const slice = shuffled.slice(0, limit);
   return slice.map((u) => {
-    if (u.startsWith("http")) return { thumbUrl: u, largeUrl: u };
+    if (u.startsWith("http")) return { thumbUrl: toAbsoluteImageUrl(u), largeUrl: toAbsoluteImageUrl(u) };
     const largePath = u.replace(/\/thumbs?\//, "/large/");
     return {
-      thumbUrl: `/api/proxy-image?path=${encodeURIComponent(u)}`,
-      largeUrl: `/api/proxy-image?path=${encodeURIComponent(largePath)}`,
+      thumbUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(u)}`),
+      largeUrl: toAbsoluteImageUrl(`/api/proxy-image?path=${encodeURIComponent(largePath)}`),
     };
   });
 }

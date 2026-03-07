@@ -6,7 +6,7 @@ import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
-import { getHreflangUrls } from "@/lib/site";
+import { getHreflangUrls, toAbsoluteImageUrl } from "@/lib/site";
 import { FeaturedWork } from "@/components/projects/FeaturedWork";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
 import type { WorkItem } from "@/types/work";
@@ -71,7 +71,7 @@ export default async function WorkPage({
     .map((p) => ({
       project: { slug: p.slug, title: p.title, description: p.description },
       coverUrl: p.coverImagePath
-        ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
+        ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET))
         : null,
     }));
   const seenFeatured = new Set(fromJson.map((x) => x.project.slug));
@@ -81,9 +81,10 @@ export default async function WorkPage({
       .slice(0, 8 - fromJson.length)
       .map(async (p) => {
         seenFeatured.add(p.slug);
+        const url = await getProjectPosterUrl(p);
         return {
           project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
-          coverUrl: await getProjectPosterUrl(p),
+          coverUrl: url ? toAbsoluteImageUrl(url) : null,
         };
       })
   );

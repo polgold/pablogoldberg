@@ -7,7 +7,7 @@ import { toLargePathOrOriginal } from "@/lib/imageVariantPath";
 import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { getHreflangUrls } from "@/lib/site";
+import { getHreflangUrls, toAbsoluteImageUrl } from "@/lib/site";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeReel } from "@/components/HomeReel";
 import { HomeAbout } from "@/components/HomeAbout";
@@ -55,7 +55,7 @@ export default async function HomePage({
     .map((p) => ({
       project: { slug: p.slug, title: p.title, description: p.description },
       coverUrl: p.coverImagePath
-        ? getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET)
+        ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(p.coverImagePath), PROJECTS_BUCKET))
         : null,
     }));
   const seen = new Set(fromJson.map((x) => x.project.slug));
@@ -65,9 +65,10 @@ export default async function HomePage({
       .slice(0, 8 - fromJson.length)
       .map(async (p) => {
         seen.add(p.slug);
+        const url = await getProjectPosterUrl(p);
         return {
           project: { slug: p.slug, title: p.title, description: p.excerpt || p.summary || "" },
-          coverUrl: await getProjectPosterUrl(p),
+          coverUrl: url ? toAbsoluteImageUrl(url) : null,
         };
       })
   );

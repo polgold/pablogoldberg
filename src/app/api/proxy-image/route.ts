@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isLocalStorageEnabled } from "@/lib/local-storage";
 
 const SUPABASE_BASE = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
 const BUCKET = "projects";
 
-/** Path seguro: solo slug, thumbs/large, y nombres de archivo. Sin ".." */
+/** Path seguro: solo slug, thumbs/large/thumb, y nombres de archivo. Sin ".." */
 function safePath(p: string): boolean {
   const decoded = decodeURIComponent(p).trim();
   if (!decoded || decoded.includes("..")) return false;
@@ -16,11 +17,36 @@ function safePath(p: string): boolean {
 
 /**
  * Proxy de imágenes: ?path=bestefar/thumbs/photo.jpg
- * Descargamos desde Supabase Storage (bucket projects) y devolvemos la imagen.
+ * Si USE_LOCAL_STORAGE=true, sirve desde public/uploads/projects/<path>.
+ * Si no, descarga desde Supabase Storage (bucket projects).
  */
 export async function GET(request: NextRequest) {
   const pathParam = request.nextUrl.searchParams.get("path");
   const urlParam = request.nextUrl.searchParams.get("url");
+
+  if (pathParam && safePath(pathParam)) {
+    if (isLocalStorageEnabled()) {
+      const { resolveLocalPath } = await import("@/lib/local-storage-server");
+      const fs = await import("fs");
+      const path = await import("path");
+      const cleanPath = pathParam.replace(/^\//, "").trim();
+      const fullPath = resolveLocalPath(cleanPath);
+      if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      const ext = path.extname(fullPath).toLowerCase();
+      const contentType =
+        ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : ext === ".gif" ? "image/gif" : "image/jpeg";
+      const body = fs.readFileSync(fullPath);
+      return new NextResponse(body, {
+        status: 200,
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": "public, max-age=86400, s-maxage=86400",
+        },
+      });
+    }
+  }
 
   let targetUrl: string;
 

@@ -9,7 +9,7 @@ import { PROJECTS_BUCKET } from "@/lib/supabase/storage";
 import { toLargePathOrOriginal, toThumbPathOrOriginal } from "@/lib/imageVariantPath";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
-import { SITE_URL, getCanonicalUrl, getHreflangUrls, SUN_FACTORY_URL } from "@/lib/site";
+import { SITE_URL, getCanonicalUrl, getHreflangUrls, SUN_FACTORY_URL, toAbsoluteImageUrl } from "@/lib/site";
 import { SafeHtml } from "@/components/SafeHtml";
 import { VideoEmbed } from "@/components/VideoEmbed";
 import { GalleryWithLightbox } from "@/components/GalleryWithLightbox";
@@ -19,11 +19,6 @@ interface PageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
 
-function absoluteImageUrl(url: string): string {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return `${SITE_URL}${url.startsWith("/") ? url : `/${url}`}`;
-}
 
 /** Asegura que el link sea absoluto (https://) para que no se interprete como ruta relativa. */
 function normalizeExternalUrl(url: string): string {
@@ -93,9 +88,9 @@ export async function generateMetadata({ params }: PageProps) {
   const coverPath = "coverImagePath" in project ? (project as { coverImagePath?: string }).coverImagePath : undefined;
   const ogImage =
     "featuredImage" in project && project.featuredImage
-      ? absoluteImageUrl(project.featuredImage)
+      ? toAbsoluteImageUrl(project.featuredImage)
       : coverPath
-        ? absoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(coverPath), PROJECTS_BUCKET))
+        ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(coverPath), PROJECTS_BUCKET))
         : `${SITE_URL}${DEFAULT_OG_IMAGE}`;
   const primaryVideo =
     "primaryVideo" in project && project.primaryVideo
@@ -143,25 +138,36 @@ export default async function ProjectPageRoute({ params }: PageProps) {
       getProjectsFromJson(loc),
       getBackstageImages(jsonProject.storageFolder, 12),
     ]);
-    let backstageImages = backstageImagesInitial;
+    let backstageImages = backstageImagesInitial.map((img) => ({
+      ...img,
+      thumbUrl: toAbsoluteImageUrl(img.thumbUrl),
+      largeUrl: toAbsoluteImageUrl(img.largeUrl),
+      originalUrl: toAbsoluteImageUrl(img.originalUrl),
+    }));
     if (backstageImages.length === 0) {
       const thumbsPaths = await getProjectGalleryFromStorage(jsonProject.slug);
       const take = thumbsPaths.slice(0, 12);
-      backstageImages = take.map((path) => ({
-        thumbUrl: getPublicImageUrl(path, PROJECTS_BUCKET),
-        largeUrl: getPublicImageUrl(path.replace(/\/thumbs?\//, "/large/"), PROJECTS_BUCKET),
-        originalUrl: getPublicImageUrl(path, PROJECTS_BUCKET),
-        alt: path.split("/").pop()?.replace(/\.[^/.]+$/, "") || "Backstage",
-      }));
+      backstageImages = take.map((path) => {
+        const thumbUrl = getPublicImageUrl(path, PROJECTS_BUCKET);
+        const largeUrl = getPublicImageUrl(path.replace(/\/thumbs?\//, "/large/"), PROJECTS_BUCKET);
+        return {
+          thumbUrl: toAbsoluteImageUrl(thumbUrl),
+          largeUrl: toAbsoluteImageUrl(largeUrl),
+          originalUrl: toAbsoluteImageUrl(thumbUrl),
+          alt: path.split("/").pop()?.replace(/\.[^/.]+$/, "") || "Backstage",
+        };
+      });
     }
     const coverUrl = jsonProject.coverImagePath
-      ? getPublicImageUrl(toLargePathOrOriginal(jsonProject.coverImagePath), PROJECTS_BUCKET)
+      ? toAbsoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(jsonProject.coverImagePath), PROJECTS_BUCKET))
       : null;
     const primaryVideo = parseVideoUrl(jsonProject.videoUrl) ?? null;
     const allProjects = allJsonProjects.map((p) => ({
       slug: p.slug,
       title: p.title,
-      coverUrl: p.coverImagePath ? getPublicImageUrl(toThumbPathOrOriginal(p.coverImagePath), PROJECTS_BUCKET) : null,
+      coverUrl: p.coverImagePath
+        ? toAbsoluteImageUrl(getPublicImageUrl(toThumbPathOrOriginal(p.coverImagePath), PROJECTS_BUCKET))
+        : null,
     }));
     const t = COPY[loc].workDetail;
     const jsonPageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
@@ -174,7 +180,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
           name: jsonProject.title,
           description: jsonDesc,
           url: jsonPageUrl,
-          thumbnailUrl: coverUrl ? absoluteImageUrl(coverUrl) : undefined,
+          thumbnailUrl: coverUrl ? toAbsoluteImageUrl(coverUrl) : undefined,
           embedUrl:
             jsonPrimaryVideo.provider === "vimeo"
               ? `https://player.vimeo.com/video/${jsonPrimaryVideo.id}`
@@ -187,7 +193,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
           name: jsonProject.title,
           description: jsonDesc,
           url: jsonPageUrl,
-          image: coverUrl ? absoluteImageUrl(coverUrl) : undefined,
+          image: coverUrl ? toAbsoluteImageUrl(coverUrl) : undefined,
           productionCompany: { "@type": "Organization", name: "Sun Factory", url: SUN_FACTORY_URL },
         };
     return (
@@ -232,7 +238,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         name: project.title,
         description: desc,
         url: pageUrl,
-        thumbnailUrl: project.featuredImage ? absoluteImageUrl(project.featuredImage) : undefined,
+        thumbnailUrl: project.featuredImage ? toAbsoluteImageUrl(project.featuredImage) : undefined,
         embedUrl:
           (primaryVideo as { embedUrl?: string }).embedUrl ??
           ("type" in primaryVideo && primaryVideo.type === "vimeo"
@@ -246,7 +252,7 @@ export default async function ProjectPageRoute({ params }: PageProps) {
         name: project.title,
         description: desc,
         url: pageUrl,
-        image: project.featuredImage ? absoluteImageUrl(project.featuredImage) : undefined,
+        image: project.featuredImage ? toAbsoluteImageUrl(project.featuredImage) : undefined,
       };
 
   const fromDb = project.galleryImages ?? [];
@@ -268,9 +274,10 @@ export default async function ProjectPageRoute({ params }: PageProps) {
     seen.add(key);
     gallery.push(p);
   }
-  const heroPoster =
+  const heroPosterRaw =
     project.featuredImage ??
     (primaryVideo ? null : (await getProjectPosterUrl(project)));
+  const heroPoster = heroPosterRaw ? toAbsoluteImageUrl(heroPosterRaw) : null;
   const t = COPY[loc].workDetail;
 
   return (

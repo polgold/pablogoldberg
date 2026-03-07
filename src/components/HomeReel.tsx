@@ -20,7 +20,7 @@ export function HomeReel({ vimeoId, title = "Reel" }: HomeReelProps) {
       <div className="relative aspect-video w-full">
         <iframe
           title={title}
-          src={`https://player.vimeo.com/video/${vimeoId}?autoplay=0&loop=0&muted=0&quality=1080p`}
+          src={`https://player.vimeo.com/video/${vimeoId}?dnt=1&autoplay=0&loop=0&muted=0`}
           className="absolute inset-0 h-full w-full"
           allow="autoplay; fullscreen; picture-in-picture"
           allowFullScreen

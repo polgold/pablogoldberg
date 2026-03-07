@@ -5,6 +5,7 @@ import { useCallback, useMemo } from "react";
 import { PhotosGridWithLightbox } from "@/components/PhotosGridWithLightbox";
 import { getPublicImageUrl } from "@/lib/supabase/storage";
 import { toThumbPathPrefix, toLargePathPrefix } from "@/lib/imageVariantPath";
+import { toAbsoluteImageUrl } from "@/lib/site";
 import { PHOTOS_BUCKET, type GalleryWithPhotos } from "@/lib/portfolio-photos-shared";
 import type { Locale } from "@/lib/content";
 
@@ -120,9 +121,9 @@ export function GalleryFilterClient({
             <PhotosGridWithLightbox
               items={photosToShow.map((p) => {
                 const path = p.storage_path;
-                const thumbUrl = getPublicImageUrl(toThumbPathPrefix(path), PHOTOS_BUCKET);
-                const largeUrl = getPublicImageUrl(toLargePathPrefix(path), PHOTOS_BUCKET);
-                const fallback = getPublicImageUrl(path, PHOTOS_BUCKET);
+                const thumbUrl = toAbsoluteImageUrl(getPublicImageUrl(toThumbPathPrefix(path), PHOTOS_BUCKET));
+                const largeUrl = toAbsoluteImageUrl(getPublicImageUrl(toLargePathPrefix(path), PHOTOS_BUCKET));
+                const fallback = toAbsoluteImageUrl(getPublicImageUrl(path, PHOTOS_BUCKET));
                 return { thumbUrl, largeUrl, fallbackThumbUrl: fallback, fallbackLargeUrl: fallback };
               })}
             />
