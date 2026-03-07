@@ -90,11 +90,12 @@ export async function generateMetadata({ params }: PageProps) {
       : ("description" in project ? String((project as { description?: string }).description ?? "").slice(0, 160) : "") ||
         (loc === "es" ? FALLBACK_DESC_ES : FALLBACK_DESC_EN);
   const pageUrl = getCanonicalUrl(`/${locale}/work/${slug}`);
+  const coverPath = "coverImagePath" in project ? (project as { coverImagePath?: string }).coverImagePath : undefined;
   const ogImage =
     "featuredImage" in project && project.featuredImage
       ? absoluteImageUrl(project.featuredImage)
-      : "coverImagePath" in project && (project as { coverImagePath?: string }).coverImagePath
-        ? `${SITE_URL}/api/proxy-image?path=${encodeURIComponent(toLargePathOrOriginal((project as { coverImagePath: string }).coverImagePath))}`
+      : coverPath
+        ? absoluteImageUrl(getPublicImageUrl(toLargePathOrOriginal(coverPath), PROJECTS_BUCKET))
         : `${SITE_URL}${DEFAULT_OG_IMAGE}`;
   const primaryVideo =
     "primaryVideo" in project && project.primaryVideo

@@ -12,6 +12,7 @@ dist/
 # Env
 .env
 .env*.local
+env-hostinger.txt
 
 # Debug / IDE
 .DS_Store
@@ -25,3 +26,6 @@ npm-debug.log*
 
 # Payload local uploads (use S3/R2 in production so images are not in git)
 media/
+
+# Copia/clon del repo que quedó dentro del mismo proyecto (evitar commit por error)
+pablogoldberg/

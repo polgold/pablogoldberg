@@ -7,6 +7,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl, getProjectAssetUrl } from "@/lib/supabase/storage";
 import { toLargePathPrefix } from "@/lib/imageVariantPath";
 import {
+  isLocalStorageEnabled,
+  writeLocalFile,
+  listLocalImageFiles,
+} from "@/lib/local-storage";
+import {
   getAdminPortfolioPhotos,
   listPortfolioGalleries,
   type PortfolioPhoto,
@@ -290,15 +295,25 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
   const projectId = inserted?.id;
   if (!projectId) return { error: "No se obtuvo ID del proyecto" };
 
+  const useLocal = isLocalStorageEnabled();
   const coverFile = formData.get("cover_file") as File | null;
   if (coverFile?.size) {
     const ext = getExt(coverFile.name) || "jpg";
-    const path = `${slug}/cover.${ext}`;
-    const { error: uploadErr } = await supabase.storage
-      .from(PROJECTS_BUCKET)
-      .upload(path, coverFile, { upsert: true, cacheControl: "31536000" });
-    if (!uploadErr) {
-      await supabase.from("projects").update({ cover_image: path }).eq("id", projectId);
+    const coverPath = `${slug}/cover.${ext}`;
+    if (useLocal) {
+      try {
+        await writeLocalFile(coverPath, Buffer.from(await coverFile.arrayBuffer()));
+        await supabase.from("projects").update({ cover_image: coverPath }).eq("id", projectId);
+      } catch (e) {
+        console.error("[admin] createProject cover local write:", e);
+      }
+    } else {
+      const { error: uploadErr } = await supabase.storage
+        .from(PROJECTS_BUCKET)
+        .upload(coverPath, coverFile, { upsert: true, cacheControl: "31536000" });
+      if (!uploadErr) {
+        await supabase.from("projects").update({ cover_image: coverPath }).eq("id", projectId);
+      }
     }
   }
 
@@ -320,14 +335,23 @@ export async function createProject(formData: FormData): Promise<{ id?: string; 
   for (const file of galleryFiles) {
     if (!file?.size) continue;
     const safeName = uniqueStorageName(file.name);
-    const path = `${slug}/large/${safeName}`;
-    const { error: uploadErr } = await supabase.storage
-      .from(PROJECTS_BUCKET)
-      .upload(path, file, { upsert: true, cacheControl: "31536000" });
-    if (!uploadErr) {
-      gallery.push({ path, url: getProjectsImageUrl(path), order: order++ });
-    } else if (!firstUploadError) {
-      firstUploadError = uploadErr.message;
+    const filePath = `${slug}/large/${safeName}`;
+    if (useLocal) {
+      try {
+        await writeLocalFile(filePath, Buffer.from(await file.arrayBuffer()));
+        gallery.push({ path: filePath, url: getProjectsImageUrl(filePath), order: order++ });
+      } catch (e) {
+        if (!firstUploadError) firstUploadError = e instanceof Error ? e.message : "Error al guardar";
+      }
+    } else {
+      const { error: uploadErr } = await supabase.storage
+        .from(PROJECTS_BUCKET)
+        .upload(filePath, file, { upsert: true, cacheControl: "31536000" });
+      if (!uploadErr) {
+        gallery.push({ path: filePath, url: getProjectsImageUrl(filePath), order: order++ });
+      } else if (!firstUploadError) {
+        firstUploadError = uploadErr.message;
+      }
     }
   }
   if (gallery.length > 0) {
@@ -421,14 +445,22 @@ export async function uploadProjectCover(
   if (!supabase) return { error: "Supabase no configurado" };
 
   const ext = getExt(file.name) || "jpg";
-  const path = `${slug}/cover.${ext}`;
+  const coverPath = `${slug}/cover.${ext}`;
+  if (isLocalStorageEnabled()) {
+    try {
+      await writeLocalFile(coverPath, Buffer.from(await file.arrayBuffer()));
+      await supabase.from("projects").update({ cover_image: coverPath }).eq("id", projectId);
+      return { path: coverPath };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Error al guardar" };
+    }
+  }
   const { error } = await supabase.storage
     .from(PROJECTS_BUCKET)
-    .upload(path, file, { upsert: true, cacheControl: "31536000" });
+    .upload(coverPath, file, { upsert: true, cacheControl: "31536000" });
   if (error) return { error: error.message };
-
-  await supabase.from("projects").update({ cover_image: path }).eq("id", projectId);
-  return { path };
+  await supabase.from("projects").update({ cover_image: coverPath }).eq("id", projectId);
+  return { path: coverPath };
 }
 
 export async function uploadProjectGalleryFile(
@@ -444,16 +476,23 @@ export async function uploadProjectGalleryFile(
   const prevGallery = (project?.gallery ?? []) as GalleryItem[];
   const order = prevGallery.length;
   const safeName = uniqueStorageName(file.name);
-  const path = `${slug}/large/${safeName}`;
+  const filePath = `${slug}/large/${safeName}`;
 
-  const { error } = await supabase.storage
-    .from(PROJECTS_BUCKET)
-    .upload(path, file, { upsert: true, cacheControl: "31536000" });
-  if (error) return { error: error.message };
+  if (isLocalStorageEnabled()) {
+    try {
+      await writeLocalFile(filePath, Buffer.from(await file.arrayBuffer()));
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "Error al guardar" };
+    }
+  } else {
+    const { error } = await supabase.storage
+      .from(PROJECTS_BUCKET)
+      .upload(filePath, file, { upsert: true, cacheControl: "31536000" });
+    if (error) return { error: error.message };
+  }
 
-  const item: GalleryItem = { path, url: getProjectsImageUrl(path), order };
+  const item: GalleryItem = { path: filePath, url: getProjectsImageUrl(filePath), order };
   const gallery = [...prevGallery, item];
-
   const { error: updateErr } = await supabase
     .from("projects")
     .update({ gallery })
@@ -491,9 +530,28 @@ export async function setProjectCover(projectId: string, path: string): Promise<
 export async function listProjectStorageFiles(slug: string): Promise<{ path: string; url: string }[]> {
   await ensureAdmin();
   if (!slug?.trim()) return [];
+
+  if (isLocalStorageEnabled()) {
+    const s = slug.trim().toLowerCase();
+    const folders = [`${s}/large`, `${s}/thumbs`, `${s}/Large`, `${s}/Thumbs`];
+    const out: { path: string; url: string }[] = [];
+    const seen = new Set<string>();
+    for (const folder of folders) {
+      const names = listLocalImageFiles(folder);
+      const prefix = folder.replace(/\/?$/, "");
+      for (const name of names) {
+        const relPath = `${prefix}/${name}`;
+        const key = relPath.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ path: relPath, url: getProjectsImageUrl(relPath) });
+      }
+    }
+    return out.sort((a, b) => a.path.localeCompare(b.path));
+  }
+
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
-
   const s = slug.trim().toLowerCase();
   const folders = [
     `${s}/large`,
@@ -524,11 +582,11 @@ export async function listProjectStorageFiles(slug: string): Promise<{ path: str
     const prefix = folder.replace(/\/?$/, "");
     for (const f of files ?? []) {
       if (!f.name || f.name.startsWith(".") || f.id == null) continue;
-      const path = `${prefix}/${f.name}`;
-      const key = path.toLowerCase();
+      const relPath = `${prefix}/${f.name}`;
+      const key = relPath.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push({ path, url: getProjectsImageUrl(path) });
+      out.push({ path: relPath, url: getProjectsImageUrl(relPath) });
     }
   }
   return out;
@@ -709,22 +767,29 @@ export async function uploadPortfolioPhotos(
     let nextOrder = ((maxOrderRow?.order ?? -1) as number) + 1;
     let uploaded = 0;
 
-    for (const file of images) {
+    const bufByFile = await Promise.all(images.map((f) => f.arrayBuffer()));
+    const useLocal = isLocalStorageEnabled();
+    for (let i = 0; i < images.length; i++) {
+      const file = images[i];
+      const buf = bufByFile[i];
       const base = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9.-]/g, "_") || "img";
       const safeName = `${base}-${crypto.randomUUID().slice(0, 8)}.jpg`;
       const storagePath = `${slug}/${safeName}`;
       const pathLarge = `${slug}/large/${safeName}`;
       const pathThumb = `${slug}/thumb/${safeName}`;
-      const buf = await file.arrayBuffer();
-      const contentType = file.type || "image/jpeg";
-      const blob = new Blob([buf], { type: contentType });
-      const { error: errLarge } = await supabase.storage.from(PROJECTS_BUCKET).upload(pathLarge, blob, { upsert: true, cacheControl: "31536000", contentType });
-      if (errLarge) {
-        return { error: `Subida large: ${errLarge.message}`, uploaded };
-      }
-      const { error: errThumb } = await supabase.storage.from(PROJECTS_BUCKET).upload(pathThumb, blob, { upsert: true, cacheControl: "31536000", contentType });
-      if (errThumb) {
-        return { error: `Subida thumb: ${errThumb.message}`, uploaded };
+      if (useLocal) {
+        try {
+          await writeLocalFile(pathLarge, Buffer.from(buf));
+          await writeLocalFile(pathThumb, Buffer.from(buf));
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : "Error al guardar en disco", uploaded };
+        }
+      } else {
+        const blob = new Blob([buf], { type: file.type || "image/jpeg" });
+        const { error: errLarge } = await supabase.storage.from(PROJECTS_BUCKET).upload(pathLarge, blob, { upsert: true, cacheControl: "31536000", contentType: file.type || "image/jpeg" });
+        if (errLarge) return { error: `Subida large: ${errLarge.message}`, uploaded };
+        const { error: errThumb } = await supabase.storage.from(PROJECTS_BUCKET).upload(pathThumb, blob, { upsert: true, cacheControl: "31536000", contentType: file.type || "image/jpeg" });
+        if (errThumb) return { error: `Subida thumb: ${errThumb.message}`, uploaded };
       }
       const publicUrl = getProjectsImageUrl(pathLarge);
       const { error: insertErr } = await supabase.from("portfolio_photos").insert({

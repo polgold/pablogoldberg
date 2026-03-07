@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seo:validate": "bash scripts/seo-validate.sh"
+    "seo:validate": "bash scripts/seo-validate.sh",
+    "storage:download": "node --env-file=.env --import tsx scripts/download-supabase-storage.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

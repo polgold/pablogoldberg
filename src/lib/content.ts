@@ -542,8 +542,25 @@ function isImagePath(name: string): boolean {
  * y devuelve paths (slug/thumbs/filename) para servir por proxy.
  */
 export async function getProjectGalleryFromStorage(slug: string): Promise<string[]> {
+  if (!slug) return [];
+  const local = await import("@/lib/local-storage");
+  if (local.isLocalStorageEnabled()) {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const folder of [`${slug}/thumbs`, `${slug}/thumb`]) {
+      const names = local.listLocalImageFiles(folder);
+      for (const name of names) {
+        const path = `${folder}/${name}`;
+        const key = path.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(path);
+      }
+    }
+    return out;
+  }
   const supabase = createSupabaseServerClient();
-  if (!slug || !supabase) return [];
+  if (!supabase) return [];
   const out: string[] = [];
   try {
     let thumbFiles: { name: string; id?: string }[] = [];

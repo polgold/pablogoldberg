@@ -3,6 +3,7 @@ import { getPublicImageUrl } from "./supabase/storage";
 import { PROJECTS_BUCKET } from "./supabase/storage";
 import { toThumbPathPrefix, toLargePathPrefix } from "./imageVariantPath";
 import { listGalleryFromStorage } from "./admin-storage-gallery";
+import { isLocalStorageEnabled, listLocalImageFiles } from "./local-storage";
 
 /** Bucket único para fotos de portfolio: projects. Path = slug/filename (ej. retratos/IMG_x.png). */
 export const PHOTOS_BUCKET = PROJECTS_BUCKET;
@@ -45,6 +46,23 @@ function getFilesFromList(data: unknown): { name: string }[] {
  * Convención: path = slug/thumb/filename → public_url para thumb; large = slug/large/filename.
  */
 async function listStorageFilesBySlug(slug: string): Promise<{ path: string; url: string }[]> {
+  if (isLocalStorageEnabled()) {
+    const out: { path: string; url: string }[] = [];
+    const seen = new Set<string>();
+    for (const sub of ["thumb", "Thumb"]) {
+      const folder = `${slug}/${sub}`;
+      const names = listLocalImageFiles(folder);
+      for (const name of names) {
+        const relPath = `${folder}/${name}`.replace(/\/+/g, "/");
+        const key = relPath.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ path: relPath, url: getPublicImageUrl(relPath, PHOTOS_BUCKET) });
+      }
+    }
+    return out.sort((a, b) => a.path.localeCompare(b.path));
+  }
+
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
 

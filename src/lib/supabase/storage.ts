@@ -1,8 +1,9 @@
 /**
- * Helper para URLs de imágenes en Supabase Storage.
- * Si el bucket es público: getPublicUrl.
- * Si el bucket es privado: usar createSignedUrl desde server (service role).
+ * Helper para URLs de imágenes en Supabase Storage o almacenamiento local (Hostinger).
+ * Si USE_LOCAL_STORAGE=true, las URLs apuntan a /uploads/projects/<path>.
  */
+
+import { getLocalProjectsUrl, isLocalStorageEnabled } from "@/lib/local-storage";
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? "public";
 
@@ -11,10 +12,13 @@ export const PROJECTS_BUCKET = "projects";
 
 /**
  * Devuelve la URL pública de un objeto en el bucket.
- * Usar cuando el bucket está configurado como público.
+ * Si USE_LOCAL_STORAGE=true y bucket es projects, devuelve URL local.
  */
 export function getPublicImageUrl(path: string, bucket?: string): string {
   if (!path) return "";
+  if (isLocalStorageEnabled() && (bucket === PROJECTS_BUCKET || !bucket)) {
+    return getLocalProjectsUrl(path);
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   if (!url) return path;
   const base = url.replace(/\/$/, "");

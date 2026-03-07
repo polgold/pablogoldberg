@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminServerClient, isAllowedAdminEmail } from "@/lib/supabase/admin-server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PROJECTS_BUCKET, getProjectsImageUrl } from "@/lib/supabase/storage";
+import { isLocalStorageEnabled, writeLocalFile } from "@/lib/local-storage";
 
 function getExt(filename: string): string {
   const i = filename.lastIndexOf(".");
@@ -71,20 +72,33 @@ export async function POST(request: Request) {
   let nextOrder = ((maxOrderRow?.order ?? -1) as number) + 1;
   let uploaded = 0;
 
+  const useLocal = isLocalStorageEnabled();
   for (const file of images) {
     const safeName = uniqueStorageName(file.name);
-    const path = `${slug}/${safeName}`;
-    const { error: uploadErr } = await supabase.storage
-      .from(PROJECTS_BUCKET)
-      .upload(path, file, { upsert: true, cacheControl: "31536000" });
-    if (uploadErr) {
-      revalidatePath("/admin/portfolio-photos");
-      const msg = `${uploadErr.message}${(uploadErr as { statusCode?: number }).statusCode ? ` (${(uploadErr as { statusCode?: number }).statusCode})` : ""}`;
-      return NextResponse.json({ error: msg, uploaded }, { status: 500 });
+    const storagePath = `${slug}/${safeName}`;
+    if (useLocal) {
+      try {
+        await writeLocalFile(storagePath, Buffer.from(await file.arrayBuffer()));
+      } catch (e) {
+        revalidatePath("/admin/portfolio-photos");
+        return NextResponse.json(
+          { error: e instanceof Error ? e.message : "Error al guardar", uploaded },
+          { status: 500 }
+        );
+      }
+    } else {
+      const { error: uploadErr } = await supabase.storage
+        .from(PROJECTS_BUCKET)
+        .upload(storagePath, file, { upsert: true, cacheControl: "31536000" });
+      if (uploadErr) {
+        revalidatePath("/admin/portfolio-photos");
+        const msg = `${uploadErr.message}${(uploadErr as { statusCode?: number }).statusCode ? ` (${(uploadErr as { statusCode?: number }).statusCode})` : ""}`;
+        return NextResponse.json({ error: msg, uploaded }, { status: 500 });
+      }
     }
-    const publicUrl = getProjectsImageUrl(path);
+    const publicUrl = getProjectsImageUrl(storagePath);
     const { error: insertErr } = await supabase.from("portfolio_photos").insert({
-      storage_path: path,
+      storage_path: storagePath,
       public_url: publicUrl,
       is_visible: true,
       order: nextOrder++,

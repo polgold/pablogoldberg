@@ -83,6 +83,25 @@ npm run dev
 
 La web usa solo el contenido de Payload; no hay que tocar JSON ni scripts para el contenido en vivo.
 
+## Hostinger: imágenes en disco (sin Supabase Storage)
+
+Si desplegás en Hostinger y querés evitar el uso de Supabase Storage (cuota/egress), podés guardar las imágenes en el servidor:
+
+1. En las variables de entorno del sitio, añadí **`USE_LOCAL_STORAGE=1`**.
+2. Las imágenes se guardan en **`public/uploads/projects/`** (cover de proyectos, galerías, fotos de portfolio). Next.js las sirve en **`/uploads/projects/<path>`**.
+3. La base de datos (proyectos, portfolio, auth) sigue en Supabase; solo el almacenamiento de archivos pasa a local.
+4. En Hostinger asegurate de que la app tenga permisos de escritura en esa carpeta (o usá el File Manager para subir archivos manualmente si el deploy es solo-lectura).
+
+**Migrar fotos desde Supabase:** para bajar todo el bucket `projects` a `public/uploads/projects/` y subirlo después a Hostinger:
+
+```bash
+npm run storage:download
+```
+
+(Requiere `.env` con `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`.) Luego podés commitear la carpeta o subirla por FTP/File Manager a Hostinger.
+
+El archivo **`env-hostinger.txt`** en la raíz tiene un ejemplo con `USE_LOCAL_STORAGE=1` para copiar en el panel de Hostinger.
+
 ## Build y producción
 
 ```bash
