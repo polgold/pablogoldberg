@@ -6,7 +6,9 @@ import { getHreflangUrls } from "@/lib/site";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeReel } from "@/components/HomeReel";
 import { HomeAbout } from "@/components/HomeAbout";
+import { HomePhotographyMini } from "@/components/HomePhotographyMini";
 import { linkifyCompanies } from "@/lib/linkifyCompanies";
+import { getFeaturedForHome } from "@/lib/galleries/public";
 
 // Featured work is content-driven; reflect changes immediately after deploy
 export const revalidate = 0;
@@ -38,7 +40,10 @@ export default async function HomePage({
     process.env.NEXT_PUBLIC_HERO_VIMEO_ID?.trim() ||
     "";
 
-  const [vimeoVideos] = await Promise.all([getVimeoPortfolioVideos()]);
+  const [vimeoVideos, featuredPhotos] = await Promise.all([
+    getVimeoPortfolioVideos(),
+    getFeaturedForHome(12),
+  ]);
   const heroVimeoId = heroVimeoEnv || (vimeoVideos[0]?.id ?? "");
   const t = COPY[loc].home;
 
@@ -59,8 +64,13 @@ export default async function HomePage({
       {/* SECTION 3 — TRABAJOS DESTACADOS: oculto hasta rearmar orígenes de portadas */}
       {/* <FeaturedWork ... /> */}
 
-      {/* SECTION 4 — PHOTOGRAPHY (preview rotativo): oculto hasta rearmar */}
-      {/* <HomePhotographyGrid ... /> */}
+      {/* SECTION 4 — PHOTOGRAPHY (preview rotativo desde galerías locales) */}
+      <HomePhotographyMini
+        items={featuredPhotos}
+        locale={locale}
+        title={t.photography}
+        ctaLabel={t.ctaGallery}
+      />
 
       {/* SECTION 5 — ABOUT */}
       <HomeAbout locale={locale} aboutText={linkifyCompanies(t.aboutText)} />

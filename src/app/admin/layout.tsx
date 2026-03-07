@@ -29,6 +29,9 @@ export default async function AdminLayout({
             <Link href="/admin/films" className="text-zinc-400 hover:text-white">
               Films
             </Link>
+            <Link href="/admin/galleries" className="text-zinc-400 hover:text-white">
+              Galerías
+            </Link>
             <Link href="/admin/pages" className="text-zinc-400 hover:text-white">
               Páginas
             </Link>
