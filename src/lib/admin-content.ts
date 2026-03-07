@@ -60,7 +60,7 @@ export type Film = {
   sort_order: number;
 };
 
-/** Projects for frontend (published, ordered) */
+/** Projects for frontend (published, ordered: sort_order asc = higher priority, then newest) */
 export async function getAdminProjects(): Promise<AdminProject[]> {
   const supabase = createSupabaseServerClient();
   if (!supabase) return [];
@@ -68,7 +68,7 @@ export async function getAdminProjects(): Promise<AdminProject[]> {
     .from("admin_projects")
     .select("*")
     .eq("published", true)
-    .order("sort_order", { ascending: false, nullsFirst: false })
+    .order("sort_order", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
   if (error) {
     console.error("[admin-content] getAdminProjects:", error.message);

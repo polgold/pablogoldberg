@@ -46,7 +46,10 @@ export function ProjectForm({
       return;
     }
     const createdId = !projectId && "id" in result ? (result as ActionResult).id : undefined;
-    if (createdId) router.push(`/admin/projects/${createdId}`);
+    if (createdId) {
+      router.push(`/admin/projects/${createdId}`);
+      return;
+    }
     router.refresh();
   }
 
@@ -178,21 +181,26 @@ export function ProjectForm({
         />
       </div>
 
-      <div>
-        <label htmlFor="cover_file" className="mb-1 block text-sm text-zinc-400">
-          Portada (imagen)
-        </label>
-        <input
-          id="cover_file"
-          name="cover_file"
-          type="file"
-          accept="image/*"
-          className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-white file:mr-2 file:rounded file:border-0 file:bg-amber-600 file:px-3 file:py-1 file:text-white"
-        />
-        {project?.cover_image_path && (
-          <p className="mt-1 text-xs text-zinc-500">Portada actual: subí otra para reemplazar</p>
-        )}
-      </div>
+      {projectId && (
+        <div>
+          <label htmlFor="cover_file" className="mb-1 block text-sm text-zinc-400">
+            Portada (imagen)
+          </label>
+          <input
+            id="cover_file"
+            name="cover_file"
+            type="file"
+            accept="image/*"
+            className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-white file:mr-2 file:rounded file:border-0 file:bg-amber-600 file:px-3 file:py-1 file:text-white"
+          />
+          {project?.cover_image_path && (
+            <p className="mt-1 text-xs text-zinc-500">Portada actual: subí otra para reemplazar</p>
+          )}
+          {!project?.cover_image_path && (
+            <p className="mt-1 text-xs text-zinc-500">Opcional. También podés elegir una imagen de la galería como portada.</p>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-4">
         <input

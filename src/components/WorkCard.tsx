@@ -26,13 +26,13 @@ export function WorkCard({ item, href, external, onVimeoClick, onYouTubeClick, b
           src={item.featuredImage}
           alt=""
           fill
-          className="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+          className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           unoptimized={item.featuredImage.includes("/api/proxy-image") || item.featuredImage.includes("/uploads/")}
         />
       ) : (
-        <div className="flex h-full items-center justify-center bg-white/5 text-xs text-white/30">
-          {item.title}
+        <div className="flex h-full min-h-[120px] items-center justify-center border border-white/10 bg-zinc-900/80 px-4 py-6 text-center">
+          <span className="line-clamp-3 text-sm font-light tracking-wide text-white/50">{item.title}</span>
         </div>
       )}
       {badge}
@@ -48,7 +48,7 @@ export function WorkCard({ item, href, external, onVimeoClick, onYouTubeClick, b
   );
 
   const className =
-    "relative block aspect-[4/3] overflow-hidden rounded-sm bg-black focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset";
+    "relative block aspect-[4/3] w-full overflow-hidden rounded-sm bg-black focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset";
 
   if (item.vimeoId && onVimeoClick) {
     return (

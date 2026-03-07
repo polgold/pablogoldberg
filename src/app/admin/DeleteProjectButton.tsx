@@ -21,8 +21,12 @@ export function DeleteProjectButton({
     setDeleting(true);
     try {
       const deleteAction = resourceType === "project" ? deleteAdminProject : deleteFilm;
-      const { error } = await deleteAction(resourceId);
-      if (error) throw new Error(error);
+      const result = await deleteAction(resourceId);
+      const err = "error" in result ? result.error : undefined;
+      if (err) {
+        const details = "fileErrors" in result && Array.isArray(result.fileErrors) ? "\n" + result.fileErrors.join("\n") : "";
+        throw new Error(err + details);
+      }
       router.push(resourceType === "project" ? "/admin" : "/admin/films");
       router.refresh();
     } catch (e) {

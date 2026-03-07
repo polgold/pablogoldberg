@@ -169,7 +169,7 @@ export async function AdminProjectPage({
             )}
           </div>
           <Link
-            href={`/${locale}/work`}
+            href={`/${locale}/work/archive`}
             className="text-xs text-white/50 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-2 focus:ring-offset-black"
           >
             {t.viewAll}

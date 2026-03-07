@@ -1,4 +1,5 @@
 import { getAdminProjects, getFilms, getProjectImageUrl, getVideoThumbnailUrl } from "@/lib/admin-content";
+import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
@@ -33,6 +34,20 @@ function filmToWorkItem(f: Film): WorkItem {
   };
 }
 
+function vimeoToWorkItem(v: { id: string; name: string; thumbnail: string; link: string; releaseTime?: string }): WorkItem {
+  const year = v.releaseTime?.slice(0, 4) ?? undefined;
+  return {
+    slug: `vimeo-${v.id}`,
+    title: v.name || `Video ${v.id}`,
+    year,
+    featuredImage: v.thumbnail || undefined,
+    href: v.link || `https://vimeo.com/${v.id}`,
+    external: true,
+    source: "vimeo",
+    vimeoId: v.id,
+  };
+}
+
 export const revalidate = 0;
 
 export async function generateMetadata({
@@ -60,10 +75,17 @@ export default async function WorkArchivePage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const [projects, films] = await Promise.all([getAdminProjects(), getFilms()]);
+  const [projects, films, vimeoVideos] = await Promise.all([
+    getAdminProjects(),
+    getFilms(),
+    getVimeoPortfolioVideos().catch(() => []),
+  ]);
+
   const projectItems = projects.map((p) => projectToWorkItem(p, locale));
   const filmItems = films.map((f) => filmToWorkItem(f));
-  const items = [...projectItems, ...filmItems];
+  const vimeoItems = vimeoVideos.map((v) => vimeoToWorkItem(v));
+
+  const items: WorkItem[] = [...projectItems, ...filmItems, ...vimeoItems];
 
   return (
     <div className="min-h-screen border-t border-white/5 bg-black pt-14">

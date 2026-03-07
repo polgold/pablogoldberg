@@ -33,7 +33,7 @@ export function Header() {
   const isTransparent = isHomepage && !isScrolled;
 
   const nav = [
-    { href: `/${locale}/work`, label: t.work },
+    { href: `/${locale}/work/archive`, label: t.work },
     { href: `/${locale}/photography`, label: t.gallery },
     { href: `/${locale}/about`, label: t.about },
     { href: `/${locale}/contact`, label: t.contact },

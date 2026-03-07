@@ -35,9 +35,16 @@ export function GalleryEditor({
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    setUploading(true);
     const form = e.currentTarget;
     const formData = new FormData(form);
+    const files = Array.from(formData.entries())
+      .filter(([, v]) => v instanceof File && (v as File).size > 0)
+      .map(([, v]) => v as File);
+    if (files.length === 0) {
+      setError("Seleccioná al menos una imagen");
+      return;
+    }
+    setUploading(true);
     const result = await uploadProjectGalleryImages(projectId, slug, formData);
     setUploading(false);
     if (result.error) {
@@ -81,7 +88,6 @@ export function GalleryEditor({
             type="file"
             accept="image/*"
             multiple
-            required
             className="rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-white file:mr-2 file:rounded file:border-0 file:bg-amber-600 file:px-3 file:py-1 file:text-white"
           />
         </div>

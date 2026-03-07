@@ -60,6 +60,7 @@ export async function getAdminProject(id: string) {
   return data;
 }
 
+/** Creates project record only. Cover/gallery/videos are added on the edit page. */
 export async function createAdminProject(formData: FormData): Promise<{ id?: string; error?: string }> {
   try {
     await ensureAdmin();
@@ -110,23 +111,11 @@ export async function createAdminProject(formData: FormData): Promise<{ id?: str
       return { error: insertErr.message };
     }
 
-    const coverFile = formData.get("cover_file") as File | null;
-    if (coverFile?.size && inserted?.id) {
-      const ext = path.extname(coverFile.name).toLowerCase() || ".jpg";
-      const safeName = `cover${ext}`;
-      const relPath = `${slug}/large/${safeName}`;
-      const fullPath = path.join(getProjectsUploadDir(), relPath);
-      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-      fs.writeFileSync(fullPath, Buffer.from(await coverFile.arrayBuffer()));
-      await supabase
-        .from("admin_projects")
-        .update({ cover_image_path: `projects/${relPath}` })
-        .eq("id", inserted.id);
-    }
-
     revalidatePath("/admin");
     revalidatePath("/es/work");
     revalidatePath("/en/work");
+    revalidatePath("/es/work/archive");
+    revalidatePath("/en/work/archive");
     return { id: inserted?.id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Error al crear" };
@@ -199,15 +188,58 @@ export async function updateAdminProject(id: string, formData: FormData): Promis
   }
 }
 
-export async function deleteAdminProject(id: string): Promise<{ error?: string }> {
-  await ensureAdmin();
-  const supabase = createAdminSupabaseClient();
-  const { error } = await supabase.from("admin_projects").delete().eq("id", id);
-  if (error) return { error: error.message };
-  revalidatePath("/admin");
-  revalidatePath("/es/work");
-  revalidatePath("/en/work");
-  return {};
+export async function deleteAdminProject(id: string): Promise<{ error?: string; fileErrors?: string[] }> {
+  try {
+    await ensureAdmin();
+    const supabase = createAdminSupabaseClient();
+
+    const { data: project } = await supabase.from("admin_projects").select("id, slug, cover_image_path").eq("id", id).maybeSingle();
+    if (!project) return { error: "Proyecto no encontrado" };
+
+    const { data: galleryRows } = await supabase.from("project_gallery_images").select("path, thumb_path").eq("project_id", id);
+
+    const { error: deleteErr } = await supabase.from("admin_projects").delete().eq("id", id);
+    if (deleteErr) {
+      if (deleteErr.code === "23503") return { error: "No se puede eliminar: hay referencias en otras tablas (foreign key)" };
+      return { error: `Error al eliminar en base de datos: ${deleteErr.message}` };
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/es/work");
+    revalidatePath("/en/work");
+    revalidatePath("/es/work/archive");
+    revalidatePath("/en/work/archive");
+
+    const fileErrors: string[] = [];
+    const baseDir = getProjectsUploadDir();
+
+    if (project.cover_image_path) {
+      const rel = project.cover_image_path.replace(/^projects\//, "");
+      const fullPath = path.join(baseDir, rel);
+      try {
+        if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+      } catch (e) {
+        fileErrors.push(`Portada: ${e instanceof Error ? e.message : "Error al eliminar archivo"}`);
+      }
+    }
+
+    for (const row of galleryRows ?? []) {
+      for (const p of [row.path, row.thumb_path].filter(Boolean)) {
+        const rel = String(p).replace(/^projects\//, "");
+        const fullPath = path.join(baseDir, rel);
+        try {
+          if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+        } catch (e) {
+          fileErrors.push(`Galería ${rel}: ${e instanceof Error ? e.message : "Error al eliminar"}`);
+        }
+      }
+    }
+
+    if (fileErrors.length > 0) return { error: "Proyecto eliminado de la base de datos, pero algunos archivos no se pudieron borrar", fileErrors };
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Error al eliminar" };
+  }
 }
 
 // ——— Gallery ———

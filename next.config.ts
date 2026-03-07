@@ -38,6 +38,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.supabase.in", pathname: "/storage/v1/object/public/**" },
       { protocol: "https", hostname: "**.supabase.in", pathname: "/storage/v1/render/image/public/**" },
       { protocol: "https", hostname: "i.vimeocdn.com", pathname: "/**" },
+      { protocol: "https", hostname: "vumbnail.com", pathname: "/**" },
+      { protocol: "https", hostname: "img.youtube.com", pathname: "/**" },
     ],
   },
 };

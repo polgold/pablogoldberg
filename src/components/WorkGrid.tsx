@@ -93,11 +93,11 @@ export function WorkGrid({ items, locale, linkCards = true, showFilters = true, 
           </select>
         </div>
       )}
-      <ul className="mt-8 grid grid-cols-2 gap-px bg-white/5 sm:grid-cols-3 lg:grid-cols-4">
+      <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {ordered.map((item) => {
           const extra = renderCardExtra?.(item);
           return (
-            <li key={item.slug} className="group bg-black">
+            <li key={item.slug} className="group min-w-0">
               <WorkCard
                 item={item}
                 href={linkCards ? item.href : undefined}

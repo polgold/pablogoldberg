@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAdminProjects, getFilms, getProjectImageUrl, getVideoThumbnailUrl } from "@/lib/admin-content";
+import { getVimeoPortfolioVideos } from "@/lib/vimeo";
 import { getLocaleFromParam, COPY } from "@/lib/i18n";
 import { getHreflangUrls } from "@/lib/site";
 import { WorkPageClient } from "@/app/(site)/work/WorkPageClient";
@@ -20,7 +21,7 @@ function projectToWorkItem(p: AdminProject, _locale: string): WorkItem {
   };
 }
 
-function filmToWorkItem(f: Film, locale: string): WorkItem {
+function filmToWorkItem(f: Film): WorkItem {
   const thumb = getVideoThumbnailUrl(f.platform, f.video_id, f.custom_thumbnail);
   return {
     slug: `film-${f.id}`,
@@ -31,6 +32,20 @@ function filmToWorkItem(f: Film, locale: string): WorkItem {
     source: "film",
     vimeoId: f.platform === "vimeo" ? f.video_id : undefined,
     youtubeId: f.platform === "youtube" ? f.video_id : undefined,
+  };
+}
+
+function vimeoToWorkItem(v: { id: string; name: string; thumbnail: string; link: string; releaseTime?: string }): WorkItem {
+  const year = v.releaseTime?.slice(0, 4) ?? undefined;
+  return {
+    slug: `vimeo-${v.id}`,
+    title: v.name || `Video ${v.id}`,
+    year,
+    featuredImage: v.thumbnail || undefined,
+    href: v.link || `https://vimeo.com/${v.id}`,
+    external: true,
+    source: "vimeo",
+    vimeoId: v.id,
   };
 }
 
@@ -61,14 +76,16 @@ export default async function WorkPage({
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
 
-  const [projects, films] = await Promise.all([
+  const [projects, films, vimeoVideos] = await Promise.all([
     getAdminProjects(),
     getFilms(),
+    getVimeoPortfolioVideos().catch(() => []),
   ]);
 
   const projectItems: WorkItem[] = projects.map((p) => projectToWorkItem(p, locale));
-  const filmItems: WorkItem[] = films.map((f) => filmToWorkItem(f, locale));
-  const items = [...projectItems, ...filmItems];
+  const filmItems: WorkItem[] = films.map((f) => filmToWorkItem(f));
+  const vimeoItems: WorkItem[] = vimeoVideos.map((v) => vimeoToWorkItem(v));
+  const items = [...projectItems, ...filmItems, ...vimeoItems];
 
   const tWork = COPY[loc].work;
 
