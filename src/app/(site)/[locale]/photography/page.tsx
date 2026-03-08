@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getGalleriesForPublic } from "@/lib/galleries/public";
+import { scanPhotographyGalleries } from "@/lib/work-galleries";
 import { getLocaleFromParam } from "@/lib/i18n";
 import { COPY } from "@/lib/i18n";
 import { getHreflangUrls, getCanonicalUrl } from "@/lib/site";
@@ -48,7 +48,19 @@ export default async function PhotographyPage({
 }) {
   const { locale } = await params;
   const loc = getLocaleFromParam(locale);
-  const galleries = getGalleriesForPublic("photography");
+  const workGalleries = scanPhotographyGalleries();
+  const galleries = workGalleries.map((g, i) => ({
+    id: g.slug,
+    title: g.title,
+    slug: g.slug,
+    sort_order: i,
+    photos: g.photos.map((p) => ({
+      thumbUrl: p.thumbUrl,
+      largeUrl: p.largeUrl,
+      fallbackThumbUrl: p.thumbUrl,
+      fallbackLargeUrl: p.largeUrl,
+    })),
+  }));
   const t = COPY[loc].gallery;
 
   return (
