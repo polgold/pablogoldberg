@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import {
-  rebuildProcessGallery,
-  rebuildClearCategory,
-  rebuildSanitizeCategory,
-} from "./actions";
+import { rebuildProcessGallery, rebuildClearCategory } from "./actions";
 import type { ProcessWorkPhotographyResult } from "@/lib/work-photography-rebuild";
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|tiff?|avif|gif)$/i;

@@ -18,11 +18,13 @@ type ContactCopy = {
   formErrorSend: string;
   formErrorInvalid: string;
   formOrWhatsApp: string;
+  formEmailNotSent: string;
 };
 
 export function ContactForm({ contactCopy: t }: { contactCopy: ContactCopy }) {
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -54,13 +56,14 @@ export function ContactForm({ contactCopy: t }: { contactCopy: ContactCopy }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, contact, message, website }),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string };
+      const data = (await res.json()) as { ok?: boolean; error?: string; emailSent?: boolean };
 
       if (!res.ok) {
         setError(data.error || t.formErrorSend);
         return;
       }
       setSuccess(true);
+      setEmailSent(data.emailSent ?? true);
       form.reset();
     } catch {
       setError(t.formErrorSend);
@@ -73,6 +76,9 @@ export function ContactForm({ contactCopy: t }: { contactCopy: ContactCopy }) {
     return (
       <div className="rounded border border-white/10 bg-white/5 p-6 text-center">
         <p className="text-white/90">{t.formSuccess}</p>
+        {!emailSent && (
+          <p className="mt-2 text-xs text-amber-200/80">{t.formEmailNotSent}</p>
+        )}
       </div>
     );
   }

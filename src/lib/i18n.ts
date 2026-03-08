@@ -39,6 +39,7 @@ export const COPY: Record<
       formErrorSend: string;
       formErrorInvalid: string;
       formOrWhatsApp: string;
+      formEmailNotSent: string;
     };
     metadata: { about: string; contact: string; photography: string; archive: string; work: string; project: string };
   }
@@ -101,6 +102,7 @@ export const COPY: Record<
       formErrorSend: "No se pudo enviar. Intenta más tarde.",
       formErrorInvalid: "Solicitud no válida.",
       formOrWhatsApp: "o escribe directo por WhatsApp",
+      formEmailNotSent: "El mensaje se guardó; el envío por email no está disponible. Podés escribir por WhatsApp.",
     },
     metadata: { about: "Sobre mí | Pablo Goldberg", contact: "Contacto | Pablo Goldberg", photography: "Fotografía | Pablo Goldberg", archive: "Archivo | Pablo Goldberg", work: "Proyectos | Pablo Goldberg", project: "Proyecto | Pablo Goldberg" },
   },
@@ -162,6 +164,7 @@ export const COPY: Record<
       formErrorSend: "Could not send. Please try again later.",
       formErrorInvalid: "Invalid request.",
       formOrWhatsApp: "or message directly via WhatsApp",
+      formEmailNotSent: "Message was saved; email delivery is not available. You can message via WhatsApp.",
     },
     metadata: { about: "About | Pablo Goldberg", contact: "Contact | Pablo Goldberg", photography: "Photography | Pablo Goldberg", archive: "Archive | Pablo Goldberg", work: "Projects | Pablo Goldberg", project: "Project | Pablo Goldberg" },
   },

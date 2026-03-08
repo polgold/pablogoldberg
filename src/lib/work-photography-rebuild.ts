@@ -127,7 +127,7 @@ export async function processUploadToWorkPhotography(
 
   const imageFiles = files
     .filter((f) => isWorkPhotographyImageFilename(f.name))
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
 
   const result: ProcessWorkPhotographyResult = {
     processed: 0,
@@ -145,26 +145,18 @@ export async function processUploadToWorkPhotography(
 
     try {
       const buffer = file.buffer;
-      const meta = await sharp(buffer).metadata();
-      const w = meta.width ?? 0;
-      const h = meta.height ?? 0;
-      const maxSide = Math.max(w, h);
 
-      const largePipeline = sharp(buffer)
+      await sharp(buffer)
         .rotate()
         .resize(LARGE_MAX_SIDE, undefined, { withoutEnlargement: true, fit: "inside" })
         .jpeg({ quality: LARGE_QUALITY, mozjpeg: true })
-        .strip();
+        .toFile(largePath);
 
-      await largePipeline.toFile(largePath);
-
-      const thumbPipeline = sharp(buffer)
+      await sharp(buffer)
         .rotate()
         .resize(THUMB_MAX_SIDE, undefined, { withoutEnlargement: true, fit: "inside" })
         .jpeg({ quality: THUMB_QUALITY, mozjpeg: true })
-        .strip();
-
-      await thumbPipeline.toFile(thumbPath);
+        .toFile(thumbPath);
 
       result.processed++;
       result.generatedNames.push(baseName);
