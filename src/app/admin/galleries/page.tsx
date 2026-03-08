@@ -26,14 +26,22 @@ export default async function AdminGalleriesPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-white">Galerías</h1>
-        <Link
-          href="/admin/galleries/new"
-          className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500"
-        >
-          Nueva galería
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/galleries/rebuild"
+            className="rounded border border-amber-600/60 bg-amber-900/20 px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-900/40"
+          >
+            Reconstruir (work/photography)
+          </Link>
+          <Link
+            href="/admin/galleries/new"
+            className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500"
+          >
+            Nueva galería
+          </Link>
+        </div>
       </div>
 
       <p className="text-sm text-zinc-400">
