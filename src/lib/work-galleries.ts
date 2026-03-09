@@ -1,11 +1,16 @@
 /**
  * Carga de galerías desde el filesystem bajo /public/uploads/work/.
  * Sin Supabase Storage. Escanea carpetas locales.
+ * Orden de categorías y fotos: work-photography-order (JSON).
  */
 import "server-only";
 import path from "path";
 import fs from "fs";
 import { getWorkImageUrl } from "./work-images";
+import {
+  readCategoriesOrder,
+  readCategoryPhotoOrder,
+} from "./work-photography-order";
 
 const WORK_DIR = path.join(process.cwd(), "public", "uploads", "work");
 const IMAGE_EXT = /\.(jpe?g|png|webp|avif|gif)$/i;
@@ -37,24 +42,44 @@ export type WorkGallery = {
 
 /**
  * Escanea photography/{category}/thumb y large.
- * Estructura: photography/art/thumb/, photography/art/large/, etc.
+ * Respeta _categories_order.json y {category}/order.json si existen.
  */
 export function scanPhotographyGalleries(): WorkGallery[] {
   const photographyDir = path.join(WORK_DIR, "photography");
   if (!fs.existsSync(photographyDir) || !fs.statSync(photographyDir).isDirectory()) return [];
 
-  const galleries: WorkGallery[] = [];
-  const categories = fs.readdirSync(photographyDir).filter((name) => {
+  let categories = fs.readdirSync(photographyDir).filter((name) => {
     const full = path.join(photographyDir, name);
     return !name.startsWith(".") && fs.statSync(full).isDirectory();
   });
 
-  for (const category of categories.sort()) {
+  const orderSlugs = readCategoriesOrder();
+  if (orderSlugs?.length) {
+    const orderSet = new Set(orderSlugs);
+    const ordered = orderSlugs.filter((s) => categories.includes(s));
+    const rest = categories.filter((c) => !orderSet.has(c)).sort((a, b) => a.localeCompare(b));
+    categories = [...ordered, ...rest];
+  } else {
+    categories = categories.sort((a, b) => a.localeCompare(b));
+  }
+
+  const galleries: WorkGallery[] = [];
+  for (const category of categories) {
     const thumbDir = path.join(photographyDir, category, "thumb");
     const largeDir = path.join(photographyDir, category, "large");
     const thumbNames = listImageFiles(thumbDir);
     const largeNames = listImageFiles(largeDir);
-    const allNames = [...new Set([...thumbNames, ...largeNames])].sort((a, b) => a.localeCompare(b));
+    let allNames = [...new Set([...thumbNames, ...largeNames])];
+
+    const photoOrder = readCategoryPhotoOrder(category);
+    if (photoOrder?.length) {
+      const orderSet = new Set(photoOrder);
+      const ordered = photoOrder.filter((n) => allNames.includes(n));
+      const rest = allNames.filter((n) => !orderSet.has(n)).sort((a, b) => a.localeCompare(b));
+      allNames = [...ordered, ...rest];
+    } else {
+      allNames.sort((a, b) => a.localeCompare(b));
+    }
 
     if (allNames.length === 0) continue;
 
@@ -81,7 +106,7 @@ export function scanPhotographyGalleries(): WorkGallery[] {
     });
   }
 
-  return galleries.sort((a, b) => a.slug.localeCompare(b.slug));
+  return galleries;
 }
 
 /**

@@ -36,6 +36,12 @@ export default async function AdminGalleriesPage() {
             Reconstruir (work/photography)
           </Link>
           <Link
+            href="/admin/galleries/rebuild/order"
+            className="rounded border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 hover:text-white"
+          >
+            Ordenar fotografía
+          </Link>
+          <Link
             href="/admin/galleries/new"
             className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500"
           >

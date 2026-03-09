@@ -11,6 +11,12 @@ import {
   processUploadToWorkPhotography,
   type ProcessWorkPhotographyResult,
 } from "@/lib/work-photography-rebuild";
+import {
+  getCategoriesInOrder,
+  getCategoryPhotoFilenamesInOrder,
+  saveCategoriesOrder,
+  saveCategoryPhotoOrder,
+} from "@/lib/work-photography-order";
 
 async function ensureAdmin() {
   const supabase = await createAdminServerClient();
@@ -73,4 +79,34 @@ export async function rebuildProcessGallery(formData: FormData): Promise<Process
   revalidatePath("/es/photography");
   revalidatePath("/en/photography");
   return result;
+}
+
+// —— Orden de categorías y fotos (work/photography) ——
+
+export async function orderGetCategories(): Promise<string[]> {
+  await ensureAdmin();
+  return getCategoriesInOrder();
+}
+
+export async function orderGetCategoryPhotos(category: string): Promise<string[]> {
+  await ensureAdmin();
+  if (!category?.trim()) return [];
+  return getCategoryPhotoFilenamesInOrder(category);
+}
+
+export async function orderSaveCategoriesOrder(slugs: string[]): Promise<void> {
+  await ensureAdmin();
+  saveCategoriesOrder(slugs);
+  revalidatePath("/admin/galleries/rebuild/order");
+  revalidatePath("/es/photography");
+  revalidatePath("/en/photography");
+}
+
+export async function orderSaveCategoryPhotoOrder(category: string, filenames: string[]): Promise<void> {
+  await ensureAdmin();
+  if (!category?.trim()) return;
+  saveCategoryPhotoOrder(category, filenames);
+  revalidatePath("/admin/galleries/rebuild/order");
+  revalidatePath("/es/photography");
+  revalidatePath("/en/photography");
 }

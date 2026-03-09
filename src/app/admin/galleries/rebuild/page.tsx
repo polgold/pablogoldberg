@@ -9,9 +9,15 @@ export default async function RebuildGalleryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <Link href="/admin/galleries" className="text-zinc-400 hover:text-white">
           ← Galerías
+        </Link>
+        <Link
+          href="/admin/galleries/rebuild/order"
+          className="rounded border border-zinc-600 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-700 hover:text-white"
+        >
+          Ordenar galerías y fotos
         </Link>
       </div>
       <h1 className="text-2xl font-semibold text-white">
