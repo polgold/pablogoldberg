@@ -10,6 +10,7 @@ import {
   uploadPortfolioPhotos,
   clearGallery,
   deleteGallery,
+  deletePortfolioPhoto,
   type PortfolioPhoto,
   type PortfolioGallery,
 } from "../actions";
@@ -45,6 +46,7 @@ export function PortfolioPhotosClient({
   const [addingGalleries, setAddingGalleries] = useState(false);
   const [deletingGalleryId, setDeletingGalleryId] = useState<string | null>(null);
   const [clearingGalleryId, setClearingGalleryId] = useState<string | null>(null);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadCancelledRef = useRef(false);
 
@@ -269,6 +271,26 @@ export function PortfolioPhotosClient({
       showToast("Galería eliminada");
     },
     [selectedGalleryId, showToast]
+  );
+
+  const handleDeletePhoto = useCallback(
+    async (photoId: string) => {
+      if (isStorageOnly(photoId)) {
+        showToast("Las fotos solo en Storage se sincronizan al recargar; no se pueden borrar una a una.");
+        return;
+      }
+      if (!confirm("¿Eliminar esta foto de la galería?")) return;
+      setDeletingPhotoId(photoId);
+      const { error } = await deletePortfolioPhoto(photoId);
+      setDeletingPhotoId(null);
+      if (error) {
+        showToast(error);
+        return;
+      }
+      setPhotos((prev) => prev.filter((p) => p.id !== photoId));
+      showToast("Foto eliminada");
+    },
+    [showToast, isStorageOnly]
   );
 
   const handleCreateGalleries = useCallback(async () => {
@@ -517,26 +539,39 @@ export function PortfolioPhotosClient({
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center justify-between border-t border-zinc-800 p-2">
+                  <div className="flex items-center justify-between gap-2 border-t border-zinc-800 p-2">
                     <span className="truncate text-xs text-zinc-500">#{index + 1}</span>
-                    {storageOnly ? (
-                      <span className="text-xs text-zinc-500" title="Solo en Storage; se sincroniza al recargar">
-                        Storage
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleToggle(photo.id)}
-                        disabled={loadingId === photo.id}
-                        className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                          photo.is_visible
-                            ? "bg-green-900/50 text-green-400 hover:bg-green-800/50"
-                            : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
-                        } ${loadingId === photo.id ? "opacity-50" : ""}`}
-                      >
-                        {loadingId === photo.id ? "…" : photo.is_visible ? "Ocultar" : "Mostrar"}
-                      </button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {storageOnly ? (
+                        <span className="text-xs text-zinc-500" title="Solo en Storage; se sincroniza al recargar">
+                          Storage
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleToggle(photo.id)}
+                            disabled={loadingId === photo.id}
+                            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
+                              photo.is_visible
+                                ? "bg-green-900/50 text-green-400 hover:bg-green-800/50"
+                                : "bg-zinc-700 text-zinc-400 hover:bg-zinc-600"
+                            } ${loadingId === photo.id ? "opacity-50" : ""}`}
+                          >
+                            {loadingId === photo.id ? "…" : photo.is_visible ? "Ocultar" : "Mostrar"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePhoto(photo.id)}
+                            disabled={deletingPhotoId === photo.id}
+                            title="Eliminar esta foto de la galería"
+                            className="rounded px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-900/30 disabled:opacity-50"
+                          >
+                            {deletingPhotoId === photo.id ? "…" : "Eliminar"}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </li>
               );

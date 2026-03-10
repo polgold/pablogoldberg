@@ -869,6 +869,19 @@ export async function reorderPortfolioPhotos(updates: { id: string; order: numbe
   return {};
 }
 
+/** Elimina una foto individual de la galería (solo en DB; el archivo en Storage no se borra). */
+export async function deletePortfolioPhoto(id: string): Promise<{ error?: string }> {
+  await ensureAdmin();
+  const supabase = createSupabaseServerClient();
+  if (!supabase) return { error: "DB no disponible" };
+  const { error } = await supabase.from("portfolio_photos").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/es/photography");
+  revalidatePath("/en/photography");
+  revalidatePath("/admin/portfolio-photos");
+  return {};
+}
+
 // ——— Páginas (About, etc.) ———
 
 export type PageContentByLocale = {
